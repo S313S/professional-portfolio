@@ -1,6 +1,13 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { motion } from 'motion/react';
 
+const EXPERIENCE_TITLE_OPACITY = 0.15;
+const EXPERIENCE_SUBTITLE_OPACITY = 0.15;
+const EXPERIENCE_MASK_RADIUS_PX = 200;
+
+const buildSpotlightMask = (radiusPx: number) =>
+  `radial-gradient(circle ${radiusPx}px at var(--mx, 50%) var(--my, 50%), rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.85) 35%, rgba(0,0,0,0.25) 60%, rgba(0,0,0,0) 82%)`;
+
 const buildImageCandidates = (relativePath: string) => {
   const normalized = relativePath.replace(/^\/+/, '');
   const base = import.meta.env.BASE_URL || '/';
@@ -26,6 +33,7 @@ export default function ExperienceHero() {
 
   const beforeCandidates = useMemo(() => buildImageCandidates('images/before.png'), []);
   const afterCandidates = useMemo(() => buildImageCandidates('images/after.png'), []);
+  const spotlightMask = useMemo(() => buildSpotlightMask(EXPERIENCE_MASK_RADIUS_PX), []);
 
   const [beforeIndex, setBeforeIndex] = useState(0);
   const [afterIndex, setAfterIndex] = useState(0);
@@ -151,10 +159,8 @@ export default function ExperienceHero() {
         draggable={false}
         style={{
           filter: `url(#${filterId})`,
-          WebkitMaskImage:
-            'radial-gradient(circle 260px at var(--mx, 50%) var(--my, 50%), rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.85) 35%, rgba(0,0,0,0.25) 60%, rgba(0,0,0,0) 82%)',
-          maskImage:
-            'radial-gradient(circle 260px at var(--mx, 50%) var(--my, 50%), rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.85) 35%, rgba(0,0,0,0.25) 60%, rgba(0,0,0,0) 82%)',
+          WebkitMaskImage: spotlightMask,
+          maskImage: spotlightMask,
           WebkitMaskRepeat: 'no-repeat',
           maskRepeat: 'no-repeat',
           WebkitMaskSize: '100% 100%',
@@ -171,8 +177,12 @@ export default function ExperienceHero() {
           transition={{ duration: 0.8, delay: 0.2 }}
           className="text-center text-white [text-shadow:0_2px_18px_rgba(0,0,0,0.45)]"
         >
-          <h2 className="mb-4 text-6xl font-bold tracking-tighter md:text-8xl">EXPERIENCE</h2>
-          <p className="text-xl font-light tracking-widest opacity-90 md:text-2xl">EXPLORE THE JOURNEY</p>
+          <h2 className="mb-4 text-6xl font-bold tracking-tighter md:text-8xl" style={{ opacity: EXPERIENCE_TITLE_OPACITY }}>
+            EXPERIENCE
+          </h2>
+          <p className="text-xl font-light tracking-widest md:text-2xl" style={{ opacity: EXPERIENCE_SUBTITLE_OPACITY }}>
+            EXPLORE THE JOURNEY
+          </p>
         </motion.div>
       </div>
 
