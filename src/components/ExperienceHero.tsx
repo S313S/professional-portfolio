@@ -1,354 +1,184 @@
-import { useEffect, useRef } from 'react';
-import * as THREE from 'three';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { motion } from 'motion/react';
 
-const vertexShader = `
-varying vec2 vUv;
-void main() {
-  vUv = uv;
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-}
-`;
-
-const fragmentShader = `
-uniform sampler2D uTexture2;
-uniform vec2 uMouse;
-uniform float uTime;
-uniform vec2 uResolution;
-uniform vec2 uImageResolution;
-uniform float uHover;
-
-varying vec2 vUv;
-
-// Simplex noise function
-vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-vec2 mod289(vec2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-vec3 permute(vec3 x) { return mod289(((x*34.0)+1.0)*x); }
-float snoise(vec2 v) {
-  const vec4 C = vec4(0.211324865405187, 0.366025403784439, -0.577350269189626, 0.024390243902439);
-  vec2 i  = floor(v + dot(v, C.yy) );
-  vec2 x0 = v - i + dot(i, C.xx);
-  vec2 i1;
-  i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
-  vec4 x12 = x0.xyxy + C.xxzz;
-  x12.xy -= i1;
-  i = mod289(i);
-  vec3 p = permute( permute( i.y + vec3(0.0, i1.y, 1.0 )) + i.x + vec3(0.0, i1.x, 1.0 ));
-  vec3 m = max(0.5 - vec3(dot(x0,x0), dot(x12.xy,x12.xy), dot(x12.zw,x12.zw)), 0.0);
-  m = m*m ;
-  m = m*m ;
-  vec3 x = 2.0 * fract(p * C.www) - 1.0;
-  vec3 h = abs(x) - 0.5;
-  vec3 ox = floor(x + 0.5);
-  vec3 a0 = x - ox;
-  m *= 1.79284291400159 - 0.85373472095314 * ( a0*a0 + h*h );
-  vec3 g;
-  g.x  = a0.x  * x0.x  + h.x  * x0.y;
-  g.yz = a0.yz * x12.xz + h.yz * x12.yw;
-  return 130.0 * dot(m, g);
-}
-
-void main() {
-  vec2 safeResolution = max(uResolution, vec2(1.0));
-  vec2 safeImageResolution = max(uImageResolution, vec2(1.0));
-  vec2 uv = vUv;
-  
-  // Calculate aspect ratio for correct circle shape
-  float aspect = safeResolution.x / safeResolution.y;
-  vec2 mouseUV = uMouse;
-  
-  // Distance from mouse
-  vec2 distVec = uv - mouseUV;
-  distVec.x *= aspect;
-  float dist = length(distVec);
-  
-  // Create a smooth circle mask
-  float radius = 0.25; // Size of the reveal circle
-  float edgeSoftness = 0.1;
-  float mask = 1.0 - smoothstep(radius - edgeSoftness, radius, dist);
-  
-  // Add some noise to the mask edges for liquid feel
-  float noise = snoise(uv * 10.0 + uTime * 0.5);
-  mask += noise * 0.02 * mask; // Only distort near the mask
-  mask = clamp(mask, 0.0, 1.0);
-  
-  // Displacement effect based on mask
-  float displacementStrength = 0.05;
-  vec2 displacement = vec2(
-    snoise(uv * 5.0 + uTime * 0.2),
-    snoise(uv * 5.0 + uTime * 0.3 + 10.0)
-  ) * displacementStrength * mask;
-  
-  // Calculate UVs for background-size: cover (robust against invalid dimensions)
-  float screenAspect = safeResolution.x / safeResolution.y;
-  float imageAspect = safeImageResolution.x / safeImageResolution.y;
-  vec2 uvCover = vUv;
-  if (screenAspect > imageAspect) {
-    float scaleY = imageAspect / screenAspect;
-    uvCover.y = vUv.y * scaleY + (1.0 - scaleY) * 0.5;
-  } else {
-    float scaleX = screenAspect / imageAspect;
-    uvCover.x = vUv.x * scaleX + (1.0 - scaleX) * 0.5;
-  }
-  
-  // Sample textures
-  vec4 tex2 = texture2D(uTexture2, uvCover + displacement); // Color image with displacement
-  
-  // Reveal color image on top of the base layer using alpha mask
-  gl_FragColor = vec4(tex2.rgb, mask);
-}
-`;
-
-const buildTexturePathCandidates = (relativePath: string) => {
+const buildImageCandidates = (relativePath: string) => {
   const normalized = relativePath.replace(/^\/+/, '');
   const base = import.meta.env.BASE_URL || '/';
   const normalizedBase = base.endsWith('/') ? base : `${base}/`;
   const aliasPath = normalized.replace(/^images\//, 'public-images/');
-  const paths = [
-    `${normalizedBase}${normalized}`,
-    `${normalizedBase}${aliasPath}`,
-    `/${normalized}`,
-    `/${aliasPath}`
-  ];
 
-  return Array.from(new Set(paths));
-};
-
-const loadTextureWithFallback = async (
-  loader: THREE.TextureLoader,
-  paths: string[],
-  onLoad?: (texture: THREE.Texture) => void
-) => {
-  let lastError: unknown = null;
-
-  for (const path of paths) {
-    try {
-      const texture = await loader.loadAsync(path);
-      onLoad?.(texture);
-      return texture;
-    } catch (error) {
-      lastError = error;
-      console.warn(`[ExperienceHero] Texture load failed: ${path}`, error);
-    }
-  }
-
-  throw new Error(
-    `[ExperienceHero] Failed to load texture from paths: ${paths.join(', ')} | ${String(lastError)}`
+  return Array.from(
+    new Set([
+      `${normalizedBase}${normalized}`,
+      `${normalizedBase}${aliasPath}`,
+      `/${normalized}`,
+      `/${aliasPath}`,
+    ]),
   );
 };
 
-const getTextureDimensions = (texture: THREE.Texture): { width: number; height: number } => {
-  const image = texture.image as
-    | {
-        naturalWidth?: number;
-        naturalHeight?: number;
-        videoWidth?: number;
-        videoHeight?: number;
-        width?: number;
-        height?: number;
-      }
-    | undefined;
-
-  const width = image?.naturalWidth || image?.videoWidth || image?.width || 1;
-  const height = image?.naturalHeight || image?.videoHeight || image?.height || 1;
-
-  return { width, height };
-};
-
 export default function ExperienceHero() {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const sceneRef = useRef<THREE.Scene | null>(null);
-  const cameraRef = useRef<THREE.OrthographicCamera | null>(null);
-  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
-  const materialRef = useRef<THREE.ShaderMaterial | null>(null);
-  const requestRef = useRef<number | null>(null);
-  const baseImagePath = `${(import.meta.env.BASE_URL || '/').replace(/\/?$/, '/')}images/before.png`;
+  const filterId = useId().replace(/:/g, '-');
+  const sectionRef = useRef<HTMLElement>(null);
+  const overlayRef = useRef<HTMLImageElement>(null);
+  const turbulenceRef = useRef<SVGFETurbulenceElement>(null);
+  const displacementRef = useRef<SVGFEDisplacementMapElement>(null);
+
+  const beforeCandidates = useMemo(() => buildImageCandidates('images/before.png'), []);
+  const afterCandidates = useMemo(() => buildImageCandidates('images/after.png'), []);
+
+  const [beforeIndex, setBeforeIndex] = useState(0);
+  const [afterIndex, setAfterIndex] = useState(0);
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    const section = sectionRef.current;
+    const overlay = overlayRef.current;
+    if (!section || !overlay) return;
 
-    // Setup
-    const scene = new THREE.Scene();
-    sceneRef.current = scene;
+    let rafId = 0;
+    let time = 0;
+    let hover = false;
+    let pointerX = 0.5;
+    let pointerY = 0.5;
 
-    const width = containerRef.current.clientWidth;
-    const height = containerRef.current.clientHeight;
-
-    // Orthographic camera for 2D effect
-    const camera = new THREE.OrthographicCamera(
-      width / -2, width / 2, height / 2, height / -2, 0.1, 1000
-    );
-    camera.position.z = 1;
-    cameraRef.current = camera;
-
-    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-    renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.setClearColor(0x000000, 0);
-    containerRef.current.appendChild(renderer.domElement);
-    rendererRef.current = renderer;
-
-    const geometry = new THREE.PlaneGeometry(width, height);
-    let mesh: THREE.Mesh | null = null;
-    let colorTexture: THREE.Texture | null = null;
-    let isDisposed = false;
-
-    const textureLoader = new THREE.TextureLoader();
-    const afterTexturePaths = buildTexturePathCandidates('images/after.png');
-
-    const configureTexture = (texture: THREE.Texture) => {
-      texture.minFilter = THREE.LinearFilter;
-      texture.magFilter = THREE.LinearFilter;
-      texture.generateMipmaps = false;
-      texture.wrapS = THREE.ClampToEdgeWrapping;
-      texture.wrapT = THREE.ClampToEdgeWrapping;
-      texture.colorSpace = THREE.SRGBColorSpace;
-      texture.needsUpdate = true;
+    const setMaskPosition = (x: number, y: number) => {
+      overlay.style.setProperty('--mx', `${(x * 100).toFixed(2)}%`);
+      overlay.style.setProperty('--my', `${(y * 100).toFixed(2)}%`);
     };
 
-    const setupMaterial = async () => {
-      try {
-        colorTexture = await loadTextureWithFallback(textureLoader, afterTexturePaths);
+    setMaskPosition(pointerX, pointerY);
 
-        if (isDisposed || !colorTexture) return;
+    const handlePointerMove = (event: PointerEvent) => {
+      const rect = section.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
 
-        configureTexture(colorTexture);
+      const x = (event.clientX - rect.left) / rect.width;
+      const y = (event.clientY - rect.top) / rect.height;
 
-        const { width: imageWidth, height: imageHeight } = getTextureDimensions(colorTexture);
+      pointerX = Math.min(1, Math.max(0, x));
+      pointerY = Math.min(1, Math.max(0, y));
+      hover = true;
+      setMaskPosition(pointerX, pointerY);
+    };
 
-        const material = new THREE.ShaderMaterial({
-          vertexShader,
-          fragmentShader,
-          transparent: true,
-          uniforms: {
-            uTime: { value: 0 },
-            uTexture2: { value: colorTexture },
-            uMouse: { value: new THREE.Vector2(0.5, 0.5) },
-            uResolution: { value: new THREE.Vector2(width, height) },
-            uImageResolution: { value: new THREE.Vector2(imageWidth, imageHeight) },
-            uHover: { value: 0 }
-          }
-        });
-        materialRef.current = material;
+    const handleLeave = () => {
+      hover = false;
+    };
 
-        mesh = new THREE.Mesh(geometry, material);
-        scene.add(mesh);
-      } catch (error) {
-        console.error('[ExperienceHero] Unable to initialize textures for displacement effect.', error);
+    section.addEventListener('pointermove', handlePointerMove);
+    section.addEventListener('pointerenter', handlePointerMove);
+    section.addEventListener('pointerleave', handleLeave);
+    window.addEventListener('blur', handleLeave);
+
+    const animate = () => {
+      time += 0.016;
+
+      if (!hover) {
+        pointerX = 0.5 + Math.sin(time * 0.35) * 0.22;
+        pointerY = 0.5 + Math.cos(time * 0.29) * 0.18;
+        setMaskPosition(pointerX, pointerY);
       }
-    };
 
-    void setupMaterial();
-
-    // Resize Handler
-    const handleResize = () => {
-      if (!containerRef.current || !rendererRef.current || !cameraRef.current || !materialRef.current || !mesh) return;
-      
-      const w = containerRef.current.clientWidth;
-      const h = containerRef.current.clientHeight;
-      
-      rendererRef.current.setSize(w, h);
-      
-      // Update camera
-      cameraRef.current.left = w / -2;
-      cameraRef.current.right = w / 2;
-      cameraRef.current.top = h / 2;
-      cameraRef.current.bottom = h / -2;
-      cameraRef.current.updateProjectionMatrix();
-      
-      // Update uniforms
-      materialRef.current.uniforms.uResolution.value.set(w, h);
-      
-      // Update geometry size (create new one to match aspect ratio if needed, or just scale mesh)
-      mesh.scale.set(1, 1, 1); // Reset scale
-      // Actually for a full screen plane in ortho view, we need to match the size
-      mesh.geometry.dispose();
-      mesh.geometry = new THREE.PlaneGeometry(w, h);
-    };
-
-    window.addEventListener('resize', handleResize);
-
-    // Mouse Move Handler
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!containerRef.current || !materialRef.current) return;
-      
-      const rect = containerRef.current.getBoundingClientRect();
-      const x = (e.clientX - rect.left) / rect.width;
-      const y = 1.0 - (e.clientY - rect.top) / rect.height; // Flip Y for UVs
-      
-      // Smooth lerp could be added here for better feel
-      materialRef.current.uniforms.uMouse.value.set(x, y);
-      materialRef.current.uniforms.uHover.value = 1;
-    };
-    
-    // Use window for mouse move to catch it even if slightly outside, 
-    // but container is safer for local coordinates
-    containerRef.current.addEventListener('mousemove', handleMouseMove);
-    containerRef.current.addEventListener('mouseleave', () => {
-        if(materialRef.current) materialRef.current.uniforms.uHover.value = 0;
-    });
-
-    // Animation Loop
-    const animate = (time: number) => {
-      requestRef.current = requestAnimationFrame(animate);
-      
-      if (materialRef.current) {
-        materialRef.current.uniforms.uTime.value = time * 0.001;
+      if (turbulenceRef.current) {
+        const freqX = 0.004 + Math.sin(time * 0.8) * 0.0012;
+        const freqY = 0.006 + Math.cos(time * 0.65) * 0.0012;
+        turbulenceRef.current.setAttribute('baseFrequency', `${freqX.toFixed(4)} ${freqY.toFixed(4)}`);
       }
-      
-      if (rendererRef.current && sceneRef.current && cameraRef.current) {
-        rendererRef.current.render(sceneRef.current, cameraRef.current);
+
+      if (displacementRef.current) {
+        const baseScale = hover ? 42 : 30;
+        const wave = Math.sin(time * 1.3) * 8;
+        displacementRef.current.setAttribute('scale', `${(baseScale + wave).toFixed(2)}`);
       }
+
+      rafId = requestAnimationFrame(animate);
     };
-    
-    requestRef.current = requestAnimationFrame(animate);
+
+    rafId = requestAnimationFrame(animate);
 
     return () => {
-      isDisposed = true;
-      window.removeEventListener('resize', handleResize);
-      if (containerRef.current) {
-        containerRef.current.removeEventListener('mousemove', handleMouseMove);
-        if (rendererRef.current && rendererRef.current.domElement) {
-            containerRef.current.removeChild(rendererRef.current.domElement);
-        }
-      }
-      if (requestRef.current) cancelAnimationFrame(requestRef.current);
-      colorTexture?.dispose();
-      if (mesh) {
-        mesh.geometry.dispose();
-      } else {
-        geometry.dispose();
-      }
-      materialRef.current?.dispose();
-      renderer.dispose();
+      cancelAnimationFrame(rafId);
+      section.removeEventListener('pointermove', handlePointerMove);
+      section.removeEventListener('pointerenter', handlePointerMove);
+      section.removeEventListener('pointerleave', handleLeave);
+      window.removeEventListener('blur', handleLeave);
     };
   }, []);
 
   return (
-    <section className="relative w-full h-screen overflow-hidden">
-      <div
-        className="absolute inset-0 z-0 bg-center bg-cover bg-no-repeat"
-        style={{ backgroundImage: `url("${baseImagePath}")` }}
+    <section ref={sectionRef} className="relative w-full h-screen overflow-hidden bg-black">
+      <svg
+        aria-hidden="true"
+        className="pointer-events-none absolute h-0 w-0"
+        style={{ position: 'absolute', width: 0, height: 0 }}
+      >
+        <defs>
+          <filter id={filterId} x="-20%" y="-20%" width="140%" height="140%" colorInterpolationFilters="sRGB">
+            <feTurbulence
+              ref={turbulenceRef}
+              type="fractalNoise"
+              baseFrequency="0.004 0.006"
+              numOctaves={2}
+              seed={9}
+              result="noise"
+            />
+            <feDisplacementMap
+              ref={displacementRef}
+              in="SourceGraphic"
+              in2="noise"
+              scale={34}
+              xChannelSelector="R"
+              yChannelSelector="G"
+            />
+          </filter>
+        </defs>
+      </svg>
+
+      <img
+        alt="Experience before state"
+        src={beforeCandidates[beforeIndex]}
+        onError={() => setBeforeIndex((index) => Math.min(index + 1, beforeCandidates.length - 1))}
+        className="pointer-events-none absolute inset-0 h-full w-full select-none object-cover"
+        draggable={false}
       />
-      <div ref={containerRef} className="absolute inset-0 w-full h-full z-0" />
-      
-      {/* Overlay Content */}
-      <div className="absolute inset-0 z-10 flex flex-col justify-center items-center pointer-events-none">
-        <motion.div 
+
+      <img
+        ref={overlayRef}
+        alt="Experience after state"
+        src={afterCandidates[afterIndex]}
+        onError={() => setAfterIndex((index) => Math.min(index + 1, afterCandidates.length - 1))}
+        className="pointer-events-none absolute inset-0 h-full w-full select-none object-cover"
+        draggable={false}
+        style={{
+          filter: `url(#${filterId})`,
+          WebkitMaskImage:
+            'radial-gradient(circle 260px at var(--mx, 50%) var(--my, 50%), rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.85) 35%, rgba(0,0,0,0.25) 60%, rgba(0,0,0,0) 82%)',
+          maskImage:
+            'radial-gradient(circle 260px at var(--mx, 50%) var(--my, 50%), rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.85) 35%, rgba(0,0,0,0.25) 60%, rgba(0,0,0,0) 82%)',
+          WebkitMaskRepeat: 'no-repeat',
+          maskRepeat: 'no-repeat',
+          WebkitMaskSize: '100% 100%',
+          maskSize: '100% 100%',
+        }}
+      />
+
+      <div className="pointer-events-none absolute inset-0 bg-black/8" />
+
+      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center pointer-events-none">
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
-          className="text-center text-white mix-blend-difference"
+          className="text-center text-white [text-shadow:0_2px_18px_rgba(0,0,0,0.45)]"
         >
-          <h2 className="text-6xl md:text-8xl font-bold tracking-tighter mb-4">EXPERIENCE</h2>
-          <p className="text-xl md:text-2xl font-light tracking-widest opacity-80">EXPLORE THE JOURNEY</p>
+          <h2 className="mb-4 text-6xl font-bold tracking-tighter md:text-8xl">EXPERIENCE</h2>
+          <p className="text-xl font-light tracking-widest opacity-90 md:text-2xl">EXPLORE THE JOURNEY</p>
         </motion.div>
       </div>
-      
-      <div className="absolute bottom-10 left-0 right-0 text-center z-10 pointer-events-none">
+
+      <div className="pointer-events-none absolute bottom-10 left-0 right-0 z-10 text-center">
         <a href="#experience" className="pointer-events-auto inline-block">
-          <p className="text-white/50 text-sm animate-bounce">Scroll to explore</p>
+          <p className="animate-bounce text-sm text-white/70">Scroll to explore</p>
         </a>
       </div>
     </section>
