@@ -11,7 +11,6 @@ void main() {
 `;
 
 const fragmentShader = `
-uniform sampler2D uTexture1;
 uniform sampler2D uTexture2;
 uniform vec2 uMouse;
 uniform float uTime;
@@ -50,10 +49,12 @@ float snoise(vec2 v) {
 }
 
 void main() {
+  vec2 safeResolution = max(uResolution, vec2(1.0));
+  vec2 safeImageResolution = max(uImageResolution, vec2(1.0));
   vec2 uv = vUv;
   
   // Calculate aspect ratio for correct circle shape
-  float aspect = uResolution.x / uResolution.y;
+  float aspect = safeResolution.x / safeResolution.y;
   vec2 mouseUV = uMouse;
   
   // Distance from mouse
@@ -64,11 +65,12 @@ void main() {
   // Create a smooth circle mask
   float radius = 0.25; // Size of the reveal circle
   float edgeSoftness = 0.1;
-  float mask = smoothstep(radius, radius - edgeSoftness, dist);
+  float mask = 1.0 - smoothstep(radius - edgeSoftness, radius, dist);
   
   // Add some noise to the mask edges for liquid feel
   float noise = snoise(uv * 10.0 + uTime * 0.5);
   mask += noise * 0.02 * mask; // Only distort near the mask
+  mask = clamp(mask, 0.0, 1.0);
   
   // Displacement effect based on mask
   float displacementStrength = 0.05;
@@ -77,23 +79,23 @@ void main() {
     snoise(uv * 5.0 + uTime * 0.3 + 10.0)
   ) * displacementStrength * mask;
   
-  // Calculate UVs for background-size: cover
-  vec2 ratio = vec2(
-      min((uResolution.x / uResolution.y) / (uImageResolution.x / uImageResolution.y), 1.0),
-      min((uResolution.y / uResolution.x) / (uImageResolution.y / uImageResolution.x), 1.0)
-  );
-
-  vec2 uvCover = vec2(
-      vUv.x * ratio.x + (1.0 - ratio.x) * 0.5,
-      vUv.y * ratio.y + (1.0 - ratio.y) * 0.5
-  );
+  // Calculate UVs for background-size: cover (robust against invalid dimensions)
+  float screenAspect = safeResolution.x / safeResolution.y;
+  float imageAspect = safeImageResolution.x / safeImageResolution.y;
+  vec2 uvCover = vUv;
+  if (screenAspect > imageAspect) {
+    float scaleY = imageAspect / screenAspect;
+    uvCover.y = vUv.y * scaleY + (1.0 - scaleY) * 0.5;
+  } else {
+    float scaleX = screenAspect / imageAspect;
+    uvCover.x = vUv.x * scaleX + (1.0 - scaleX) * 0.5;
+  }
   
   // Sample textures
-  vec4 tex1 = texture2D(uTexture1, uvCover); // BW Image
-  vec4 tex2 = texture2D(uTexture2, uvCover + displacement); // Color Image with displacement
+  vec4 tex2 = texture2D(uTexture2, uvCover + displacement); // Color image with displacement
   
-  // Mix based on mask
-  gl_FragColor = mix(tex1, tex2, mask);
+  // Reveal color image on top of the base layer using alpha mask
+  gl_FragColor = vec4(tex2.rgb, mask);
 }
 `;
 
@@ -135,6 +137,24 @@ const loadTextureWithFallback = async (
   );
 };
 
+const getTextureDimensions = (texture: THREE.Texture): { width: number; height: number } => {
+  const image = texture.image as
+    | {
+        naturalWidth?: number;
+        naturalHeight?: number;
+        videoWidth?: number;
+        videoHeight?: number;
+        width?: number;
+        height?: number;
+      }
+    | undefined;
+
+  const width = image?.naturalWidth || image?.videoWidth || image?.width || 1;
+  const height = image?.naturalHeight || image?.videoHeight || image?.height || 1;
+
+  return { width, height };
+};
+
 export default function ExperienceHero() {
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -142,6 +162,7 @@ export default function ExperienceHero() {
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const materialRef = useRef<THREE.ShaderMaterial | null>(null);
   const requestRef = useRef<number | null>(null);
+  const baseImagePath = `${(import.meta.env.BASE_URL || '/').replace(/\/?$/, '/')}images/before.png`;
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -155,7 +176,7 @@ export default function ExperienceHero() {
 
     // Orthographic camera for 2D effect
     const camera = new THREE.OrthographicCamera(
-      width / -2, width / 2, height / 2, height / -2, 1, 1000
+      width / -2, width / 2, height / 2, height / -2, 0.1, 1000
     );
     camera.position.z = 1;
     cameraRef.current = camera;
@@ -163,45 +184,45 @@ export default function ExperienceHero() {
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.setClearColor(0x000000, 0);
     containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
     const geometry = new THREE.PlaneGeometry(width, height);
     let mesh: THREE.Mesh | null = null;
-    let bwTexture: THREE.Texture | null = null;
     let colorTexture: THREE.Texture | null = null;
     let isDisposed = false;
 
     const textureLoader = new THREE.TextureLoader();
-    const beforeTexturePaths = buildTexturePathCandidates('images/before.png');
     const afterTexturePaths = buildTexturePathCandidates('images/after.png');
 
     const configureTexture = (texture: THREE.Texture) => {
       texture.minFilter = THREE.LinearFilter;
       texture.magFilter = THREE.LinearFilter;
       texture.generateMipmaps = false;
+      texture.wrapS = THREE.ClampToEdgeWrapping;
+      texture.wrapT = THREE.ClampToEdgeWrapping;
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.needsUpdate = true;
     };
 
     const setupMaterial = async () => {
       try {
-        bwTexture = await loadTextureWithFallback(textureLoader, beforeTexturePaths);
         colorTexture = await loadTextureWithFallback(textureLoader, afterTexturePaths);
 
-        if (isDisposed || !bwTexture || !colorTexture) return;
+        if (isDisposed || !colorTexture) return;
 
-        configureTexture(bwTexture);
         configureTexture(colorTexture);
 
-        const image = bwTexture.image as { width?: number; height?: number } | undefined;
-        const imageWidth = image?.width ?? 1;
-        const imageHeight = image?.height ?? 1;
+        const { width: imageWidth, height: imageHeight } = getTextureDimensions(colorTexture);
 
         const material = new THREE.ShaderMaterial({
           vertexShader,
           fragmentShader,
+          transparent: true,
           uniforms: {
             uTime: { value: 0 },
-            uTexture1: { value: bwTexture },
             uTexture2: { value: colorTexture },
             uMouse: { value: new THREE.Vector2(0.5, 0.5) },
             uResolution: { value: new THREE.Vector2(width, height) },
@@ -293,7 +314,6 @@ export default function ExperienceHero() {
         }
       }
       if (requestRef.current) cancelAnimationFrame(requestRef.current);
-      bwTexture?.dispose();
       colorTexture?.dispose();
       if (mesh) {
         mesh.geometry.dispose();
@@ -306,7 +326,11 @@ export default function ExperienceHero() {
   }, []);
 
   return (
-    <section className="relative w-full h-screen overflow-hidden bg-black">
+    <section className="relative w-full h-screen overflow-hidden">
+      <div
+        className="absolute inset-0 z-0 bg-center bg-cover bg-no-repeat"
+        style={{ backgroundImage: `url("${baseImagePath}")` }}
+      />
       <div ref={containerRef} className="absolute inset-0 w-full h-full z-0" />
       
       {/* Overlay Content */}
