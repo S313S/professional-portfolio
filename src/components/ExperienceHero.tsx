@@ -327,7 +327,7 @@ export default function ExperienceHero() {
           </p>
           <p className="text-2xl md:text-3xl font-medium tracking-wide text-zinc-900 leading-tight">
             Everything is<br />
-            an <span className="text-[#96b4fb] font-semibold">inspiration</span>
+            an <span className="text-[#D48596] font-semibold">inspiration</span>
           </p>
         </motion.div>
 
@@ -338,7 +338,7 @@ export default function ExperienceHero() {
         >
           <p className="text-2xl md:text-3xl font-medium tracking-wide text-zinc-900 leading-tight mb-8 text-right">
             the digital<br />
-            <span className="text-[#96b4fb] font-semibold">world</span>.
+            <span className="text-[#8A9F73] font-semibold">world</span>.
           </p>
           <p className="text-2xl md:text-3xl font-medium tracking-wide text-zinc-900 leading-tight text-right">
             what you see<br />
