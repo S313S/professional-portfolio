@@ -139,6 +139,10 @@ export default function ExperienceHero() {
   const rightTextOpacity = useTransform(scrollYProgress, [0.55, 0.7], [0, 1]);
   const rightTextY = useTransform(scrollYProgress, [0.55, 0.7], ['20px', '0px']);
 
+  // Top Title Reveal Animation (Appears above the easel)
+  const topTitleOpacity = useTransform(scrollYProgress, [0.45, 0.6], [0, 1]);
+  const topTitleY = useTransform(scrollYProgress, [0.45, 0.6], ['-30px', '0px']);
+
   // Master fade out for transitioning to next section
   const containerOpacity = useTransform(scrollYProgress, [0.95, 1], [1, 0]);
 
@@ -281,6 +285,25 @@ export default function ExperienceHero() {
               maskSize: '100% 100%',
             }}
           />
+        </motion.div>
+
+        {/* --- TOP TITLE --- */}
+        <motion.div
+          className="absolute top-[8%] w-full text-center z-40 pointer-events-none flex justify-center"
+          style={{ opacity: topTitleOpacity, y: topTitleY }}
+        >
+          <h3
+            className="text-5xl md:text-7xl font-medium tracking-wider px-8 py-4"
+            style={{
+              fontFamily: "'Great Vibes', cursive",
+              background: 'linear-gradient(110deg, #D48596 0%, #E2B4BD 40%, #A2C2E1 100%)', // Tulip soft pink to sky blue
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              filter: 'drop-shadow(0px 2px 4px rgba(212,133,150,0.3)) drop-shadow(0px 4px 12px rgba(255,255,255,0.8))'
+            }}
+          >
+            The Digital World Through Xiaoci's Eyes
+          </h3>
         </motion.div>
 
         {/* --- EASEL BACKGROUND LAYER --- */}
