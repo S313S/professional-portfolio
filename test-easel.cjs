@@ -7,15 +7,21 @@ const { chromium } = require('playwright');
   await page.goto('http://localhost:3006');
   await page.waitForTimeout(1000);
 
-  // Scroll to 0.7 progress roughly (where easel and texts are fully visible)
-  // Total container is 600vh, screen is 100vh. Scroll range = 500vh
-  // 0.7 * 500vh = 3.5 * window.innerHeight
-  await page.evaluate(() => {
-    window.scrollBy(0, window.innerHeight * 3.7);
+  // Scroll to 0.7 progress smoothly
+  await page.evaluate(async () => {
+    let currentScroll = 0;
+    const targetScroll = window.innerHeight * 3.7;
+    const step = 50;
+    while(currentScroll < targetScroll) {
+      window.scrollBy(0, step);
+      currentScroll += step;
+      await new Promise(r => setTimeout(r, 20));
+    }
   });
+  
   await page.waitForTimeout(1000);
   
-  await page.screenshot({ path: '/tmp/easel-test-1.png' });
+  await page.screenshot({ path: '/tmp/easel-test-2.png' });
   
   await browser.close();
 })();

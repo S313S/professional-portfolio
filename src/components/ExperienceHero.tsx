@@ -215,7 +215,7 @@ export default function ExperienceHero() {
   }, []);
 
   return (
-    <div ref={containerRef} className="relative w-full h-[600vh] bg-[#FDFCF8]">
+    <div id="experience-hero" ref={containerRef} className="relative w-full h-[600vh] bg-[#FDFCF8]">
       <motion.div className="sticky top-0 w-full h-screen overflow-hidden bg-[#FDFCF8] flex items-center justify-center" style={{ opacity: containerOpacity }}>
 
         {/* Shaders */}
