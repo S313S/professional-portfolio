@@ -1,8 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { motion, useScroll, useTransform, MotionValue } from 'motion/react';
 
-const EXPERIENCE_TITLE_OPACITY = 0.09;
-const EXPERIENCE_SUBTITLE_OPACITY = 0.07;
 const EXPERIENCE_MASK_RADIUS_PX = 260;
 const EXPERIENCE_FLOW_SPEED = 1.75;
 
@@ -17,13 +15,6 @@ const EXPERIENCE_DISPLACEMENT_IDLE = 52;
 const EXPERIENCE_DISPLACEMENT_HOVER = 72;
 const EXPERIENCE_DISPLACEMENT_WAVE = 14;
 const EXPERIENCE_DISPLACEMENT_SPEED = 2.05;
-
-const EXPERIENCE_TITLE_LENS_RADIUS_PX = 320;
-const EXPERIENCE_SUBTITLE_LENS_RADIUS_PX = 250;
-const EXPERIENCE_TITLE_LENS_SCALE = 0.24;
-const EXPERIENCE_SUBTITLE_LENS_SCALE = 0.16;
-const EXPERIENCE_TITLE_LENS_BLUR_MAX = 1.8;
-const EXPERIENCE_SUBTITLE_LENS_BLUR_MAX = 1.2;
 
 const buildSpotlightMask = (radiusPx: number) =>
   `radial-gradient(circle ${radiusPx}px at var(--mx, 50%) var(--my, 50%), rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.85) 35%, rgba(0,0,0,0.25) 60%, rgba(0,0,0,0) 82%)`;
@@ -95,8 +86,6 @@ export default function ExperienceHero() {
   const overlayRef = useRef<HTMLImageElement>(null);
   const turbulenceRef = useRef<SVGFETurbulenceElement>(null);
   const displacementRef = useRef<SVGFEDisplacementMapElement>(null);
-  const titleRef = useRef<HTMLHeadingElement>(null);
-  const subtitleRef = useRef<HTMLParagraphElement>(null);
 
   const beforeCandidates = useMemo(() => buildImageCandidates('images/before.png'), []);
   const afterCandidates = useMemo(() => buildImageCandidates('images/after.png'), []);
@@ -191,63 +180,21 @@ export default function ExperienceHero() {
   // --- Hero Mouse Interactions & Shaders ---
   useEffect(() => {
     const section = containerRef.current;
-    const overlay = overlayRef.current;
-    if (!section || !overlay) return;
+    if (!section) return;
 
     let rafId = 0;
     let time = 0;
 
-    const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
-
-    const getLensFocus = (element: HTMLElement | null, radius: number) => {
-      if (!element) return 0;
-      const sectionRect = section.getBoundingClientRect();
-      // Ensure we only calculate hover effect in the early scroll phases
-      if (sectionRect.top <= -window.innerHeight * 0.5) return 0;
-
-      const rect = element.getBoundingClientRect();
-      const px = pointerStateRef.current.x * sectionRect.width;
-      const py = pointerStateRef.current.y * sectionRect.height;
-
-      const cx = rect.left + rect.width / 2;
-      const cy = rect.top + rect.height / 2;
-      const dist = Math.hypot(px - cx, py - cy);
-      return clamp01(1 - dist / radius);
-    };
-
-    const applyTextLensEffect = () => {
-      const { hover } = pointerStateRef.current;
-      const titleFocus = hover ? getLensFocus(titleRef.current, EXPERIENCE_TITLE_LENS_RADIUS_PX) : 0;
-      const subtitleFocus = hover ? getLensFocus(subtitleRef.current, EXPERIENCE_SUBTITLE_LENS_RADIUS_PX) : 0;
-
-      if (titleRef.current) {
-        const opacity = EXPERIENCE_TITLE_OPACITY + titleFocus * (1 - EXPERIENCE_TITLE_OPACITY);
-        const scale = 1 + titleFocus * EXPERIENCE_TITLE_LENS_SCALE;
-        const blur = (1 - titleFocus) * EXPERIENCE_TITLE_LENS_BLUR_MAX;
-        titleRef.current.style.opacity = opacity.toFixed(3);
-        titleRef.current.style.transform = `translateZ(0) scale(${scale.toFixed(3)})`;
-        titleRef.current.style.filter = `blur(${blur.toFixed(2)}px)`;
-      }
-
-      if (subtitleRef.current) {
-        const opacity = EXPERIENCE_SUBTITLE_OPACITY + subtitleFocus * (1 - EXPERIENCE_SUBTITLE_OPACITY);
-        const scale = 1 + subtitleFocus * EXPERIENCE_SUBTITLE_LENS_SCALE;
-        const blur = (1 - subtitleFocus) * EXPERIENCE_SUBTITLE_LENS_BLUR_MAX;
-        subtitleRef.current.style.opacity = opacity.toFixed(3);
-        subtitleRef.current.style.transform = `translateZ(0) scale(${scale.toFixed(3)})`;
-        subtitleRef.current.style.filter = `blur(${blur.toFixed(2)}px)`;
-      }
-    };
-
     const setMaskPosition = (x: number, y: number) => {
-      overlay.style.setProperty('--mx', `${(x * 100).toFixed(2)}%`);
-      overlay.style.setProperty('--my', `${(y * 100).toFixed(2)}%`);
+      // Set CSS variables on the section so they cascade to both the image mask and text mask
+      section.style.setProperty('--mx', `${(x * 100).toFixed(2)}%`);
+      section.style.setProperty('--my', `${(y * 100).toFixed(2)}%`);
     };
 
     setMaskPosition(0.5, 0.5);
 
     const handlePointerMove = (event: PointerEvent) => {
-      // Use viewport coordinates as bounding rect since sticky position means section spans multiple pages
+      // Use viewport coordinates as bounding rect
       const x = event.clientX / window.innerWidth;
       const y = event.clientY / window.innerHeight;
 
@@ -256,7 +203,7 @@ export default function ExperienceHero() {
       pointerStateRef.current.hover = true;
 
       const sectionRect = section.getBoundingClientRect();
-      if (sectionRect.top > -window.innerHeight * 0.5) {
+      if (sectionRect.top > -window.innerHeight * 1.5) {
         setMaskPosition(pointerStateRef.current.x, pointerStateRef.current.y);
       }
     };
@@ -273,7 +220,7 @@ export default function ExperienceHero() {
       time += 0.016 * EXPERIENCE_FLOW_SPEED;
 
       const sectionRect = section.getBoundingClientRect();
-      if (!pointerStateRef.current.hover && sectionRect.top > -window.innerHeight * 0.5) {
+      if (!pointerStateRef.current.hover && sectionRect.top > -window.innerHeight * 1.5) {
         pointerStateRef.current.x = 0.5 + Math.sin(time * 0.35) * 0.22;
         pointerStateRef.current.y = 0.5 + Math.cos(time * 0.29) * 0.18;
         setMaskPosition(pointerStateRef.current.x, pointerStateRef.current.y);
@@ -291,7 +238,6 @@ export default function ExperienceHero() {
         displacementRef.current.setAttribute('scale', `${(baseScale + wave).toFixed(2)}`);
       }
 
-      applyTextLensEffect();
       rafId = requestAnimationFrame(animate);
     };
 
@@ -339,7 +285,7 @@ export default function ExperienceHero() {
 
         {/* --- DYNAMIC CARD (Initially covers whole screen) --- */}
         <motion.div
-          className="absolute z-20 flex items-center justify-center overflow-hidden bg-black"
+          className="absolute z-10 flex items-center justify-center overflow-hidden bg-black"
           style={{
             width: heroImageWidth,
             height: heroImageHeight,
@@ -362,7 +308,7 @@ export default function ExperienceHero() {
             alt="Experience after state"
             src={afterCandidates[afterIndex]}
             onError={() => setAfterIndex((index) => Math.min(index + 1, afterCandidates.length - 1))}
-            className="absolute inset-0 h-full w-full object-cover"
+            className="absolute inset-0 h-full w-full object-cover pointer-events-none"
             draggable={false}
             style={{
               filter: `url(#${filterId})`,
@@ -382,29 +328,43 @@ export default function ExperienceHero() {
           style={{ opacity: titleOpacityScroll }}
         >
           <div className="absolute inset-0 bg-black/8" />
+
+          {/* DIMMED BACKGROUND TEXT */}
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="text-center text-white [text-shadow:0_2px_18px_rgba(0,0,0,0.45)]"
+              className="text-center text-white/20 blur-[2px] transition-all duration-300"
             >
-              <h2
-                ref={titleRef}
-                className="mb-4 origin-center text-6xl font-bold tracking-tighter md:text-8xl"
-                style={{ opacity: EXPERIENCE_TITLE_OPACITY }}
-              >
-                EXPERIENCE
-              </h2>
-              <p
-                ref={subtitleRef}
-                className="origin-center text-xl font-light tracking-widest md:text-2xl"
-                style={{ opacity: EXPERIENCE_SUBTITLE_OPACITY }}
-              >
-                EXPLORE THE JOURNEY
-              </p>
+              <h2 className="mb-4 text-6xl font-bold tracking-tighter md:text-8xl">EXPERIENCE</h2>
+              <p className="text-xl font-light tracking-widest md:text-2xl">EXPLORE THE JOURNEY</p>
             </motion.div>
           </div>
+
+          {/* MASKED REVEAL TEXT */}
+          <div
+            className="absolute inset-0 flex flex-col items-center justify-center"
+            style={{
+              WebkitMaskImage: spotlightMask,
+              maskImage: spotlightMask,
+              WebkitMaskRepeat: 'no-repeat',
+              maskRepeat: 'no-repeat',
+              WebkitMaskSize: '100% 100%',
+              maskSize: '100% 100%',
+            }}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="text-center text-white [text-shadow:0_2px_12px_rgba(255,255,255,0.45)] scale-[1.02]"
+            >
+              <h2 className="mb-4 text-6xl font-bold tracking-tighter md:text-8xl">EXPERIENCE</h2>
+              <p className="text-xl font-light tracking-widest md:text-2xl">EXPLORE THE JOURNEY</p>
+            </motion.div>
+          </div>
+
           <div className="absolute bottom-10 left-0 right-0 text-center pointer-events-auto">
             <a href="#experience" className="inline-block">
               <p className="animate-bounce text-sm text-white/70">Scroll to explore</p>
@@ -412,10 +372,9 @@ export default function ExperienceHero() {
           </div>
         </motion.div>
 
-
         {/* --- ENVELOPE GROUP --- */}
         <motion.div
-          className="absolute inset-0 flex items-center justify-center pointer-events-none"
+          className="absolute inset-0 flex items-center justify-center pointer-events-none z-30"
           style={{ opacity: envelopeOpacity, y: envelopeY }}
         >
           {/* Envelope Back */}
