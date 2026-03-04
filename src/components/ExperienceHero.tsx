@@ -202,8 +202,8 @@ export default function ExperienceHero() {
     const getLensFocus = (element: HTMLElement | null, radius: number) => {
       if (!element) return 0;
       const sectionRect = section.getBoundingClientRect();
-      // Ensure we only calculate hover effect in the first viewport (when scroll is 0)
-      if (window.scrollY > window.innerHeight * 0.5) return 0;
+      // Ensure we only calculate hover effect in the early scroll phases
+      if (sectionRect.top <= -window.innerHeight * 0.5) return 0;
 
       const rect = element.getBoundingClientRect();
       const px = pointerStateRef.current.x * sectionRect.width;
@@ -255,7 +255,8 @@ export default function ExperienceHero() {
       pointerStateRef.current.y = Math.min(1, Math.max(0, y));
       pointerStateRef.current.hover = true;
 
-      if (window.scrollY < window.innerHeight) {
+      const sectionRect = section.getBoundingClientRect();
+      if (sectionRect.top > -window.innerHeight * 0.5) {
         setMaskPosition(pointerStateRef.current.x, pointerStateRef.current.y);
       }
     };
@@ -271,7 +272,8 @@ export default function ExperienceHero() {
     const animate = () => {
       time += 0.016 * EXPERIENCE_FLOW_SPEED;
 
-      if (!pointerStateRef.current.hover && window.scrollY < window.innerHeight) {
+      const sectionRect = section.getBoundingClientRect();
+      if (!pointerStateRef.current.hover && sectionRect.top > -window.innerHeight * 0.5) {
         pointerStateRef.current.x = 0.5 + Math.sin(time * 0.35) * 0.22;
         pointerStateRef.current.y = 0.5 + Math.cos(time * 0.29) * 0.18;
         setMaskPosition(pointerStateRef.current.x, pointerStateRef.current.y);
