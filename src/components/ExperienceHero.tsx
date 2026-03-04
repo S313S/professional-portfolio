@@ -108,15 +108,10 @@ export default function ExperienceHero() {
   // --- Choreography ---
   // The first 100vh (0 to ~0.15) is the initial hero state, which stays pinned via sticky.
   // 0.15 - 0.35: Image scales down, turns into 460x260 card hovering above center
-  // 0.35 - 0.45: Envelope back & front appear from bottom
-  // 0.45 - 0.55: Card drops into envelope
-  // 0.55 - 0.65: Top flap folds down
-  // 0.65 - 0.75: "xiaoci-memory" text draws and fades in
-  // 0.75 - 0.95: Envelope explodes into characters
-  // 0.95 - 1.00: Fade out
-
-  // At scrub=0 we see the hero image covering screen
-  // By scrub=0.15 we scale it up or let it float.
+  // 0.35 - 0.50: Wooden Easel fades in behind the card
+  // 0.50 - 0.70: Left and Right text blocks fade in alongside the easel
+  // 0.70 - 0.95: Hold the final composed state
+  // 0.95 - 1.00: Fade out the whole container
 
   // Hide UI text
   const titleOpacityScroll = useTransform(scrollYProgress, [0, 0.1], [1, 0]);
@@ -133,49 +128,19 @@ export default function ExperienceHero() {
   const heroImageHeight = useTransform(scrollYProgress, [0.1, 0.3], [`${winSize.h}px`, '260px']);
   const heroBorderRadius = useTransform(scrollYProgress, [0.1, 0.3], ['0px', '12px']);
 
-  // Card moves down into envelope
-  const cardY = useTransform(scrollYProgress,
-    [0.1, 0.3, 0.45, 0.55],
-    ['0vh', '-120px', '-120px', '0px']
-  );
+  // Easel Animations
+  const easelOpacity = useTransform(scrollYProgress, [0.35, 0.5], [0, 1]);
+  const easelY = useTransform(scrollYProgress, [0.35, 0.5], ['30px', '0px']);
 
-  // Fade out card and background as shatter happens
-  const cardAndBgOpacity = useTransform(scrollYProgress, [0.75, 0.8], [1, 0]);
+  // Text Fade In
+  const leftTextOpacity = useTransform(scrollYProgress, [0.5, 0.65], [0, 1]);
+  const leftTextY = useTransform(scrollYProgress, [0.5, 0.65], ['20px', '0px']);
 
-  // Envelope Animations
-  const envelopeOpacity = useTransform(scrollYProgress, [0.3, 0.4], [0, 1]);
-  const envelopeY = useTransform(scrollYProgress, [0.3, 0.45], ['20vh', '0vh']);
-  const envelopeFadeOut = useTransform(scrollYProgress, [0.75, 0.8], [1, 0]);
+  const rightTextOpacity = useTransform(scrollYProgress, [0.55, 0.7], [0, 1]);
+  const rightTextY = useTransform(scrollYProgress, [0.55, 0.7], ['20px', '0px']);
 
-  // Flap rotation - closed at 180
-  const flapRotateX = useTransform(scrollYProgress, [0.55, 0.65], [0, 180]);
-  const flapZIndex = useTransform(scrollYProgress, [0.55, 0.6], [10, 30]);
-
-  // Handwriting Animations
-  const pathLength = useTransform(scrollYProgress, [0.65, 0.73], [0, 1]);
-  const textOpacity = useTransform(scrollYProgress, [0.7, 0.75], [0, 1]);
-
-  // Shatter Animation
-  const shatterProgress = useTransform(scrollYProgress, [0.75, 0.95], [0, 1]);
+  // Master fade out for transitioning to next section
   const containerOpacity = useTransform(scrollYProgress, [0.95, 1], [1, 0]);
-
-  const [particles, setParticles] = useState<{ id: number; char: string; x: number; y: number; rotate: number; scale: number; delay: number; color: string }[]>([]);
-
-  useEffect(() => {
-    const chars = 'xiaoci-memory101010/*-+<>!?'.split('');
-    const colors = ['#8B5A2B', '#EAE0D3', '#D4C3B1', '#C6A992', '#5A4C40'];
-    const newParticles = Array.from({ length: 250 }).map((_, i) => ({
-      id: i,
-      char: chars[Math.floor(Math.random() * chars.length)],
-      x: (Math.random() - 0.5) * window.innerWidth * 1.5,
-      y: (Math.random() - 0.5) * window.innerHeight * 1.5,
-      rotate: (Math.random() - 0.5) * 720,
-      scale: Math.random() * 2 + 0.5,
-      delay: Math.random() * 0.3,
-      color: colors[Math.floor(Math.random() * colors.length)]
-    }));
-    setParticles(newParticles);
-  }, []);
 
   // --- Hero Mouse Interactions & Shaders ---
   useEffect(() => {
@@ -186,7 +151,6 @@ export default function ExperienceHero() {
     let time = 0;
 
     const setMaskPosition = (x: number, y: number) => {
-      // Set CSS variables on the section so they cascade to both the image mask and text mask
       section.style.setProperty('--mx', `${(x * 100).toFixed(2)}%`);
       section.style.setProperty('--my', `${(y * 100).toFixed(2)}%`);
     };
@@ -194,7 +158,6 @@ export default function ExperienceHero() {
     setMaskPosition(0.5, 0.5);
 
     const handlePointerMove = (event: PointerEvent) => {
-      // Use viewport coordinates as bounding rect
       const x = event.clientX / window.innerWidth;
       const y = event.clientY / window.innerHeight;
 
@@ -252,8 +215,8 @@ export default function ExperienceHero() {
   }, []);
 
   return (
-    <div ref={containerRef} className="relative w-full h-[600vh] bg-black">
-      <motion.div className="sticky top-0 w-full h-screen overflow-hidden bg-black flex items-center justify-center" style={{ opacity: containerOpacity }}>
+    <div ref={containerRef} className="relative w-full h-[600vh] bg-[#FDFCF8]">
+      <motion.div className="sticky top-0 w-full h-screen overflow-hidden bg-[#FDFCF8] flex items-center justify-center" style={{ opacity: containerOpacity }}>
 
         {/* Shaders */}
         <svg
@@ -285,13 +248,11 @@ export default function ExperienceHero() {
 
         {/* --- DYNAMIC CARD (Initially covers whole screen) --- */}
         <motion.div
-          className="absolute z-10 flex items-center justify-center overflow-hidden bg-black"
+          className="absolute z-20 flex items-center justify-center overflow-hidden bg-black"
           style={{
             width: heroImageWidth,
             height: heroImageHeight,
             borderRadius: heroBorderRadius,
-            y: cardY,
-            opacity: cardAndBgOpacity,
             boxShadow: useTransform(scrollYProgress, [0.1, 0.2], ['0px 0px 0px rgba(0,0,0,0)', '0px 20px 40px rgba(0,0,0,0.5)']),
           }}
         >
@@ -322,9 +283,55 @@ export default function ExperienceHero() {
           />
         </motion.div>
 
-        {/* --- TEXT UI LAYER (Fades out when scrolling) --- */}
+        {/* --- EASEL BACKGROUND LAYER --- */}
         <motion.div
-          className="absolute inset-0 z-20 pointer-events-none"
+          className="absolute inset-0 flex items-center justify-center pointer-events-none z-10"
+          style={{ opacity: easelOpacity, y: easelY }}
+        >
+          {/* We position the easel relative to the center, pushing it down slightly so the card sits on its shelf */}
+          <div className="relative w-[750px] h-[750px] transform translate-y-[180px]">
+            <img
+              src="/images/easel-removebg.png"
+              alt="Wooden Easel"
+              className="absolute inset-0 w-full h-full object-contain opacity-100 drop-shadow-xl"
+              draggable={false}
+            />
+          </div>
+        </motion.div>
+
+        {/* --- LEFT SIDE TEXT --- */}
+        <motion.div
+          className="absolute left-[10%] xl:left-[15%] top-1/2 -translate-y-1/2 z-30 pointer-events-none max-w-[300px]"
+          style={{ opacity: leftTextOpacity, y: leftTextY }}
+        >
+          <p className="text-2xl md:text-3xl font-medium tracking-wide text-zinc-900 leading-tight mb-8">
+            Capturing the<br />
+            hazy poetry of
+          </p>
+          <p className="text-2xl md:text-3xl font-medium tracking-wide text-zinc-900 leading-tight">
+            Everything is<br />
+            an <span className="text-[#96b4fb] font-semibold">inspiration</span>
+          </p>
+        </motion.div>
+
+        {/* --- RIGHT SIDE TEXT --- */}
+        <motion.div
+          className="absolute right-[10%] xl:right-[15%] top-1/2 -translate-y-1/2 z-30 pointer-events-none max-w-[300px]"
+          style={{ opacity: rightTextOpacity, y: rightTextY }}
+        >
+          <p className="text-2xl md:text-3xl font-medium tracking-wide text-zinc-900 leading-tight mb-8 text-right">
+            the digital<br />
+            <span className="text-[#96b4fb] font-semibold">world</span>.
+          </p>
+          <p className="text-2xl md:text-3xl font-medium tracking-wide text-zinc-900 leading-tight text-right">
+            what you see<br />
+            is a painting.
+          </p>
+        </motion.div>
+
+        {/* --- HERO INITIAL TEXT UI LAYER (Fades out when scrolling) --- */}
+        <motion.div
+          className="absolute inset-0 z-40 pointer-events-none"
           style={{ opacity: titleOpacityScroll }}
         >
           <div className="absolute inset-0 bg-black/8" />
@@ -370,101 +377,6 @@ export default function ExperienceHero() {
               <p className="animate-bounce text-sm text-white/70">Scroll to explore</p>
             </a>
           </div>
-        </motion.div>
-
-        {/* --- ENVELOPE GROUP --- */}
-        <motion.div
-          className="absolute inset-0 flex items-center justify-center pointer-events-none z-30"
-          style={{ opacity: envelopeOpacity, y: envelopeY }}
-        >
-          {/* Envelope Back */}
-          <motion.div
-            className="absolute w-[500px] h-[280px] bg-[#E3D1BF] rounded-b-lg shadow-xl"
-            style={{ opacity: envelopeFadeOut, zIndex: 10 }}
-          >
-            <div className="absolute inset-x-2 bottom-2 top-4 bg-[#D1BCB0] rounded-b-md" />
-          </motion.div>
-
-          {/* Envelope Front Flaps */}
-          <motion.div
-            className="absolute w-[500px] h-[280px] drop-shadow-2xl"
-            style={{ opacity: envelopeFadeOut, zIndex: 30 }}
-          >
-            <svg viewBox="0 0 500 280" className="w-full h-full absolute inset-0">
-              <defs>
-                <filter id="envelope_shadow" x="-5%" y="-5%" width="110%" height="110%">
-                  <feDropShadow dx="0" dy="2" stdDeviation="4" floodOpacity="0.15" />
-                </filter>
-              </defs>
-              <path d="M0 0 L0 280 L260 150 Z" fill="#EFE8E1" stroke="#D1BCB0" strokeWidth="1" filter="url(#envelope_shadow)" />
-              <path d="M500 0 L500 280 L240 150 Z" fill="#F4EFEA" stroke="#D1BCB0" strokeWidth="1" filter="url(#envelope_shadow)" />
-              <path d="M0 280 L250 140 L500 280 Z" fill="#F8F4F0" stroke="#D1BCB0" strokeWidth="1" filter="url(#envelope_shadow)" />
-            </svg>
-
-            {/* Handwriting Overlay */}
-            <motion.div className="absolute inset-0 flex items-center justify-center z-40 top-16 right-[-20px]">
-              <div className="relative transform -rotate-3">
-                <svg width="240" height="80" viewBox="0 0 240 80" className="absolute inset-0 -top-2 left-6 opacity-40">
-                  <motion.path
-                    d="M10 60 C 20 50, 40 40, 60 55 C 80 70, 100 45, 120 50 C 140 55, 160 30, 180 45 C 200 60, 220 70, 230 40"
-                    fill="transparent"
-                    stroke="#8B5A2B"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    style={{ pathLength }}
-                  />
-                </svg>
-                <motion.span
-                  className="text-5xl text-[#8B5A2B] tracking-wide block pl-4"
-                  style={{
-                    opacity: textOpacity,
-                    fontFamily: "'Caveat', cursive",
-                    textShadow: '0 1px 2px rgba(0,0,0,0.1)'
-                  }}
-                >
-                  xiaoci-memory
-                </motion.span>
-              </div>
-            </motion.div>
-          </motion.div>
-
-          {/* Envelope Top Flap */}
-          <motion.div
-            className="absolute top-[60px] w-[500px] h-[160px] origin-top drop-shadow-[0_10px_10px_rgba(0,0,0,0.15)]"
-            style={{
-              opacity: envelopeFadeOut,
-              rotateX: flapRotateX,
-              zIndex: flapZIndex,
-              transformStyle: 'preserve-3d',
-            }}
-          >
-            <svg
-              viewBox="0 0 500 160"
-              className="w-full h-full absolute inset-0"
-              style={{ backfaceVisibility: 'hidden' }}
-              preserveAspectRatio="none"
-            >
-              <path d="M0 0 L250 160 L500 0 Z" fill="#EAE0D3" />
-            </svg>
-            <svg
-              viewBox="0 0 500 160"
-              className="w-full h-full absolute inset-0"
-              style={{ backfaceVisibility: 'hidden', transform: 'rotateX(180deg)' }}
-              preserveAspectRatio="none"
-            >
-              <path d="M0 0 L250 160 L500 0 Z" fill="#EFE8E1" stroke="#D1BCB0" strokeWidth="1" />
-            </svg>
-          </motion.div>
-        </motion.div>
-
-
-        {/* --- PARTICLES SCATTER OVERLAY --- */}
-        <motion.div
-          className="absolute inset-0 pointer-events-none z-50 flex items-center justify-center overflow-hidden"
-        >
-          {particles.map((p) => (
-            <Particle key={p.id} shatterProgress={shatterProgress} p={p} />
-          ))}
         </motion.div>
 
       </motion.div>
