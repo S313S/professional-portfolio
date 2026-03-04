@@ -289,21 +289,15 @@ export default function ExperienceHero() {
 
         {/* --- TOP TITLE --- */}
         <motion.div
-          className="absolute top-[8%] w-full text-center z-40 pointer-events-none flex justify-center"
+          className="absolute top-[8%] left-[10%] right-[10%] xl:left-[15%] xl:right-[15%] flex justify-center z-40 pointer-events-none"
           style={{ opacity: topTitleOpacity, y: topTitleY }}
         >
-          <h3
-            className="text-5xl md:text-7xl font-medium tracking-wider px-8 py-4"
-            style={{
-              fontFamily: "'Great Vibes', cursive",
-              background: 'linear-gradient(110deg, #D48596 0%, #E2B4BD 40%, #A2C2E1 100%)', // Tulip soft pink to sky blue
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              filter: 'drop-shadow(0px 2px 4px rgba(212,133,150,0.3)) drop-shadow(0px 4px 12px rgba(255,255,255,0.8))'
-            }}
-          >
-            The Digital World Through Xiaoci's Eyes
-          </h3>
+          <img
+            src="/images/top-title.png"
+            alt="The Digital World Through Xiaoci's Eyes"
+            className="w-full object-contain drop-shadow-md"
+            draggable={false}
+          />
         </motion.div>
 
         {/* --- EASEL BACKGROUND LAYER --- */}
