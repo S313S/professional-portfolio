@@ -323,7 +323,7 @@ export default function ExperienceHero() {
         >
           <p className="text-2xl md:text-3xl font-medium tracking-wide text-zinc-900 leading-tight mb-8">
             Capturing the<br />
-            hazy poetry of
+            hazy <span className="text-[#A2C2E1] font-semibold">poetry</span> of
           </p>
           <p className="text-2xl md:text-3xl font-medium tracking-wide text-zinc-900 leading-tight">
             Everything is<br />
@@ -342,7 +342,7 @@ export default function ExperienceHero() {
           </p>
           <p className="text-2xl md:text-3xl font-medium tracking-wide text-zinc-900 leading-tight text-right">
             what you see<br />
-            is a painting.
+            is a <span className="text-[#E27D60] font-semibold">painting</span>.
           </p>
         </motion.div>
 
