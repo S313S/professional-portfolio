@@ -110,41 +110,10 @@ export default function ExperienceHero() {
   // 0.15 - 0.35: Image scales down, turns into 460x260 card hovering above center
   // 0.35 - 0.50: Wooden Easel fades in behind the card
   // 0.50 - 0.70: Left and Right text blocks fade in alongside the easel
-  // 0.70 - 0.95: Hold the final composed state
-  // 0.95 - 1.00: Fade out the whole container
+  // 0.70 - 1.00: Hold the final composed state until the video transition section takes over
 
   // Hide UI text
-  const titleOpacityScroll = useTransform(scrollYProgress, [0, 0.1], [1, 0]);
-
-  const [winSize, setWinSize] = useState({ w: typeof window !== 'undefined' ? window.innerWidth : 1440, h: typeof window !== 'undefined' ? window.innerHeight : 900 });
-  useEffect(() => {
-    const onResize = () => setWinSize({ w: window.innerWidth, h: window.innerHeight });
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, []);
-
-  // Image transforming to card
-  const heroImageWidth = useTransform(scrollYProgress, [0.1, 0.3], [`${winSize.w}px`, '460px']);
-  const heroImageHeight = useTransform(scrollYProgress, [0.1, 0.3], [`${winSize.h}px`, '260px']);
-  const heroBorderRadius = useTransform(scrollYProgress, [0.1, 0.3], ['0px', '12px']);
-
-  // Easel Animations
-  const easelOpacity = useTransform(scrollYProgress, [0.35, 0.5], [0, 1]);
-  const easelY = useTransform(scrollYProgress, [0.35, 0.5], ['30px', '0px']);
-
-  // Text Fade In
-  const leftTextOpacity = useTransform(scrollYProgress, [0.5, 0.65], [0, 1]);
-  const leftTextY = useTransform(scrollYProgress, [0.5, 0.65], ['20px', '0px']);
-
-  const rightTextOpacity = useTransform(scrollYProgress, [0.55, 0.7], [0, 1]);
-  const rightTextY = useTransform(scrollYProgress, [0.55, 0.7], ['20px', '0px']);
-
-  // Top Title Reveal Animation (Appears above the easel)
-  const topTitleOpacity = useTransform(scrollYProgress, [0.45, 0.6], [0, 1]);
-  const topTitleY = useTransform(scrollYProgress, [0.45, 0.6], ['-30px', '0px']);
-
-  // Master fade out for transitioning to next section
-  const containerOpacity = useTransform(scrollYProgress, [0.95, 1], [1, 0]);
+  const titleOpacityScroll = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
 
   // --- Hero Mouse Interactions & Shaders ---
   useEffect(() => {
@@ -219,8 +188,8 @@ export default function ExperienceHero() {
   }, []);
 
   return (
-    <div id="experience-hero" ref={containerRef} className="relative w-full h-[600vh] bg-[#FDFCF8]">
-      <motion.div className="sticky top-0 w-full h-screen overflow-hidden bg-[#FDFCF8] flex items-center justify-center" style={{ opacity: containerOpacity }}>
+    <div id="experience-hero" ref={containerRef} className="relative w-full h-[150vh] bg-[#FDFCF8]">
+      <motion.div className="sticky top-0 w-full h-screen overflow-hidden bg-[#FDFCF8] flex items-center justify-center">
 
         {/* Shaders */}
         <svg
@@ -250,15 +219,9 @@ export default function ExperienceHero() {
           </defs>
         </svg>
 
-        {/* --- DYNAMIC CARD (Initially covers whole screen) --- */}
+        {/* --- FULLSCREEN BACKGROUND IMAGE --- */}
         <motion.div
-          className="absolute z-20 flex items-center justify-center overflow-hidden bg-black"
-          style={{
-            width: heroImageWidth,
-            height: heroImageHeight,
-            borderRadius: heroBorderRadius,
-            boxShadow: useTransform(scrollYProgress, [0.1, 0.2], ['0px 0px 0px rgba(0,0,0,0)', '0px 20px 40px rgba(0,0,0,0.5)']),
-          }}
+          className="absolute z-20 flex items-center justify-center overflow-hidden bg-black w-full h-full"
         >
           <img
             alt="Experience before state"
@@ -287,66 +250,7 @@ export default function ExperienceHero() {
           />
         </motion.div>
 
-        {/* --- TOP TITLE --- */}
-        <motion.div
-          className="absolute top-[8%] left-[10%] right-[10%] xl:left-[15%] xl:right-[15%] flex justify-center z-40 pointer-events-none"
-          style={{ opacity: topTitleOpacity, y: topTitleY }}
-        >
-          <img
-            src="/images/top-title.png"
-            alt="The Digital World Through Xiaoci's Eyes"
-            className="w-full object-contain drop-shadow-md"
-            draggable={false}
-          />
-        </motion.div>
-
-        {/* --- EASEL BACKGROUND LAYER --- */}
-        <motion.div
-          className="absolute inset-0 flex items-center justify-center pointer-events-none z-10"
-          style={{ opacity: easelOpacity, y: easelY }}
-        >
-          {/* We position the easel relative to the center, pushing it down slightly so the card sits on its shelf */}
-          <div className="relative w-[750px] h-[750px] transform translate-y-[180px]">
-            <img
-              src="/images/easel-removebg.png"
-              alt="Wooden Easel"
-              className="absolute inset-0 w-full h-full object-contain opacity-100 drop-shadow-xl"
-              draggable={false}
-            />
-          </div>
-        </motion.div>
-
-        {/* --- LEFT SIDE TEXT --- */}
-        <motion.div
-          className="absolute left-[10%] xl:left-[15%] top-1/2 -translate-y-1/2 z-30 pointer-events-none max-w-[300px]"
-          style={{ opacity: leftTextOpacity, y: leftTextY }}
-        >
-          <p className="text-2xl md:text-3xl font-medium tracking-wide text-zinc-900 leading-tight mb-8">
-            Capturing the<br />
-            hazy <span className="text-[#A2C2E1] font-semibold">poetry</span> of
-          </p>
-          <p className="text-2xl md:text-3xl font-medium tracking-wide text-zinc-900 leading-tight">
-            Everything is<br />
-            an <span className="text-[#D48596] font-semibold">inspiration</span>
-          </p>
-        </motion.div>
-
-        {/* --- RIGHT SIDE TEXT --- */}
-        <motion.div
-          className="absolute right-[10%] xl:right-[15%] top-1/2 -translate-y-1/2 z-30 pointer-events-none max-w-[300px]"
-          style={{ opacity: rightTextOpacity, y: rightTextY }}
-        >
-          <p className="text-2xl md:text-3xl font-medium tracking-wide text-zinc-900 leading-tight mb-8 text-right">
-            the digital<br />
-            <span className="text-[#8A9F73] font-semibold">world</span>.
-          </p>
-          <p className="text-2xl md:text-3xl font-medium tracking-wide text-zinc-900 leading-tight text-right">
-            what you see<br />
-            is a <span className="text-[#E27D60] font-semibold">painting</span>.
-          </p>
-        </motion.div>
-
-        {/* --- HERO INITIAL TEXT UI LAYER (Fades out when scrolling) --- */}
+        {/* --- INIT TEXT UI LAYER (Fades out when scrolling) --- */}
         <motion.div
           className="absolute inset-0 z-40 pointer-events-none"
           style={{ opacity: titleOpacityScroll }}
@@ -390,9 +294,7 @@ export default function ExperienceHero() {
           </div>
 
           <div className="absolute bottom-10 left-0 right-0 text-center pointer-events-auto">
-            <a href="#experience" className="inline-block">
-              <p className="animate-bounce text-sm text-white/70">Scroll to explore</p>
-            </a>
+            <p className="animate-bounce text-sm text-white/70">Scroll gently to explore</p>
           </div>
         </motion.div>
 
