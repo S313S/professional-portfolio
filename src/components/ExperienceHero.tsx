@@ -239,8 +239,8 @@ export default function ExperienceHero() {
       <motion.div
         className="sticky top-0 w-full overflow-hidden bg-[#FDFCF8] flex items-center justify-center"
         style={{
-          height: 'calc(100dvh + 2px)',
-          minHeight: 'calc(100dvh + 2px)',
+          height: 'calc(100dvh + 16px)',
+          minHeight: 'calc(100dvh + 16px)',
         }}
       >
 
@@ -274,7 +274,8 @@ export default function ExperienceHero() {
 
         {/* --- FULLSCREEN BACKGROUND IMAGE --- */}
         <motion.div
-          className="absolute -inset-px z-20 flex items-center justify-center overflow-hidden bg-black"
+          className="absolute z-20 flex items-center justify-center overflow-hidden bg-black"
+          style={{ inset: '-4px -2px -12px -2px' }}
         >
           <img
             alt="Experience before state"
