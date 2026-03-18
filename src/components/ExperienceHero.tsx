@@ -1,7 +1,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
-import { motion, useScroll, useTransform, MotionValue } from 'motion/react';
+import { motion, useTransform, MotionValue } from 'motion/react';
 
-import { getExperienceHeroSnapState } from './ExperienceHero.logic';
+import { getExperienceHeroSnapState, getExperienceHeroSnapTargetY } from './ExperienceHero.logic';
 
 const EXPERIENCE_MASK_RADIUS_PX = 260;
 const EXPERIENCE_FLOW_SPEED = 1.75;
@@ -104,21 +104,6 @@ export default function ExperienceHero() {
   // Custom pointer tracking state to bridge vanilla JS and React
   const pointerStateRef = useRef({ x: 0.5, y: 0.5, hover: false });
 
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ['start start', 'end end'],
-  });
-
-  // --- Choreography ---
-  // The first 100vh (0 to ~0.15) is the initial hero state, which stays pinned via sticky.
-  // 0.15 - 0.35: Image scales down, turns into 460x260 card hovering above center
-  // 0.35 - 0.50: Wooden Easel fades in behind the card
-  // 0.50 - 0.70: Left and Right text blocks fade in alongside the easel
-  // 0.70 - 1.00: Hold the final composed state until the video transition section takes over
-
-  // Hide UI text
-  const titleOpacityScroll = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
-
   // --- Hero Mouse Interactions & Shaders ---
   useEffect(() => {
     const section = containerRef.current;
@@ -219,7 +204,7 @@ export default function ExperienceHero() {
       if (snapState.shouldSnap) {
         hasSnappedOnCurrentEntryRef.current = true;
         window.scrollTo({
-          top: sectionTop,
+          top: getExperienceHeroSnapTargetY(sectionTop),
           behavior: 'smooth',
         });
       }
@@ -305,10 +290,7 @@ export default function ExperienceHero() {
         </motion.div>
 
         {/* --- INIT TEXT UI LAYER (Fades out when scrolling) --- */}
-        <motion.div
-          className="absolute inset-0 z-40 pointer-events-none"
-          style={{ opacity: titleOpacityScroll }}
-        >
+        <motion.div className="absolute inset-0 z-40 pointer-events-none">
           <div className="absolute inset-0 bg-black/8" />
 
           {/* DIMMED BACKGROUND TEXT */}

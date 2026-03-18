@@ -578,35 +578,23 @@ export default function VideoScrollTransition() {
 
       {visualState.showCta ? (
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute left-[38%] top-[67%] -translate-x-1/2 -translate-y-1/2 md:left-[36%] md:top-[62%]">
-            <button
-              type="button"
-              onClick={activatePushVideo}
-              className="pointer-events-auto flex h-28 w-28 items-center justify-center rounded-full border border-black/10 bg-[#f7efe5]/90 text-[#6b6259] shadow-[0_18px_40px_rgba(72,52,32,0.16)] backdrop-blur-sm transition duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:bg-[#fbf5ec] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8f806c] focus-visible:ring-offset-4 focus-visible:ring-offset-transparent md:h-32 md:w-32"
-              aria-label={isMobile ? 'Play the album transition video' : 'Start dragging through the album transition'}
-            >
-              <span className="flex flex-col items-center gap-1 font-[cursive] text-[15px] leading-none md:text-[18px]">
-                <svg
-                  aria-hidden="true"
-                  viewBox="0 0 24 24"
-                  className="h-10 w-10 text-[#7f766d] md:h-11 md:w-11"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M12 19V5" />
-                  <path d="m7 10 5-5 5 5" />
-                </svg>
-                <span>Drag</span>
-              </span>
-            </button>
+          <button
+            type="button"
+            onClick={activatePushVideo}
+            className="pointer-events-auto absolute left-[27.4%] top-[66.3%] flex h-20 w-20 -translate-x-1/2 -translate-y-1/2 items-center justify-center transition duration-300 hover:-translate-y-[54%] hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8f806c] focus-visible:ring-offset-4 focus-visible:ring-offset-transparent md:left-[27.2%] md:top-[65.8%] md:h-24 md:w-24"
+            aria-label={isMobile ? 'Play the album transition video' : 'Start dragging through the album transition'}
+          >
+            <img
+              src="/images/drag图标_灰色版.png"
+              alt=""
+              aria-hidden="true"
+              className="h-14 w-14 object-contain md:h-16 md:w-16"
+            />
+          </button>
 
-            <p className="mt-4 text-center text-[11px] uppercase tracking-[0.28em] text-white/70 md:text-xs">
-              {isMobile ? 'Tap to continue' : 'Click, then scroll'}
-            </p>
-          </div>
+          <p className="absolute left-[27.8%] top-[72.9%] -translate-x-1/2 -translate-y-1/2 text-center text-[10px] uppercase tracking-[0.26em] text-white/70 md:left-[27.6%] md:top-[72.2%] md:text-[11px]">
+            {isMobile ? 'Tap to continue' : 'Click, then scroll'}
+          </p>
         </div>
       ) : null}
     </section>

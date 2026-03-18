@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { getExperienceHeroSnapState } from './ExperienceHero.logic.ts';
+import { getExperienceHeroSnapState, getExperienceHeroSnapTargetY } from './ExperienceHero.logic.ts';
 
 test('requests a snap when scrolling down into the activation zone', () => {
   const result = getExperienceHeroSnapState({
@@ -97,4 +97,12 @@ test('requests a latch reset after the user leaves the section below', () => {
     shouldSnap: false,
     shouldResetLatch: true,
   });
+});
+
+test('snap target shifts upward slightly so the next section does not peek through at the bottom', () => {
+  assert.equal(getExperienceHeroSnapTargetY(2000), 1976);
+});
+
+test('snap target does not scroll above the top of the document', () => {
+  assert.equal(getExperienceHeroSnapTargetY(12), 0);
 });
