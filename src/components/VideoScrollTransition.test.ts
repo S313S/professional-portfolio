@@ -10,6 +10,7 @@ import {
   getVideoStateAfterPrompt,
   getVideoVisualState,
   getVideoWheelState,
+  shouldResetCompletedVideoOnScroll,
 } from './VideoScrollTransition.logic.ts';
 
 test('starts in loopPlaying with only the curtain video visible', () => {
@@ -159,6 +160,66 @@ test('releases page scrolling once the push-in animation is complete', () => {
     phase: 'completed',
     scrubProgress: 1,
   });
+});
+
+test('rewinds completed state back to the curtain loop on upward wheel input', () => {
+  const wheelState = getVideoWheelState({
+    state: {
+      phase: 'completed',
+      scrubProgress: 1,
+    },
+    deltaY: -120,
+    step: DEFAULT_VIDEO_WHEEL_STEP,
+  });
+
+  assert.equal(wheelState.shouldPreventScroll, true);
+  assert.deepEqual(wheelState.nextState, {
+    phase: 'loopPlaying',
+    scrubProgress: 0,
+  });
+});
+
+test('lets downward wheel input pass through once the completed state has released the page', () => {
+  const wheelState = getVideoWheelState({
+    state: {
+      phase: 'completed',
+      scrubProgress: 1,
+    },
+    deltaY: 120,
+    step: DEFAULT_VIDEO_WHEEL_STEP,
+  });
+
+  assert.equal(wheelState.shouldPreventScroll, false);
+  assert.deepEqual(wheelState.nextState, {
+    phase: 'completed',
+    scrubProgress: 1,
+  });
+});
+
+test('resets the completed video flow when the page starts scrolling upward', () => {
+  const shouldReset = shouldResetCompletedVideoOnScroll({
+    state: {
+      phase: 'completed',
+      scrubProgress: 1,
+    },
+    previousScrollY: 3600,
+    scrollY: 3300,
+  });
+
+  assert.equal(shouldReset, true);
+});
+
+test('does not reset the completed video flow while the page keeps moving downward', () => {
+  const shouldReset = shouldResetCompletedVideoOnScroll({
+    state: {
+      phase: 'completed',
+      scrubProgress: 1,
+    },
+    previousScrollY: 3300,
+    scrollY: 3600,
+  });
+
+  assert.equal(shouldReset, false);
 });
 
 test('completed state keeps the final push-in frame visible', () => {

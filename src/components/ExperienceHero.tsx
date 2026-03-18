@@ -1,6 +1,8 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { motion, useScroll, useTransform, MotionValue } from 'motion/react';
 
+import { getExperienceHeroSnapState } from './ExperienceHero.logic';
+
 const EXPERIENCE_MASK_RADIUS_PX = 260;
 const EXPERIENCE_FLOW_SPEED = 1.75;
 
@@ -21,7 +23,7 @@ const buildSpotlightMask = (radiusPx: number) =>
 
 const buildImageCandidates = (relativePath: string) => {
   const normalized = relativePath.replace(/^\/+/, '');
-  const base = import.meta.env.BASE_URL || '/';
+  const base = import.meta.env?.BASE_URL || '/';
   const normalizedBase = base.endsWith('/') ? base : `${base}/`;
   const aliasPath = normalized.replace(/^images\//, 'public-images/');
 
@@ -96,6 +98,8 @@ export default function ExperienceHero() {
 
   // Scroll Container setup
   const containerRef = useRef<HTMLDivElement>(null);
+  const hasSnappedOnCurrentEntryRef = useRef(false);
+  const lastScrollYRef = useRef(0);
 
   // Custom pointer tracking state to bridge vanilla JS and React
   const pointerStateRef = useRef({ x: 0.5, y: 0.5, hover: false });
@@ -187,9 +191,58 @@ export default function ExperienceHero() {
     };
   }, []);
 
+  useEffect(() => {
+    const section = containerRef.current;
+    if (!section) {
+      return;
+    }
+
+    lastScrollYRef.current = window.scrollY;
+
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+      const sectionTop = section.getBoundingClientRect().top + scrollY;
+      const sectionHeight = section.offsetHeight;
+      const snapState = getExperienceHeroSnapState({
+        scrollY,
+        lastScrollY: lastScrollYRef.current,
+        sectionTop,
+        sectionHeight,
+        viewportHeight: window.innerHeight,
+        hasSnappedOnCurrentEntry: hasSnappedOnCurrentEntryRef.current,
+      });
+
+      if (snapState.shouldResetLatch) {
+        hasSnappedOnCurrentEntryRef.current = false;
+      }
+
+      if (snapState.shouldSnap) {
+        hasSnappedOnCurrentEntryRef.current = true;
+        window.scrollTo({
+          top: sectionTop,
+          behavior: 'smooth',
+        });
+      }
+
+      lastScrollYRef.current = scrollY;
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
   return (
-    <div id="experience-hero" ref={containerRef} className="relative w-full h-[150vh] bg-[#FDFCF8]">
-      <motion.div className="sticky top-0 w-full h-screen overflow-hidden bg-[#FDFCF8] flex items-center justify-center">
+    <div id="experience" ref={containerRef} className="relative w-full h-[150vh] bg-[#FDFCF8]">
+      <motion.div
+        className="sticky top-0 w-full overflow-hidden bg-[#FDFCF8] flex items-center justify-center"
+        style={{
+          height: 'calc(100dvh + 2px)',
+          minHeight: 'calc(100dvh + 2px)',
+        }}
+      >
 
         {/* Shaders */}
         <svg
@@ -221,7 +274,7 @@ export default function ExperienceHero() {
 
         {/* --- FULLSCREEN BACKGROUND IMAGE --- */}
         <motion.div
-          className="absolute z-20 flex items-center justify-center overflow-hidden bg-black w-full h-full"
+          className="absolute -inset-px z-20 flex items-center justify-center overflow-hidden bg-black"
         >
           <img
             alt="Experience before state"

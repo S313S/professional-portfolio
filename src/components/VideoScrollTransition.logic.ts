@@ -109,6 +109,20 @@ export interface VideoWheelState {
   shouldPreventScroll: boolean;
 }
 
+export interface CompletedScrollResetInput {
+  state: VideoScrollState;
+  previousScrollY: number;
+  scrollY: number;
+}
+
+export function shouldResetCompletedVideoOnScroll({
+  state,
+  previousScrollY,
+  scrollY,
+}: CompletedScrollResetInput): boolean {
+  return state.phase === 'completed' && scrollY < previousScrollY;
+}
+
 export function getVideoWheelState({ state, deltaY, step }: VideoWheelInput): VideoWheelState {
   const normalizedDelta = deltaY / 120;
 
@@ -137,6 +151,20 @@ export function getVideoWheelState({ state, deltaY, step }: VideoWheelInput): Vi
     return {
       nextState: state,
       shouldPreventScroll: normalizedDelta > 0,
+    };
+  }
+
+  if (state.phase === 'completed') {
+    if (normalizedDelta >= 0) {
+      return {
+        nextState: state,
+        shouldPreventScroll: false,
+      };
+    }
+
+    return {
+      nextState: DEFAULT_VIDEO_SCROLL_INITIAL_STATE,
+      shouldPreventScroll: true,
     };
   }
 

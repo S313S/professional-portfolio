@@ -10,6 +10,7 @@ import {
   getVideoVisualState,
   getVideoWheelState,
   isScrollWithinVideoSection,
+  shouldResetCompletedVideoOnScroll,
   type VideoNavigationType,
   type VideoScrollState,
 } from './VideoScrollTransition.logic';
@@ -28,6 +29,8 @@ export default function VideoScrollTransition() {
   const stateRef = useRef<VideoScrollState>(DEFAULT_VIDEO_SCROLL_INITIAL_STATE);
   const mobileAutoplayRef = useRef(false);
   const isMobileRef = useRef(false);
+  const lastTouchYRef = useRef<number | null>(null);
+  const previousScrollYRef = useRef(0);
 
   const [videoState, setVideoState] = useState<VideoScrollState>(DEFAULT_VIDEO_SCROLL_INITIAL_STATE);
   const [isMobile, setIsMobile] = useState(false);
@@ -196,6 +199,13 @@ export default function VideoScrollTransition() {
     queuePushVideoTime(0);
   };
 
+  const restoreLoopPlayback = () => {
+    queuedTimeRef.current = 0;
+    setMobileAutoplay(false);
+    resetPushVideo();
+    restartLoopVideo();
+  };
+
   const syncReloadMarker = () => {
     const metrics = getSectionMetrics();
     if (!metrics) {
@@ -210,6 +220,14 @@ export default function VideoScrollTransition() {
 
     if (isInsideVideoSection) {
       sessionStorage.setItem(VIDEO_SECTION_RELOAD_MARKER, '1');
+      window.history.scrollRestoration = 'manual';
+      return;
+    }
+
+    if (
+      getNavigationType() === 'reload' &&
+      sessionStorage.getItem(VIDEO_SECTION_RELOAD_MARKER) === '1'
+    ) {
       window.history.scrollRestoration = 'manual';
       return;
     }
@@ -251,14 +269,22 @@ export default function VideoScrollTransition() {
       return false;
     }
 
-    window.scrollTo(0, targetScrollY);
     resetToInitialState();
+    window.scrollTo(0, targetScrollY);
+
+    const didReachTarget = Math.abs(window.scrollY - targetScrollY) <= 2;
+    if (!didReachTarget) {
+      window.history.scrollRestoration = 'manual';
+      return false;
+    }
+
     sessionStorage.removeItem(VIDEO_SECTION_RELOAD_MARKER);
     window.history.scrollRestoration = 'auto';
     return true;
   };
 
   useLayoutEffect(() => {
+    previousScrollYRef.current = window.scrollY;
     resetToInitialState(false);
     resetVideoSectionIfNeeded();
   }, []);
@@ -301,6 +327,20 @@ export default function VideoScrollTransition() {
 
   useEffect(() => {
     const handleScroll = () => {
+      const scrollY = window.scrollY;
+
+      if (
+        shouldResetCompletedVideoOnScroll({
+          state: stateRef.current,
+          previousScrollY: previousScrollYRef.current,
+          scrollY,
+        })
+      ) {
+        restoreLoopPlayback();
+        commitVideoState(DEFAULT_VIDEO_SCROLL_INITIAL_STATE);
+      }
+
+      previousScrollYRef.current = scrollY;
       syncReloadMarker();
     };
 
@@ -332,7 +372,15 @@ export default function VideoScrollTransition() {
         setMobileAutoplay(false);
       }
 
+      if (wheelState.nextState.phase === 'loopPlaying') {
+        restoreLoopPlayback();
+      }
+
       commitVideoState(wheelState.nextState);
+    };
+
+    const handleTouchStart = (event: TouchEvent) => {
+      lastTouchYRef.current = event.touches[0]?.clientY ?? null;
     };
 
     const handleTouchMove = (event: TouchEvent) => {
@@ -340,12 +388,57 @@ export default function VideoScrollTransition() {
         return;
       }
 
+      const metrics = getSectionMetrics();
+      if (!metrics) {
+        return;
+      }
+
+      const currentY = event.touches[0]?.clientY;
+      const lastY = lastTouchYRef.current;
+      if (typeof currentY !== 'number') {
+        return;
+      }
+
+      lastTouchYRef.current = currentY;
+
+      const isPinnedAtSectionTop = Math.abs(window.scrollY - metrics.sectionTop) <= 2;
+      if (!isPinnedAtSectionTop) {
+        return;
+      }
+
       if (stateRef.current.phase !== 'scrubbing' || !mobileAutoplayRef.current) {
+        if (stateRef.current.phase !== 'completed' || typeof lastY !== 'number') {
+          return;
+        }
+
+        const deltaY = lastY - currentY;
+        const wheelState = getVideoWheelState({
+          state: stateRef.current,
+          deltaY,
+          step: DEFAULT_VIDEO_WHEEL_STEP,
+        });
+
+        if (!wheelState.shouldPreventScroll) {
+          return;
+        }
+
+        event.preventDefault();
+        pinSectionTop();
+
+        if (wheelState.nextState.phase === 'loopPlaying') {
+          restoreLoopPlayback();
+        }
+
+        commitVideoState(wheelState.nextState);
         return;
       }
 
       event.preventDefault();
       pinSectionTop();
+    };
+
+    const handleTouchEnd = () => {
+      lastTouchYRef.current = null;
     };
 
     const frame = requestAnimationFrame(() => {
@@ -357,15 +450,46 @@ export default function VideoScrollTransition() {
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     window.addEventListener('wheel', handleWheel, { passive: false });
+    window.addEventListener('touchstart', handleTouchStart, { passive: true });
     window.addEventListener('touchmove', handleTouchMove, { passive: false });
+    window.addEventListener('touchend', handleTouchEnd, { passive: true });
+    window.addEventListener('touchcancel', handleTouchEnd, { passive: true });
 
     return () => {
       cancelAnimationFrame(frame);
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('wheel', handleWheel);
+      window.removeEventListener('touchstart', handleTouchStart);
       window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleTouchEnd);
+      window.removeEventListener('touchcancel', handleTouchEnd);
       if (frameRequestRef.current !== null) {
         cancelAnimationFrame(frameRequestRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    let frame: number | null = null;
+    let attempts = 0;
+
+    const retryPendingReset = () => {
+      if (sessionStorage.getItem(VIDEO_SECTION_RELOAD_MARKER) !== '1') {
+        return;
+      }
+
+      attempts += 1;
+      const didReset = resetVideoSectionIfNeeded();
+      if (!didReset && attempts < 90) {
+        frame = requestAnimationFrame(retryPendingReset);
+      }
+    };
+
+    retryPendingReset();
+
+    return () => {
+      if (frame !== null) {
+        cancelAnimationFrame(frame);
       }
     };
   }, []);
