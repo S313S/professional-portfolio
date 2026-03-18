@@ -235,12 +235,12 @@ export default function ExperienceHero() {
   }, []);
 
   return (
-    <div id="experience" ref={containerRef} className="relative w-full h-[150vh] bg-[#FDFCF8]">
+    <div id="experience" ref={containerRef} className="relative w-full h-[100dvh] bg-[#FDFCF8]">
       <motion.div
         className="sticky top-0 w-full overflow-hidden bg-[#FDFCF8] flex items-center justify-center"
         style={{
-          height: 'calc(100dvh + 16px)',
-          minHeight: 'calc(100dvh + 16px)',
+          height: '100dvh',
+          minHeight: '100dvh',
         }}
       >
 
@@ -275,7 +275,7 @@ export default function ExperienceHero() {
         {/* --- FULLSCREEN BACKGROUND IMAGE --- */}
         <motion.div
           className="absolute z-20 flex items-center justify-center overflow-hidden bg-black"
-          style={{ inset: '-4px -2px -12px -2px' }}
+          style={{ inset: '-4px -2px -16px -2px' }}
         >
           <img
             alt="Experience before state"
