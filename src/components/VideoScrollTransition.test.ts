@@ -2,40 +2,185 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-  DEFAULT_VIDEO_SCROLL_CONFIG,
-  getVideoScrollState,
-} from './VideoScrollTransition.logic';
+  DEFAULT_VIDEO_SCROLL_INITIAL_STATE,
+  DEFAULT_VIDEO_WHEEL_STEP,
+  getVideoScrollMountState,
+  getVideoStateAfterActivation,
+  getVideoStateAfterMobilePlaybackEnd,
+  getVideoStateAfterPrompt,
+  getVideoVisualState,
+  getVideoWheelState,
+} from './VideoScrollTransition.logic.ts';
 
-test('keeps the looping curtain video visible before scrub begins', () => {
-  const state = getVideoScrollState(0.08, DEFAULT_VIDEO_SCROLL_CONFIG);
+test('starts in loopPlaying with only the curtain video visible', () => {
+  const state = getVideoVisualState(DEFAULT_VIDEO_SCROLL_INITIAL_STATE);
 
-  assert.equal(state.phase, 'idle');
+  assert.equal(state.phase, 'loopPlaying');
   assert.equal(state.scrubProgress, 0);
   assert.equal(state.overlayOpacity, 0);
+  assert.equal(state.loopOpacity, 1);
+  assert.equal(state.showCta, false);
+  assert.equal(state.shouldPlayLoopVideo, true);
 });
 
-test('fades the push-in video in as the slow scrub starts', () => {
-  const state = getVideoScrollState(0.18, DEFAULT_VIDEO_SCROLL_CONFIG);
+test('shows the CTA when the curtain video finishes naturally', () => {
+  const state = getVideoStateAfterPrompt(DEFAULT_VIDEO_SCROLL_INITIAL_STATE);
 
-  assert.equal(state.phase, 'scrubbing');
+  assert.equal(state.phase, 'awaitingActivation');
   assert.equal(state.scrubProgress, 0);
-  assert.ok(state.overlayOpacity > 0);
-  assert.ok(state.overlayOpacity < 1);
+
+  const visualState = getVideoVisualState(state);
+  assert.equal(visualState.showCta, true);
+  assert.equal(visualState.loopOpacity, 1);
+  assert.equal(visualState.overlayOpacity, 0);
+  assert.equal(visualState.shouldPlayLoopVideo, false);
 });
 
-test('advances the push-in video slowly through the middle of the section', () => {
-  const state = getVideoScrollState(0.5, DEFAULT_VIDEO_SCROLL_CONFIG);
+test('first downward wheel step only reveals the CTA without starting the push-in video', () => {
+  const wheelState = getVideoWheelState({
+    state: DEFAULT_VIDEO_SCROLL_INITIAL_STATE,
+    deltaY: 120,
+    step: DEFAULT_VIDEO_WHEEL_STEP,
+  });
 
-  assert.equal(state.phase, 'scrubbing');
-  assert.ok(state.scrubProgress > 0.3);
-  assert.ok(state.scrubProgress < 0.5);
-  assert.equal(state.overlayOpacity, 1);
+  assert.equal(wheelState.shouldPreventScroll, true);
+  assert.deepEqual(wheelState.nextState, {
+    phase: 'awaitingActivation',
+    scrubProgress: 0,
+  });
 });
 
-test('holds on the final frame when scroll reaches the end band', () => {
-  const state = getVideoScrollState(0.97, DEFAULT_VIDEO_SCROLL_CONFIG);
+test('clicking the CTA arms the push-in animation at progress zero', () => {
+  const state = getVideoStateAfterActivation({
+    phase: 'awaitingActivation',
+    scrubProgress: 0,
+  });
 
-  assert.equal(state.phase, 'endHold');
-  assert.equal(state.scrubProgress, 1);
-  assert.equal(state.overlayOpacity, 1);
+  assert.deepEqual(state, {
+    phase: 'scrubbing',
+    scrubProgress: 0,
+  });
+
+  const visualState = getVideoVisualState(state);
+  assert.equal(visualState.overlayOpacity, 1);
+  assert.equal(visualState.loopOpacity, 0);
+  assert.equal(visualState.showCta, false);
+});
+
+test('resets to the video section start when reload restores scroll inside the section', () => {
+  const mountState = getVideoScrollMountState({
+    navigationType: 'reload',
+    scrollY: 3240,
+    sectionTop: 2800,
+    sectionHeight: 5040,
+  });
+
+  assert.equal(mountState.shouldResetScroll, true);
+  assert.equal(mountState.targetScrollY, 2800);
+  assert.deepEqual(mountState.initialVideoState, {
+    phase: 'loopPlaying',
+    scrubProgress: 0,
+  });
+});
+
+test('keeps the restored scroll position when navigation is not a reload', () => {
+  const mountState = getVideoScrollMountState({
+    navigationType: 'navigate',
+    scrollY: 3240,
+    sectionTop: 2800,
+    sectionHeight: 5040,
+  });
+
+  assert.equal(mountState.shouldResetScroll, false);
+  assert.equal(mountState.targetScrollY, null);
+  assert.deepEqual(mountState.initialVideoState, {
+    phase: 'loopPlaying',
+    scrubProgress: 0,
+  });
+});
+
+test('does not reset when reload happens outside the video section', () => {
+  const mountState = getVideoScrollMountState({
+    navigationType: 'reload',
+    scrollY: 1200,
+    sectionTop: 2800,
+    sectionHeight: 5040,
+  });
+
+  assert.equal(mountState.shouldResetScroll, false);
+  assert.equal(mountState.targetScrollY, null);
+});
+
+test('advances the push-in animation while scrubbing on desktop wheel input', () => {
+  const wheelState = getVideoWheelState({
+    state: {
+      phase: 'scrubbing',
+      scrubProgress: 0,
+    },
+    deltaY: 120,
+    step: DEFAULT_VIDEO_WHEEL_STEP,
+  });
+
+  assert.equal(wheelState.shouldPreventScroll, true);
+  assert.equal(wheelState.nextState.phase, 'scrubbing');
+  assert.ok(wheelState.nextState.scrubProgress > 0);
+  assert.ok(wheelState.nextState.scrubProgress < 0.2);
+});
+
+test('rewinds back to the CTA state when wheel scrubbing returns to zero', () => {
+  const wheelState = getVideoWheelState({
+    state: {
+      phase: 'scrubbing',
+      scrubProgress: 0.06,
+    },
+    deltaY: -120,
+    step: DEFAULT_VIDEO_WHEEL_STEP,
+  });
+
+  assert.equal(wheelState.shouldPreventScroll, true);
+  assert.deepEqual(wheelState.nextState, {
+    phase: 'awaitingActivation',
+    scrubProgress: 0,
+  });
+});
+
+test('releases page scrolling once the push-in animation is complete', () => {
+  const wheelState = getVideoWheelState({
+    state: {
+      phase: 'scrubbing',
+      scrubProgress: 0.96,
+    },
+    deltaY: 120,
+    step: DEFAULT_VIDEO_WHEEL_STEP,
+  });
+
+  assert.equal(wheelState.shouldPreventScroll, true);
+  assert.deepEqual(wheelState.nextState, {
+    phase: 'completed',
+    scrubProgress: 1,
+  });
+});
+
+test('completed state keeps the final push-in frame visible', () => {
+  const visualState = getVideoVisualState({
+    phase: 'completed',
+    scrubProgress: 1,
+  });
+
+  assert.equal(visualState.phase, 'completed');
+  assert.equal(visualState.overlayOpacity, 1);
+  assert.equal(visualState.loopOpacity, 0);
+  assert.equal(visualState.showCta, false);
+});
+
+test('mobile autoplay marks the transition complete when the push-in video ends', () => {
+  const state = getVideoStateAfterMobilePlaybackEnd({
+    phase: 'scrubbing',
+    scrubProgress: 0,
+  });
+
+  assert.deepEqual(state, {
+    phase: 'completed',
+    scrubProgress: 1,
+  });
 });

@@ -8,7 +8,10 @@
     "build": "vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "test:video-scroll": "node --import tsx --test src/components/VideoScrollTransition.test.ts",
+    "test:video-refresh": "node test-video-transition-refresh.cjs",
+    "test:video-wheel": "node test-video-transition-wheel.cjs"
   },
   "dependencies": {
     "@google/genai": "^1.29.0",

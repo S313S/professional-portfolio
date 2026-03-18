@@ -1,61 +1,220 @@
-export type VideoScrollPhase = 'idle' | 'scrubbing' | 'endHold';
-
-export interface VideoScrollConfig {
-  idleEnd: number;
-  fadeInStart: number;
-  fadeInEnd: number;
-  scrubStart: number;
-  scrubEnd: number;
-  endHoldStart: number;
-}
+export type VideoScrollPhase =
+  | 'loopPlaying'
+  | 'awaitingActivation'
+  | 'scrubbing'
+  | 'completed';
 
 export interface VideoScrollState {
   phase: VideoScrollPhase;
   scrubProgress: number;
-  overlayOpacity: number;
 }
 
-export const DEFAULT_VIDEO_SCROLL_CONFIG: VideoScrollConfig = {
-  idleEnd: 0.12,
-  fadeInStart: 0.12,
-  fadeInEnd: 0.22,
-  scrubStart: 0.18,
-  scrubEnd: 0.92,
-  endHoldStart: 0.94,
+export interface VideoVisualState extends VideoScrollState {
+  overlayOpacity: number;
+  loopOpacity: number;
+  showCta: boolean;
+  shouldPlayLoopVideo: boolean;
+}
+
+export type VideoNavigationType = 'navigate' | 'reload' | 'back_forward' | 'prerender';
+
+export interface VideoScrollMountInput {
+  navigationType: VideoNavigationType;
+  scrollY: number;
+  sectionTop: number;
+  sectionHeight: number;
+}
+
+export interface VideoScrollMountState {
+  shouldResetScroll: boolean;
+  targetScrollY: number | null;
+  initialVideoState: VideoScrollState;
+}
+
+export const DEFAULT_VIDEO_WHEEL_STEP = 0.12;
+
+export const DEFAULT_VIDEO_SCROLL_INITIAL_STATE: VideoScrollState = {
+  phase: 'loopPlaying',
+  scrubProgress: 0,
 };
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
-const normalizeProgress = (value: number, start: number, end: number) => {
-  if (end <= start) {
-    return value >= end ? 1 : 0;
+export function isScrollWithinVideoSection(scrollY: number, sectionTop: number, sectionHeight: number) {
+  if (sectionHeight <= 0) {
+    return false;
   }
 
-  return clamp((value - start) / (end - start), 0, 1);
-};
+  const sectionBottom = sectionTop + sectionHeight;
+  return scrollY >= sectionTop && scrollY < sectionBottom;
+}
 
-export function getVideoScrollState(progress: number, config: VideoScrollConfig): VideoScrollState {
-  const safeProgress = clamp(progress, 0, 1);
+export function getVideoScrollMountState({
+  navigationType,
+  scrollY,
+  sectionTop,
+  sectionHeight,
+}: VideoScrollMountInput): VideoScrollMountState {
+  const shouldResetScroll =
+    navigationType === 'reload' && isScrollWithinVideoSection(scrollY, sectionTop, sectionHeight);
 
-  if (safeProgress >= config.endHoldStart) {
-    return {
-      phase: 'endHold',
-      scrubProgress: 1,
-      overlayOpacity: 1,
-    };
+  return {
+    shouldResetScroll,
+    targetScrollY: shouldResetScroll ? sectionTop : null,
+    initialVideoState: DEFAULT_VIDEO_SCROLL_INITIAL_STATE,
+  };
+}
+
+export function getVideoStateAfterPrompt(state: VideoScrollState): VideoScrollState {
+  if (state.phase !== 'loopPlaying') {
+    return state;
   }
 
-  if (safeProgress <= config.idleEnd) {
-    return {
-      phase: 'idle',
-      scrubProgress: 0,
-      overlayOpacity: 0,
-    };
+  return {
+    phase: 'awaitingActivation',
+    scrubProgress: 0,
+  };
+}
+
+export function getVideoStateAfterActivation(state: VideoScrollState): VideoScrollState {
+  if (state.phase !== 'awaitingActivation') {
+    return state;
   }
 
   return {
     phase: 'scrubbing',
-    scrubProgress: normalizeProgress(safeProgress, config.scrubStart, config.scrubEnd),
-    overlayOpacity: normalizeProgress(safeProgress, config.fadeInStart, config.fadeInEnd),
+    scrubProgress: 0,
+  };
+}
+
+export function getVideoStateAfterMobilePlaybackEnd(state: VideoScrollState): VideoScrollState {
+  if (state.phase !== 'scrubbing') {
+    return state;
+  }
+
+  return {
+    phase: 'completed',
+    scrubProgress: 1,
+  };
+}
+
+export interface VideoWheelInput {
+  state: VideoScrollState;
+  deltaY: number;
+  step: number;
+}
+
+export interface VideoWheelState {
+  nextState: VideoScrollState;
+  shouldPreventScroll: boolean;
+}
+
+export function getVideoWheelState({ state, deltaY, step }: VideoWheelInput): VideoWheelState {
+  const normalizedDelta = deltaY / 120;
+
+  if (normalizedDelta === 0) {
+    return {
+      nextState: state,
+      shouldPreventScroll: false,
+    };
+  }
+
+  if (state.phase === 'loopPlaying') {
+    if (normalizedDelta <= 0) {
+      return {
+        nextState: state,
+        shouldPreventScroll: false,
+      };
+    }
+
+    return {
+      nextState: getVideoStateAfterPrompt(state),
+      shouldPreventScroll: true,
+    };
+  }
+
+  if (state.phase === 'awaitingActivation') {
+    return {
+      nextState: state,
+      shouldPreventScroll: normalizedDelta > 0,
+    };
+  }
+
+  if (state.phase !== 'scrubbing') {
+    return {
+      nextState: state,
+      shouldPreventScroll: false,
+    };
+  }
+
+  const safeProgress = clamp(state.scrubProgress, 0, 1);
+  const shouldPreventScroll =
+    (normalizedDelta > 0 && safeProgress < 1) || (normalizedDelta < 0 && safeProgress > 0);
+
+  if (!shouldPreventScroll) {
+    return {
+      nextState: state,
+      shouldPreventScroll: false,
+    };
+  }
+
+  const nextProgress = clamp(safeProgress + normalizedDelta * step, 0, 1);
+
+  if (nextProgress <= 0) {
+    return {
+      nextState: {
+        phase: 'awaitingActivation',
+        scrubProgress: 0,
+      },
+      shouldPreventScroll: true,
+    };
+  }
+
+  if (nextProgress >= 1) {
+    return {
+      nextState: {
+        phase: 'completed',
+        scrubProgress: 1,
+      },
+      shouldPreventScroll: true,
+    };
+  }
+
+  return {
+    nextState: {
+      phase: 'scrubbing',
+      scrubProgress: nextProgress,
+    },
+    shouldPreventScroll: true,
+  };
+}
+
+export function getVideoVisualState(state: VideoScrollState): VideoVisualState {
+  if (state.phase === 'loopPlaying') {
+    return {
+      ...state,
+      overlayOpacity: 0,
+      loopOpacity: 1,
+      showCta: false,
+      shouldPlayLoopVideo: true,
+    };
+  }
+
+  if (state.phase === 'awaitingActivation') {
+    return {
+      ...state,
+      overlayOpacity: 0,
+      loopOpacity: 1,
+      showCta: true,
+      shouldPlayLoopVideo: false,
+    };
+  }
+
+  return {
+    ...state,
+    overlayOpacity: 1,
+    loopOpacity: 0,
+    showCta: false,
+    shouldPlayLoopVideo: false,
   };
 }
