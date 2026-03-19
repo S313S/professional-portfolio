@@ -1,8 +1,15 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 
 import {
+  AWAITING_ACTIVATION_REPIN_DURATION_MS,
+  AWAITING_ACTIVATION_REPIN_TOLERANCE_PX,
+  CTA_HINT_LEFT_BASE_PERCENT,
+  CTA_HINT_LEFT_MD_PERCENT,
+  CTA_HINT_OFFSET_X_PX,
   DEFAULT_VIDEO_SCROLL_INITIAL_STATE,
   DEFAULT_VIDEO_WHEEL_STEP,
+  getCtaHintLeftValue,
+  getSoftRepinScrollTop,
   getVideoScrollMountState,
   getVideoStateAfterActivation,
   getVideoStateAfterMobilePlaybackEnd,
@@ -10,6 +17,7 @@ import {
   getVideoVisualState,
   getVideoWheelState,
   isScrollWithinVideoSection,
+  shouldPinVideoSectionOnPrompt,
   shouldRepinAwaitingActivationOnScroll,
   shouldResetCompletedVideoOnScroll,
   type VideoNavigationType,
@@ -32,10 +40,25 @@ export default function VideoScrollTransition() {
   const isMobileRef = useRef(false);
   const lastTouchYRef = useRef<number | null>(null);
   const previousScrollYRef = useRef(0);
+  const awaitingActivationRepinFrameRef = useRef<number | null>(null);
+  const awaitingActivationRepinStartTimeRef = useRef<number | null>(null);
+  const awaitingActivationRepinStartYRef = useRef(0);
+  const awaitingActivationRepinTargetYRef = useRef(0);
 
   const [videoState, setVideoState] = useState<VideoScrollState>(DEFAULT_VIDEO_SCROLL_INITIAL_STATE);
   const [isMobile, setIsMobile] = useState(false);
   const visualState = getVideoVisualState(videoState);
+  const ctaButtonAnimationClassName = visualState.showCtaPromptAnimation
+    ? 'video-cta-prompt-button'
+    : '';
+  const ctaIconAnimationClassName = visualState.showCtaPromptAnimation
+    ? 'video-cta-prompt-icon'
+    : '';
+  const ctaTextAnimationClassName = visualState.showCtaPromptAnimation
+    ? 'video-cta-prompt-text'
+    : '';
+  const ctaHintLeftValue = getCtaHintLeftValue(CTA_HINT_LEFT_BASE_PERCENT, CTA_HINT_OFFSET_X_PX);
+  const ctaHintLeftMdValue = getCtaHintLeftValue(CTA_HINT_LEFT_MD_PERCENT, CTA_HINT_OFFSET_X_PX);
 
   const getSectionMetrics = () => {
     const container = containerRef.current;
@@ -146,6 +169,12 @@ export default function VideoScrollTransition() {
   };
 
   const pinSectionTop = () => {
+    if (awaitingActivationRepinFrameRef.current !== null) {
+      cancelAnimationFrame(awaitingActivationRepinFrameRef.current);
+      awaitingActivationRepinFrameRef.current = null;
+    }
+    awaitingActivationRepinStartTimeRef.current = null;
+
     const metrics = getSectionMetrics();
     if (!metrics) {
       return;
@@ -154,13 +183,68 @@ export default function VideoScrollTransition() {
     window.scrollTo(0, metrics.sectionTop);
   };
 
+  const softPinSectionTop = () => {
+    if (awaitingActivationRepinFrameRef.current !== null) {
+      return;
+    }
+
+    const metrics = getSectionMetrics();
+    if (!metrics) {
+      return;
+    }
+
+    awaitingActivationRepinStartYRef.current = window.scrollY;
+    awaitingActivationRepinTargetYRef.current = metrics.sectionTop;
+
+    awaitingActivationRepinStartTimeRef.current = null;
+
+    const step = (timestamp: number) => {
+      if (awaitingActivationRepinStartTimeRef.current === null) {
+        awaitingActivationRepinStartTimeRef.current = timestamp;
+      }
+
+      const elapsed = timestamp - awaitingActivationRepinStartTimeRef.current;
+      const progress = Math.min(elapsed / AWAITING_ACTIVATION_REPIN_DURATION_MS, 1);
+      const nextScrollTop = getSoftRepinScrollTop(
+        awaitingActivationRepinStartYRef.current,
+        awaitingActivationRepinTargetYRef.current,
+        progress,
+      );
+
+      window.scrollTo(0, nextScrollTop);
+
+      if (progress < 1) {
+        awaitingActivationRepinFrameRef.current = requestAnimationFrame(step);
+        return;
+      }
+
+      awaitingActivationRepinFrameRef.current = null;
+      awaitingActivationRepinStartTimeRef.current = null;
+      window.scrollTo(0, awaitingActivationRepinTargetYRef.current);
+    };
+
+    awaitingActivationRepinFrameRef.current = requestAnimationFrame(step);
+  };
+
   const showActivationPrompt = () => {
     const nextState = getVideoStateAfterPrompt(stateRef.current);
     if (nextState === stateRef.current) {
       return;
     }
 
-    pinSectionTop();
+    const metrics = getSectionMetrics();
+    const shouldPinToSection =
+      metrics &&
+      shouldPinVideoSectionOnPrompt({
+        scrollY: window.scrollY,
+        sectionTop: metrics.sectionTop,
+        sectionHeight: metrics.sectionHeight,
+      });
+
+    if (shouldPinToSection) {
+      pinSectionTop();
+    }
+
     loopVideoRef.current?.pause();
     setMobileAutoplay(false);
     commitVideoState(nextState);
@@ -337,12 +421,13 @@ export default function VideoScrollTransition() {
         shouldRepinAwaitingActivationOnScroll({
           state: stateRef.current,
           sectionTop: metrics.sectionTop,
+          sectionHeight: metrics.sectionHeight,
           previousScrollY: previousScrollYRef.current,
           scrollY,
         })
       ) {
-        pinSectionTop();
-        previousScrollYRef.current = metrics.sectionTop;
+        softPinSectionTop();
+        previousScrollYRef.current = Math.max(scrollY - AWAITING_ACTIVATION_REPIN_TOLERANCE_PX, metrics.sectionTop);
         syncReloadMarker();
         return;
       }
@@ -378,7 +463,9 @@ export default function VideoScrollTransition() {
 
       if (isAwaitingActivationDownward && isWithinVideoSection) {
         event.preventDefault();
-        pinSectionTop();
+        if (window.scrollY > metrics.sectionTop + AWAITING_ACTIVATION_REPIN_TOLERANCE_PX) {
+          softPinSectionTop();
+        }
         return;
       }
 
@@ -436,7 +523,9 @@ export default function VideoScrollTransition() {
 
       if (stateRef.current.phase === 'awaitingActivation' && deltaY > 0) {
         event.preventDefault();
-        pinSectionTop();
+        if (window.scrollY > metrics.sectionTop + AWAITING_ACTIVATION_REPIN_TOLERANCE_PX) {
+          softPinSectionTop();
+        }
         return;
       }
 
@@ -503,6 +592,9 @@ export default function VideoScrollTransition() {
       window.removeEventListener('touchcancel', handleTouchEnd);
       if (frameRequestRef.current !== null) {
         cancelAnimationFrame(frameRequestRef.current);
+      }
+      if (awaitingActivationRepinFrameRef.current !== null) {
+        cancelAnimationFrame(awaitingActivationRepinFrameRef.current);
       }
     };
   }, []);
@@ -619,18 +711,26 @@ export default function VideoScrollTransition() {
           <button
             type="button"
             onClick={activatePushVideo}
-            className="pointer-events-auto absolute left-[27.4%] top-[66.3%] flex h-20 w-20 -translate-x-1/2 -translate-y-1/2 items-center justify-center transition duration-300 hover:-translate-y-[54%] hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8f806c] focus-visible:ring-offset-4 focus-visible:ring-offset-transparent md:left-[27.2%] md:top-[65.8%] md:h-24 md:w-24"
+            className={`pointer-events-auto absolute left-[27.4%] top-[66.3%] flex h-20 w-20 -translate-x-1/2 -translate-y-1/2 items-center justify-center transition duration-300 hover:-translate-y-[54%] hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8f806c] focus-visible:ring-offset-4 focus-visible:ring-offset-transparent md:left-[27.2%] md:top-[65.8%] md:h-24 md:w-24 ${ctaButtonAnimationClassName}`}
             aria-label={isMobile ? 'Play the album transition video' : 'Start dragging through the album transition'}
           >
             <img
               src="/images/drag图标_灰色版.png"
               alt=""
               aria-hidden="true"
-              className="h-14 w-14 object-contain md:h-16 md:w-16"
+              className={`h-14 w-14 object-contain md:h-16 md:w-16 ${ctaIconAnimationClassName}`}
             />
           </button>
 
-          <p className="absolute left-[27.8%] top-[72.9%] -translate-x-1/2 -translate-y-1/2 text-center text-[10px] uppercase tracking-[0.26em] text-white/70 md:left-[27.6%] md:top-[72.2%] md:text-[11px]">
+          <p
+            className={`absolute left-[var(--video-cta-hint-left)] top-[72.9%] -translate-x-1/2 -translate-y-1/2 text-center text-[10px] uppercase tracking-[0.26em] text-white/70 md:left-[var(--video-cta-hint-left-md)] md:top-[72.2%] md:text-[11px] ${ctaTextAnimationClassName}`}
+            style={
+              {
+                '--video-cta-hint-left': ctaHintLeftValue,
+                '--video-cta-hint-left-md': ctaHintLeftMdValue,
+              } as CSSProperties
+            }
+          >
             {isMobile ? 'Tap to continue' : 'Click, then scroll'}
           </p>
         </div>

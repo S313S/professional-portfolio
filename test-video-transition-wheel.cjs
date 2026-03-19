@@ -55,6 +55,7 @@ const baseUrl = process.env.BASE_URL || 'http://127.0.0.1:3001';
     const videos = Array.from(section.querySelectorAll('video'));
     const overlay = videos[1]?.parentElement;
     const cta = section.querySelector('button');
+    const hint = section.querySelector('p');
     return {
       phase: section.dataset.phase,
       scrollY: window.scrollY,
@@ -62,6 +63,9 @@ const baseUrl = process.env.BASE_URL || 'http://127.0.0.1:3001';
       overlayOpacity: overlay ? Number.parseFloat(getComputedStyle(overlay).opacity || '0') : 0,
       pushTime: videos[1]?.currentTime ?? 0,
       ctaVisible: Boolean(cta),
+      ctaClassName: cta?.className ?? '',
+      hintClassName: hint?.className ?? '',
+      hintStyle: hint?.getAttribute('style') ?? '',
     };
   });
 
@@ -71,6 +75,10 @@ const baseUrl = process.env.BASE_URL || 'http://127.0.0.1:3001';
   );
   assert.equal(afterFirstWheel.phase, 'awaitingActivation');
   assert.equal(afterFirstWheel.ctaVisible, true, 'Expected CTA button to appear after the first wheel step.');
+  assert.match(afterFirstWheel.ctaClassName, /\bvideo-cta-prompt-button\b/, 'Expected CTA button prompt animation class to be present.');
+  assert.match(afterFirstWheel.hintClassName, /\bvideo-cta-prompt-text\b/, 'Expected CTA hint prompt animation class to be present.');
+  assert.match(afterFirstWheel.hintStyle, /--video-cta-hint-left:\s*calc\(27\.8% \+ 17px\)/, 'Expected CTA hint text to expose the base offset via a tunable CSS variable.');
+  assert.match(afterFirstWheel.hintStyle, /--video-cta-hint-left-md:\s*calc\(27\.6% \+ 17px\)/, 'Expected CTA hint text to expose the desktop offset via a tunable CSS variable.');
   assert.equal(afterFirstWheel.pushTime, before.pushTime, 'Expected push-in video to stay idle before CTA click.');
   assert.ok(afterFirstWheel.overlayOpacity < 0.05, `Expected push-in layer to remain hidden before CTA click. Got ${afterFirstWheel.overlayOpacity}`);
   assert.ok(afterFirstWheel.loopOpacity > 0.95, `Expected curtain layer to remain visible while awaiting activation. Got ${afterFirstWheel.loopOpacity}`);

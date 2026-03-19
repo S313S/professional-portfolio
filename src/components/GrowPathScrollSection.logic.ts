@@ -17,6 +17,17 @@ export interface GrowPathCardVisual {
   zIndex: number;
 }
 
+export interface GrowPathFocusCardVisual {
+  isSelected: boolean;
+  opacity: number;
+  scale: number;
+  rotate: number;
+  translateY: number;
+  filter: string;
+  zIndex: number;
+  pointerEventsEnabled: boolean;
+}
+
 export interface GrowPathWheelInput {
   state: GrowPathScrollState;
   deltaY: number;
@@ -39,6 +50,11 @@ export interface GrowPathWheelCaptureState extends GrowPathWheelState {
   targetScrollY: number | null;
 }
 
+export interface GrowPathFocusWheelState {
+  nextSelectedCardId: GrowPathCardId | null;
+  shouldPreventScroll: boolean;
+}
+
 export const GROW_PATH_CARD_IDS: GrowPathCardId[] = [
   'growPath_01',
   'growPath_02',
@@ -51,6 +67,15 @@ export const DEFAULT_GROW_PATH_WHEEL_STEP = 0.14;
 export const DEFAULT_GROW_PATH_SCROLL_STATE: GrowPathScrollState = {
   progress: 0,
 };
+
+const GROW_PATH_FOCUS_PROGRESS_THRESHOLD = 1;
+const GROW_PATH_FOCUS_SCALE = 1.14;
+const GROW_PATH_BACKGROUND_SCALE = 0.96;
+const GROW_PATH_BACKGROUND_TRANSLATE_Y = 10;
+const GROW_PATH_BACKGROUND_OPACITY = 0.62;
+const GROW_PATH_BACKGROUND_FILTER = 'blur(4px) saturate(0.88) brightness(0.96)';
+const GROW_PATH_FOCUS_Z_INDEX = 30;
+const GROW_PATH_BACKGROUND_Z_INDEX = 6;
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
@@ -182,6 +207,50 @@ export function getGrowPathWheelCaptureState({
   return {
     ...wheelState,
     targetScrollY: wheelState.shouldPreventScroll ? sectionTop : null,
+  };
+}
+
+export function canFocusGrowPathCard(progress: number) {
+  return clamp(progress, 0, 1) >= GROW_PATH_FOCUS_PROGRESS_THRESHOLD;
+}
+
+export function getGrowPathFocusVisuals(
+  selectedCardId: GrowPathCardId,
+): Record<GrowPathCardId, GrowPathFocusCardVisual> {
+  return GROW_PATH_CARD_IDS.reduce(
+    (visuals, cardId) => {
+      const isSelected = cardId === selectedCardId;
+
+      visuals[cardId] = {
+        isSelected,
+        opacity: isSelected ? 1 : GROW_PATH_BACKGROUND_OPACITY,
+        scale: isSelected ? GROW_PATH_FOCUS_SCALE : GROW_PATH_BACKGROUND_SCALE,
+        rotate: 0,
+        translateY: isSelected ? 0 : GROW_PATH_BACKGROUND_TRANSLATE_Y,
+        filter: isSelected ? 'none' : GROW_PATH_BACKGROUND_FILTER,
+        zIndex: isSelected ? GROW_PATH_FOCUS_Z_INDEX : GROW_PATH_BACKGROUND_Z_INDEX,
+        pointerEventsEnabled: isSelected,
+      };
+
+      return visuals;
+    },
+    {} as Record<GrowPathCardId, GrowPathFocusCardVisual>,
+  );
+}
+
+export function getGrowPathFocusWheelState(
+  selectedCardId: GrowPathCardId | null,
+): GrowPathFocusWheelState {
+  if (!selectedCardId) {
+    return {
+      nextSelectedCardId: null,
+      shouldPreventScroll: false,
+    };
+  }
+
+  return {
+    nextSelectedCardId: null,
+    shouldPreventScroll: false,
   };
 }
 

@@ -2,12 +2,18 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  CTA_HINT_LEFT_BASE_PERCENT,
+  CTA_HINT_LEFT_MD_PERCENT,
+  CTA_HINT_OFFSET_X_PX,
   DEFAULT_VIDEO_SCROLL_INITIAL_STATE,
   DEFAULT_VIDEO_WHEEL_STEP,
+  getCtaHintLeftValue,
+  getSoftRepinScrollTop,
   getVideoScrollMountState,
   getVideoStateAfterActivation,
   getVideoStateAfterMobilePlaybackEnd,
   getVideoStateAfterPrompt,
+  shouldPinVideoSectionOnPrompt,
   getVideoVisualState,
   getVideoWheelState,
   shouldRepinAwaitingActivationOnScroll,
@@ -33,6 +39,7 @@ test('shows the CTA when the curtain video finishes naturally', () => {
 
   const visualState = getVideoVisualState(state);
   assert.equal(visualState.showCta, true);
+  assert.equal(visualState.showCtaPromptAnimation, true);
   assert.equal(visualState.loopOpacity, 1);
   assert.equal(visualState.overlayOpacity, 0);
   assert.equal(visualState.shouldPlayLoopVideo, false);
@@ -111,6 +118,26 @@ test('does not reset when reload happens outside the video section', () => {
 
   assert.equal(mountState.shouldResetScroll, false);
   assert.equal(mountState.targetScrollY, null);
+});
+
+test('pins the section when the activation prompt appears while the user is still inside the video section', () => {
+  const shouldPin = shouldPinVideoSectionOnPrompt({
+    scrollY: 3240,
+    sectionTop: 2800,
+    sectionHeight: 5040,
+  });
+
+  assert.equal(shouldPin, true);
+});
+
+test('does not pin the section when the activation prompt appears after the user has scrolled into the next section', () => {
+  const shouldPin = shouldPinVideoSectionOnPrompt({
+    scrollY: 7900,
+    sectionTop: 2800,
+    sectionHeight: 5040,
+  });
+
+  assert.equal(shouldPin, false);
 });
 
 test('advances the push-in animation while scrubbing on desktop wheel input', () => {
@@ -230,11 +257,56 @@ test('re-pins the section when awaiting activation starts drifting downward', ()
       scrubProgress: 0,
     },
     sectionTop: 2800,
+    sectionHeight: 5040,
     previousScrollY: 2800,
     scrollY: 2860,
   });
 
   assert.equal(shouldRepin, true);
+});
+
+test('does not re-pin when awaiting activation has already scrolled below the video section', () => {
+  const shouldRepin = shouldRepinAwaitingActivationOnScroll({
+    state: {
+      phase: 'awaitingActivation',
+      scrubProgress: 0,
+    },
+    sectionTop: 2800,
+    sectionHeight: 5040,
+    previousScrollY: 7890,
+    scrollY: 7900,
+  });
+
+  assert.equal(shouldRepin, false);
+});
+
+test('does not re-pin when awaiting activation only drifts downward within the tolerance band', () => {
+  const shouldRepin = shouldRepinAwaitingActivationOnScroll({
+    state: {
+      phase: 'awaitingActivation',
+      scrubProgress: 0,
+    },
+    sectionTop: 2800,
+    sectionHeight: 5040,
+    previousScrollY: 2800,
+    scrollY: 2808,
+  });
+
+  assert.equal(shouldRepin, false);
+});
+
+test('builds CTA hint left values from tunable percent and offset constants', () => {
+  assert.equal(getCtaHintLeftValue(CTA_HINT_LEFT_BASE_PERCENT, CTA_HINT_OFFSET_X_PX), 'calc(27.8% + 17px)');
+  assert.equal(getCtaHintLeftValue(CTA_HINT_LEFT_MD_PERCENT, CTA_HINT_OFFSET_X_PX), 'calc(27.6% + 17px)');
+});
+
+test('interpolates soft repin scroll positions with easing', () => {
+  assert.equal(getSoftRepinScrollTop(2860, 2800, 0), 2860);
+  assert.equal(getSoftRepinScrollTop(2860, 2800, 1), 2800);
+
+  const midPoint = getSoftRepinScrollTop(2860, 2800, 0.5);
+  assert.ok(midPoint < 2860);
+  assert.ok(midPoint > 2800);
 });
 
 test('does not re-pin when awaiting activation scrolls upward toward the previous section', () => {
@@ -244,6 +316,7 @@ test('does not re-pin when awaiting activation scrolls upward toward the previou
       scrubProgress: 0,
     },
     sectionTop: 2800,
+    sectionHeight: 5040,
     previousScrollY: 2860,
     scrollY: 2740,
   });
@@ -261,6 +334,7 @@ test('completed state keeps the final push-in frame visible', () => {
   assert.equal(visualState.overlayOpacity, 1);
   assert.equal(visualState.loopOpacity, 0);
   assert.equal(visualState.showCta, false);
+  assert.equal(visualState.showCtaPromptAnimation, false);
 });
 
 test('mobile autoplay marks the transition complete when the push-in video ends', () => {

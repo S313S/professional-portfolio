@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import * as growPathLogic from './GrowPathScrollSection.logic.ts';
+
 import {
   DEFAULT_GROW_PATH_SCROLL_STATE,
   DEFAULT_GROW_PATH_WHEEL_STEP,
@@ -121,6 +123,7 @@ test('does not capture wheel input before the grow-path section reaches the view
   const captureState = getGrowPathWheelCaptureState({
     scrollY: 980,
     sectionTop: 1000,
+    sectionHeight: 900,
     state: {
       progress: 0.32,
     },
@@ -186,5 +189,70 @@ test('does not capture wheel input once the user has already scrolled past the s
   assert.equal(captureState.targetScrollY, null);
   assert.deepEqual(captureState.nextState, {
     progress: 0.18,
+  });
+});
+
+test('focus mode stays disabled until the grow-path stack is fully expanded', () => {
+  assert.equal(typeof (growPathLogic as Record<string, unknown>).canFocusGrowPathCard, 'function');
+
+  const canFocusGrowPathCard = (
+    growPathLogic as unknown as {
+      canFocusGrowPathCard: (progress: number) => boolean;
+    }
+  ).canFocusGrowPathCard;
+
+  assert.equal(canFocusGrowPathCard(0.99), false);
+  assert.equal(canFocusGrowPathCard(1), true);
+});
+
+test('focus visuals elevate the selected card and soften every unselected card', () => {
+  assert.equal(typeof (growPathLogic as Record<string, unknown>).getGrowPathFocusVisuals, 'function');
+
+  const getGrowPathFocusVisuals = (
+    growPathLogic as unknown as {
+      getGrowPathFocusVisuals: (
+        selectedCardId: string,
+      ) => Record<string, Record<string, number | string | boolean>>;
+    }
+  ).getGrowPathFocusVisuals;
+
+  const visuals = getGrowPathFocusVisuals('growPath_02');
+  const selectedVisual = visuals.growPath_02;
+  const backgroundVisual = visuals.growPath_01;
+
+  assert.equal(selectedVisual.isSelected, true);
+  assert.equal(selectedVisual.scale, 1.14);
+  assert.equal(selectedVisual.rotate, 0);
+  assert.equal(selectedVisual.filter, 'none');
+  assert.equal(selectedVisual.zIndex, 30);
+
+  assert.equal(backgroundVisual.isSelected, false);
+  assert.equal(backgroundVisual.scale, 0.96);
+  assert.equal(backgroundVisual.translateY, 10);
+  assert.equal(backgroundVisual.opacity, 0.62);
+  assert.equal(backgroundVisual.filter, 'blur(4px) saturate(0.88) brightness(0.96)');
+  assert.equal(backgroundVisual.pointerEventsEnabled, false);
+});
+
+test('focus-wheel state closes the selected card and releases native scrolling', () => {
+  assert.equal(typeof (growPathLogic as Record<string, unknown>).getGrowPathFocusWheelState, 'function');
+
+  const getGrowPathFocusWheelState = (
+    growPathLogic as unknown as {
+      getGrowPathFocusWheelState: (selectedCardId: string | null) => {
+        nextSelectedCardId: string | null;
+        shouldPreventScroll: boolean;
+      };
+    }
+  ).getGrowPathFocusWheelState;
+
+  assert.deepEqual(getGrowPathFocusWheelState('growPath_03'), {
+    nextSelectedCardId: null,
+    shouldPreventScroll: false,
+  });
+
+  assert.deepEqual(getGrowPathFocusWheelState(null), {
+    nextSelectedCardId: null,
+    shouldPreventScroll: false,
   });
 });
