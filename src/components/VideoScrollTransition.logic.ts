@@ -115,12 +115,28 @@ export interface CompletedScrollResetInput {
   scrollY: number;
 }
 
+export interface AwaitingActivationRepinInput {
+  state: VideoScrollState;
+  sectionTop: number;
+  previousScrollY: number;
+  scrollY: number;
+}
+
 export function shouldResetCompletedVideoOnScroll({
   state,
   previousScrollY,
   scrollY,
 }: CompletedScrollResetInput): boolean {
   return state.phase === 'completed' && scrollY < previousScrollY;
+}
+
+export function shouldRepinAwaitingActivationOnScroll({
+  state,
+  sectionTop,
+  previousScrollY,
+  scrollY,
+}: AwaitingActivationRepinInput): boolean {
+  return state.phase === 'awaitingActivation' && scrollY > sectionTop && scrollY > previousScrollY;
 }
 
 export function getVideoWheelState({ state, deltaY, step }: VideoWheelInput): VideoWheelState {

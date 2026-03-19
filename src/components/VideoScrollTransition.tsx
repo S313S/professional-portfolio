@@ -10,6 +10,7 @@ import {
   getVideoVisualState,
   getVideoWheelState,
   isScrollWithinVideoSection,
+  shouldRepinAwaitingActivationOnScroll,
   shouldResetCompletedVideoOnScroll,
   type VideoNavigationType,
   type VideoScrollState,
@@ -159,6 +160,7 @@ export default function VideoScrollTransition() {
       return;
     }
 
+    pinSectionTop();
     loopVideoRef.current?.pause();
     setMobileAutoplay(false);
     commitVideoState(nextState);
@@ -328,6 +330,22 @@ export default function VideoScrollTransition() {
   useEffect(() => {
     const handleScroll = () => {
       const scrollY = window.scrollY;
+      const metrics = getSectionMetrics();
+
+      if (
+        metrics &&
+        shouldRepinAwaitingActivationOnScroll({
+          state: stateRef.current,
+          sectionTop: metrics.sectionTop,
+          previousScrollY: previousScrollYRef.current,
+          scrollY,
+        })
+      ) {
+        pinSectionTop();
+        previousScrollYRef.current = metrics.sectionTop;
+        syncReloadMarker();
+        return;
+      }
 
       if (
         shouldResetCompletedVideoOnScroll({
@@ -347,6 +365,20 @@ export default function VideoScrollTransition() {
     const handleWheel = (event: WheelEvent) => {
       const metrics = getSectionMetrics();
       if (!metrics) {
+        return;
+      }
+
+      const isAwaitingActivationDownward =
+        stateRef.current.phase === 'awaitingActivation' && event.deltaY > 0;
+      const isWithinVideoSection = isScrollWithinVideoSection(
+        window.scrollY,
+        metrics.sectionTop,
+        metrics.sectionHeight,
+      );
+
+      if (isAwaitingActivationDownward && isWithinVideoSection) {
+        event.preventDefault();
+        pinSectionTop();
         return;
       }
 
@@ -399,7 +431,14 @@ export default function VideoScrollTransition() {
         return;
       }
 
+      const deltaY = typeof lastY === 'number' ? lastY - currentY : 0;
       lastTouchYRef.current = currentY;
+
+      if (stateRef.current.phase === 'awaitingActivation' && deltaY > 0) {
+        event.preventDefault();
+        pinSectionTop();
+        return;
+      }
 
       const isPinnedAtSectionTop = Math.abs(window.scrollY - metrics.sectionTop) <= 2;
       if (!isPinnedAtSectionTop) {
@@ -411,7 +450,6 @@ export default function VideoScrollTransition() {
           return;
         }
 
-        const deltaY = lastY - currentY;
         const wheelState = getVideoWheelState({
           state: stateRef.current,
           deltaY,

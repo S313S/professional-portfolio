@@ -10,6 +10,7 @@ import {
   getVideoStateAfterPrompt,
   getVideoVisualState,
   getVideoWheelState,
+  shouldRepinAwaitingActivationOnScroll,
   shouldResetCompletedVideoOnScroll,
 } from './VideoScrollTransition.logic.ts';
 
@@ -220,6 +221,34 @@ test('does not reset the completed video flow while the page keeps moving downwa
   });
 
   assert.equal(shouldReset, false);
+});
+
+test('re-pins the section when awaiting activation starts drifting downward', () => {
+  const shouldRepin = shouldRepinAwaitingActivationOnScroll({
+    state: {
+      phase: 'awaitingActivation',
+      scrubProgress: 0,
+    },
+    sectionTop: 2800,
+    previousScrollY: 2800,
+    scrollY: 2860,
+  });
+
+  assert.equal(shouldRepin, true);
+});
+
+test('does not re-pin when awaiting activation scrolls upward toward the previous section', () => {
+  const shouldRepin = shouldRepinAwaitingActivationOnScroll({
+    state: {
+      phase: 'awaitingActivation',
+      scrubProgress: 0,
+    },
+    sectionTop: 2800,
+    previousScrollY: 2860,
+    scrollY: 2740,
+  });
+
+  assert.equal(shouldRepin, false);
 });
 
 test('completed state keeps the final push-in frame visible', () => {
