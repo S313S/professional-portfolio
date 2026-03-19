@@ -2,6 +2,7 @@ import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import About from './components/About';
 import ExperienceHero from './components/ExperienceHero';
+import GrowPathScrollSection from './components/GrowPathScrollSection';
 import VideoScrollTransition from './components/VideoScrollTransition';
 
 export default function App() {
@@ -13,6 +14,7 @@ export default function App() {
         <About />
         <ExperienceHero />
         <VideoScrollTransition />
+        <GrowPathScrollSection />
       </main>
 
       <footer className="py-8 text-center text-zinc-400 text-sm font-mono relative z-50">

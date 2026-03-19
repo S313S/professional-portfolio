@@ -294,12 +294,12 @@ export default function ExperienceHero() {
           <div className="absolute inset-0 bg-black/8" />
 
           {/* DIMMED BACKGROUND TEXT */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <div className="absolute inset-0">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="text-center text-white/20 blur-[2px] transition-all duration-300"
+              className="absolute left-1/2 top-1/2 w-max -translate-x-1/2 -translate-y-1/2 text-center text-white/20 blur-[2px] transition-all duration-300"
             >
               <h2 className="mb-4 text-6xl font-bold tracking-tighter md:text-8xl">EXPERIENCE</h2>
               <p className="text-xl font-light tracking-widest md:text-2xl">EXPLORE THE JOURNEY</p>
@@ -308,7 +308,7 @@ export default function ExperienceHero() {
 
           {/* MASKED REVEAL TEXT */}
           <div
-            className="absolute inset-0 flex flex-col items-center justify-center"
+            className="absolute inset-0"
             style={{
               WebkitMaskImage: spotlightMask,
               maskImage: spotlightMask,
@@ -322,15 +322,15 @@ export default function ExperienceHero() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="text-center text-white [text-shadow:0_2px_12px_rgba(255,255,255,0.45)] scale-[1.02]"
+              className="absolute left-1/2 top-1/2 w-max -translate-x-1/2 -translate-y-1/2 text-center text-white [text-shadow:0_2px_12px_rgba(255,255,255,0.45)] scale-[1.02]"
             >
               <h2 className="mb-4 text-6xl font-bold tracking-tighter md:text-8xl">EXPERIENCE</h2>
               <p className="text-xl font-light tracking-widest md:text-2xl">EXPLORE THE JOURNEY</p>
             </motion.div>
           </div>
 
-          <div className="absolute bottom-10 left-0 right-0 text-center pointer-events-auto">
-            <p className="animate-bounce text-sm text-white/70">Scroll gently to explore</p>
+          <div className="pointer-events-auto absolute bottom-10 left-1/2 -translate-x-1/2">
+            <p className="animate-bounce text-center text-sm text-white/70">Scroll gently to explore</p>
           </div>
         </motion.div>
 
