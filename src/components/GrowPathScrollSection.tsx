@@ -28,24 +28,24 @@ const DESKTOP_CARD_LAYOUTS: Record<
   }
 > = {
   growPath_01: {
-    left: '18%',
+    left: '17%',
     top: '58%',
-    width: 'clamp(180px, 19vw, 285px)',
+    width: 'clamp(230px, 23vw, 355px)',
   },
   growPath_02: {
-    left: '36%',
-    top: '42%',
-    width: 'clamp(180px, 18.5vw, 280px)',
+    left: '38%',
+    top: '48%',
+    width: 'clamp(250px, 25vw, 390px)',
   },
   growPath_03: {
-    left: '59%',
+    left: '61%',
     top: '50%',
-    width: 'clamp(195px, 20vw, 310px)',
+    width: 'clamp(240px, 24vw, 370px)',
   },
   growPath_04: {
-    left: '81%',
-    top: '46%',
-    width: 'clamp(155px, 16vw, 240px)',
+    left: '83%',
+    top: '53%',
+    width: 'clamp(220px, 22vw, 340px)',
   },
 };
 
