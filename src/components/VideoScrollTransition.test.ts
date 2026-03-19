@@ -296,8 +296,14 @@ test('does not re-pin when awaiting activation only drifts downward within the t
 });
 
 test('builds CTA hint left values from tunable percent and offset constants', () => {
-  assert.equal(getCtaHintLeftValue(CTA_HINT_LEFT_BASE_PERCENT, CTA_HINT_OFFSET_X_PX), 'calc(27.8% + 17px)');
-  assert.equal(getCtaHintLeftValue(CTA_HINT_LEFT_MD_PERCENT, CTA_HINT_OFFSET_X_PX), 'calc(27.6% + 17px)');
+  assert.equal(
+    getCtaHintLeftValue(CTA_HINT_LEFT_BASE_PERCENT, CTA_HINT_OFFSET_X_PX),
+    `calc(${CTA_HINT_LEFT_BASE_PERCENT}% + ${CTA_HINT_OFFSET_X_PX}px)`,
+  );
+  assert.equal(
+    getCtaHintLeftValue(CTA_HINT_LEFT_MD_PERCENT, CTA_HINT_OFFSET_X_PX),
+    `calc(${CTA_HINT_LEFT_MD_PERCENT}% + ${CTA_HINT_OFFSET_X_PX}px)`,
+  );
 });
 
 test('interpolates soft repin scroll positions with easing', () => {
