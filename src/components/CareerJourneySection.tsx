@@ -72,7 +72,7 @@ const CAREER_JOURNEY_CONFIG = {
     wrapper: {
       base: 'relative z-20 max-w-fit',
       lg: 'lg:absolute lg:left-[5%] lg:top-[4%]',
-      xl: 'xl:left-[4%] xl:top-[0.3%]',
+      xl: 'xl:left-[3%] xl:top-[0.2%]',
     },
     brandTitle: {
       base:
@@ -167,13 +167,13 @@ const CAREER_JOURNEY_CONFIG = {
       position: {
         base: 'right-[40%] top-[20%]',
         sm: 'sm:right-[8%] sm:top-[41%]',
-        lg: 'lg:right-[3%] lg:top-[20%]',
-        xl: 'xl:right-[-0.5%]',
+        lg: 'lg:right-[3%] lg:top-[15%]',
+        xl: 'xl:right-[-5%]',
       },
       width: {
-        base: 'w-[9rem]',
-        sm: 'sm:w-[10.5rem]',
-        lg: 'lg:w-[clamp(10rem,12vw,14.5rem)]',
+        base: 'w-[29rem]',
+        sm: 'sm:w-[40.5rem]',
+        lg: 'lg:w-[clamp(15rem,2vw,2rem)]',
       },
       motionClassName: 'career-journey-float-champion',
       dataKey: 'champion',
@@ -221,7 +221,7 @@ const CAREER_JOURNEY_CONFIG = {
   aigcBadgeLayout: {
     wrapper: {
       base:
-        'pointer-events-none absolute bottom-[7%] right-[3%] z-20 text-[3rem] font-black uppercase leading-none tracking-[-0.08em] text-transparent opacity-80',
+        'pointer-events-none absolute bottom-[7%] right-[3%] z-20 text-[3rem] font-black uppercase leading-none tracking-[-0.08em] text-transparent opacity-95',
       sm: 'sm:text-[3.8rem]',
       md: 'md:text-[4.6rem]',
       lg: 'lg:bottom-[-3%] lg:right-[4%] lg:text-[clamp(5rem,7vw,7.8rem)]',
