@@ -1,0 +1,22 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { renderToStaticMarkup } from 'react-dom/server';
+
+import CareerJourneySection from './CareerJourneySection';
+
+test('renders the career journey poster content and decorative assets', () => {
+  const markup = renderToStaticMarkup(<CareerJourneySection />);
+
+  assert.match(markup, /CAREER JOURNEY/);
+  assert.match(markup, /FROM CHANCE/);
+  assert.match(markup, /TO CHOICE/);
+  assert.match(markup, /I entered my first formal role with luck/);
+  assert.match(markup, /\/images\/career_role\.png/);
+  assert.match(markup, /\/images\/career_icon_Cross-border e-commerce\.png/);
+  assert.match(markup, /\/images\/career_icon_socialMedia\.png/);
+  assert.match(markup, /\/images\/career_icon_champion\.png/);
+  assert.match(markup, />AIGC</);
+  assert.match(markup, /data-career-block="content"/);
+  assert.match(markup, /data-career-block="title"/);
+  assert.match(markup, /data-career-card="social"/);
+});

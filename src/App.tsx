@@ -4,6 +4,7 @@ import About from './components/About';
 import ExperienceHero from './components/ExperienceHero';
 import GrowPathScrollSection from './components/GrowPathScrollSection';
 import VideoScrollTransition from './components/VideoScrollTransition';
+import CareerJourneySection from './components/CareerJourneySection';
 
 export default function App() {
   return (
@@ -15,6 +16,7 @@ export default function App() {
         <ExperienceHero />
         <VideoScrollTransition />
         <GrowPathScrollSection />
+        <CareerJourneySection />
       </main>
 
       <footer className="py-8 text-center text-zinc-400 text-sm font-mono relative z-50">

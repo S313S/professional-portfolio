@@ -73,6 +73,89 @@
   }
 }
 
+.career-journey-role-wrap,
+.career-journey-float-slow,
+.career-journey-float-fast,
+.career-journey-float-champion,
+.career-journey-float-gold {
+  will-change: transform;
+}
+
+@keyframes career-journey-role-drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  50% {
+    transform: translate3d(0, -10px, 0);
+  }
+}
+
+@keyframes career-journey-float-slow {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(-2deg);
+  }
+
+  50% {
+    transform: translate3d(0, -8px, 0) rotate(1deg);
+  }
+}
+
+@keyframes career-journey-float-fast {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(1deg);
+  }
+
+  50% {
+    transform: translate3d(0, -12px, 0) rotate(-1.5deg);
+  }
+}
+
+@keyframes career-journey-float-gold {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  50% {
+    transform: translate3d(0, -6px, 0);
+  }
+}
+
+@keyframes career-journey-float-champion {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(-1.4deg);
+  }
+
+  50% {
+    transform: translate3d(0, -7px, 0) rotate(0.8deg);
+  }
+}
+
+.career-journey-role-drift {
+  animation: career-journey-role-drift 6.4s ease-in-out infinite;
+}
+
+.career-journey-float-slow {
+  animation: career-journey-float-slow 7.2s ease-in-out infinite;
+}
+
+.career-journey-float-fast {
+  animation: career-journey-float-fast 6s ease-in-out infinite;
+}
+
+.career-journey-float-champion {
+  animation: career-journey-float-champion 7.4s ease-in-out infinite;
+}
+
+.career-journey-float-gold {
+  animation: career-journey-float-gold 6.6s ease-in-out infinite;
+}
+
 .video-cta-prompt-button {
   will-change: auto;
 }
@@ -93,6 +176,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .career-journey-role-drift,
+  .career-journey-float-slow,
+  .career-journey-float-fast,
+  .career-journey-float-champion,
+  .career-journey-float-gold,
   .video-cta-prompt-button,
   .video-cta-prompt-icon,
   .video-cta-prompt-text {
