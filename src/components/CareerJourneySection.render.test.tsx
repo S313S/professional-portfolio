@@ -16,6 +16,7 @@ test('renders the career journey poster content and decorative assets', () => {
   assert.match(markup, /\/images\/career_icon_socialMedia\.png/);
   assert.match(markup, /\/images\/career_icon_champion\.png/);
   assert.match(markup, />AIGC</);
+  assert.match(markup, /data-career-block="brand"/);
   assert.match(markup, /data-career-block="content"/);
   assert.match(markup, /data-career-block="title"/);
   assert.match(markup, /data-career-block="role"/);
@@ -23,4 +24,6 @@ test('renders the career journey poster content and decorative assets', () => {
   assert.match(markup, /data-career-card="champion"/);
   assert.match(markup, /data-career-card="commerce"/);
   assert.match(markup, /data-career-card="social"/);
+  assert.match(markup, /font-family:&quot;Cormorant Garamond&quot;, serif/);
+  assert.match(markup, /font-family:&quot;Manrope&quot;, sans-serif/);
 });

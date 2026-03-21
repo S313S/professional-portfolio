@@ -66,20 +66,29 @@ const CAREER_JOURNEY_CONFIG = {
   },
 
   /* 顶部左上角品牌区。
-     想调 XIAOCI 和 Career Journey 的位置、字号，就改这里。 */
+     想调这整块的位置，改 wrapper 里的 left / top。
+     想单独改 XIAOCI 或副标题的字体，改各自 style.fontFamily。 */
   brandLayout: {
     wrapper: {
       base: 'relative z-20 max-w-fit',
+      lg: 'lg:absolute lg:left-[5%] lg:top-[4%]',
+      xl: 'xl:left-[4%] xl:top-[0.3%]',
     },
     brandTitle: {
       base:
         'font-serif text-[2rem] font-semibold uppercase tracking-[-0.05em] text-[#1d1511]',
       sm: 'sm:text-[2.4rem]',
-      lg: 'lg:text-[2.8rem]',
+      lg: 'lg:text-[1.49rem]',
+      style: {
+        fontFamily: '"Cormorant Garamond", serif',
+      } satisfies CSSProperties,
     },
     subtitle: {
       base: '-mt-2 text-base font-semibold tracking-[-0.03em] text-[#1f1713]',
-      sm: 'sm:text-[1.35rem]',
+      sm: 'sm:text-[1.0rem]',
+      style: {
+        fontFamily: '"Manrope", sans-serif',
+      } satisfies CSSProperties,
     },
   },
 
@@ -92,7 +101,7 @@ const CAREER_JOURNEY_CONFIG = {
       base: 'relative z-20 max-w-[34rem]',
       md: 'md:pt-10',
       lg: 'lg:absolute lg:left-[5%] lg:top-[17%] lg:w-[39%] lg:max-w-[38rem]',
-      xl: 'xl:left-[4%] xl:top-[3%] xl:w-[37%]',
+      xl: 'xl:left-[4%] xl:top-[15%] xl:w-[37%]',
     },
     eyebrowRow: {
       base:
@@ -158,8 +167,8 @@ const CAREER_JOURNEY_CONFIG = {
       position: {
         base: 'right-[40%] top-[20%]',
         sm: 'sm:right-[8%] sm:top-[41%]',
-        lg: 'lg:right-[3%] lg:top-[2%]',
-        xl: 'xl:right-[-2%]',
+        lg: 'lg:right-[3%] lg:top-[20%]',
+        xl: 'xl:right-[-0.5%]',
       },
       width: {
         base: 'w-[9rem]',
@@ -174,7 +183,7 @@ const CAREER_JOURNEY_CONFIG = {
       position: {
         base: 'bottom-[9%] left-[4%]',
         sm: 'sm:bottom-[8%] sm:left-[6%]',
-        lg: 'lg:bottom-[2%] lg:left-[7%]',
+        lg: 'lg:bottom-[-1%] lg:left-[7%]',
         xl: 'xl:left-[-2%]',
       },
       width: {
@@ -190,7 +199,7 @@ const CAREER_JOURNEY_CONFIG = {
       position: {
         base: 'bottom-[18%] right-[4%]',
         sm: 'sm:bottom-[16%] sm:right-[8%]',
-        lg: 'lg:bottom-[24%] lg:right-[16.5%]',
+        lg: 'lg:bottom-[14%] lg:right-[16.5%]',
         xl: 'xl:right-[48%]',
       },
       width: {
@@ -311,15 +320,22 @@ export default function CareerJourneySection() {
 
       <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-[1600px] flex-col px-5 pb-10 pt-6 sm:px-8 md:px-10 lg:px-12 xl:px-16">
         <header
+          data-career-block="brand"
           className={joinClasses(
             getResponsiveClasses(brandLayout.wrapper),
             `transition-all duration-[1100ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${revealClassName}`,
           )}
         >
-          <p className={getResponsiveClasses(brandLayout.brandTitle)}>
+          <p
+            className={getResponsiveClasses(brandLayout.brandTitle)}
+            style={brandLayout.brandTitle.style}
+          >
             {text.brand}
           </p>
-          <p className={getResponsiveClasses(brandLayout.subtitle)}>
+          <p
+            className={getResponsiveClasses(brandLayout.subtitle)}
+            style={brandLayout.subtitle.style}
+          >
             {text.subtitle}
           </p>
         </header>
