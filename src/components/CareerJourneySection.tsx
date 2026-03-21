@@ -1,8 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
-
-const CAREER_TITLE_LINES = ['FROM CHANCE', 'TO CHOICE'] as const;
-const CAREER_BODY =
-  'I entered my first formal role with luck, reached the AI wave at a major turning point, then learned the hard way that leaving the spotlight did not guarantee clarity. Through setbacks, misjudgments, and difficult transitions, I kept building, sharpening my work, my communication, and my sense of direction.';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 
 const CAREER_ASSETS = {
   background: '/images/career_bg.png',
@@ -14,83 +10,224 @@ const CAREER_ASSETS = {
 
 const reducedMotionQuery = '(prefers-reduced-motion: reduce)';
 
+type ResponsiveClassGroup = {
+  base: string;
+  sm?: string;
+  md?: string;
+  lg?: string;
+  xl?: string;
+};
+
 type DecorativeLayout = {
   position: {
     base: string;
     sm?: string;
+    md?: string;
     lg?: string;
     xl?: string;
   };
   width: {
     base: string;
     sm?: string;
+    md?: string;
     lg?: string;
     xl?: string;
   };
   motionClassName: string;
+  dataKey: 'champion' | 'commerce' | 'social';
 };
 
 const joinClasses = (...classNames: Array<string | false | null | undefined>) =>
   classNames.filter(Boolean).join(' ');
 
-/* 这三组配置专门给装饰元素调位置用。
-   调整规则：
-   - 手机优先改 base / sm
-   - 桌面优先改 lg / xl
-   - 想左右移动就改 left/right
-   - 想上下移动就改 top/bottom
-   - 想改大小只改 width */
-const DECORATIVE_LAYOUTS: Record<'championCard' | 'commerceIcon' | 'socialMediaIcon', DecorativeLayout> = {
-  championCard: {
-    /* 冠军卡：贴在右上视觉区。
-       现在桌面主要由 lg/right + lg/top 控制。 */
-    position: {
-      base: 'right-[40%] top-[20%]',
-      sm: 'sm:right-[8%] sm:top-[41%]',
-      lg: 'lg:right-[3%] lg:top-[2%]',
-      xl: 'xl:right-[-2%]',
-    },
-    width: {
-      base: 'w-[9rem]',
-      sm: 'sm:w-[10.5rem]',
-      lg: 'lg:w-[clamp(10rem,12vw,14.5rem)]',
-    },
-    motionClassName: 'career-journey-float-champion',
+const getResponsiveClasses = (group: ResponsiveClassGroup) =>
+  joinClasses(group.base, group.sm, group.md, group.lg, group.xl);
+
+/* 这一页的所有“可调参数”都集中在这里。
+   后面如果你要微调版式，优先只改这个配置对象，不改下面 JSX 布局。 */
+const CAREER_JOURNEY_CONFIG = {
+  /* 参数读法：
+     - base / sm / md / lg / xl：分别对应默认、sm、md、lg、xl 断点
+     - wrapper：控制一个整块区域的位置、宽度、层级
+     - title / body / subtitle：控制文字字号、字距、行高、边距
+     - position：主要改 left/right/top/bottom
+     - width：主要改 w-[...] 或 max-w-[...]
+     - motionClassName：控制浮动动画类名；不想动效时可以留空 */
+
+  /* 文案区：品牌名、副标题、眉标题、大标题、正文、右下角 AIGC 字样都在这里改。 */
+  text: {
+    brand: 'XIAOCI',
+    subtitle: 'Career Journey',
+    eyebrow: 'CAREER JOURNEY',
+    titleLines: ['FROM CHANCE', 'TO CHOICE'],
+    body:
+      'I entered my first formal role with luck, reached the AI wave at a major turning point, then learned the hard way that leaving the spotlight did not guarantee clarity. Through setbacks, misjudgments, and difficult transitions, I kept building, sharpening my work, my communication, and my sense of direction.',
+    aigcBadge: 'AIGC',
   },
-  commerceIcon: {
-    /* 地球图标：放在左侧文案区下方。
-       现在桌面主要由 lg/left + lg/bottom 控制。
-       xl值越小越靠左，xl越到越靠右 */
-    position: {
-      base: 'bottom-[9%] left-[4%]',
-      sm: 'sm:bottom-[8%] sm:left-[6%]',
-      lg: 'lg:bottom-[-8%] lg:left-[7%]',
-      xl: 'xl:left-[3%]',
+
+  /* 顶部左上角品牌区。
+     想调 XIAOCI 和 Career Journey 的位置、字号，就改这里。 */
+  brandLayout: {
+    wrapper: {
+      base: 'relative z-20 max-w-fit',
     },
-    width: {
-      base: 'w-[6rem]',
-      sm: 'sm:w-[7rem]',
-      lg: 'lg:w-[clamp(7rem,8vw,9rem)]',
+    brandTitle: {
+      base:
+        'font-serif text-[2rem] font-semibold uppercase tracking-[-0.05em] text-[#1d1511]',
+      sm: 'sm:text-[2.4rem]',
+      lg: 'lg:text-[2.8rem]',
     },
-    motionClassName: 'career-journey-float-slow',
+    subtitle: {
+      base: '-mt-2 text-base font-semibold tracking-[-0.03em] text-[#1f1713]',
+      sm: 'sm:text-[1.35rem]',
+    },
   },
-  socialMediaIcon: {
-    /* 社媒卡：压在人物图左下附近。
-       现在桌面主要由 lg/right + lg/bottom 控制。 */
-    position: {
-      base: 'bottom-[18%] right-[4%]',
-      sm: 'sm:bottom-[16%] sm:right-[8%]',
-      lg: 'lg:bottom-[10%] lg:right-[16.5%]',
-      xl: 'xl:right-[48%]',
+
+  /* 左侧主内容区。
+     改位置看 wrapper，改眉标题/主标题/正文大小看对应 class。
+     如果想把整块内容整体左移/右移，优先改 lg:left / xl:left；
+     如果想把整块内容整体上移/下移，优先改 lg:top / xl:top。 */
+  contentLayout: {
+    wrapper: {
+      base: 'relative z-20 max-w-[34rem]',
+      md: 'md:pt-10',
+      lg: 'lg:absolute lg:left-[5%] lg:top-[17%] lg:w-[39%] lg:max-w-[38rem]',
+      xl: 'xl:left-[4%] xl:top-[3%] xl:w-[37%]',
     },
-    width: {
-      base: 'w-[7.4rem]',
-      sm: 'sm:w-[8.4rem]',
-      lg: 'lg:w-[clamp(8.5rem,10.8vw,12.2rem)]',
+    eyebrowRow: {
+      base:
+        'mb-5 flex items-center gap-2 text-[0.78rem] font-semibold uppercase tracking-[0.16em] text-[#2e241d]',
+      sm: 'sm:text-[0.85rem]',
     },
-    motionClassName: 'career-journey-float-fast',
+    eyebrowArrow: {
+      base: 'text-[1rem] leading-none',
+    },
+    title: {
+      base:
+        'max-w-[12ch] font-sans text-[3.6rem] leading-[0.88] font-black tracking-[-0.08em] text-[#31251d]',
+      sm: 'sm:text-[4.6rem]',
+      md: 'md:text-[5.3rem]',
+      lg: 'lg:text-[clamp(4.8rem,6vw,7rem)]',
+    },
+    body: {
+      base: 'mt-6 max-w-[32rem] text-[1rem] leading-[1.35] text-[#2c221b]',
+      sm: 'sm:mt-7 sm:text-[1.08rem]',
+      md: 'md:max-w-[31rem]',
+      lg: 'lg:mt-8 lg:text-[clamp(1rem,1.2vw,1.35rem)]',
+    },
   },
-};
+
+  /* 右侧人物主图。
+     改人物图位置看 wrapper，改人物图大小看 image，改漂浮动画可改 motionClassName。
+     常用调整：
+     - 往左/右移动：改 lg:right、xl:right
+     - 往上/下移动：改 lg:bottom
+     - 变宽/变窄：改 lg:w、xl:w
+     - 最高高度限制：改 image.lg 里的 max-h */
+  roleLayout: {
+    wrapper: {
+      base: 'career-journey-role-wrap relative mx-auto mt-2 w-full max-w-[24rem]',
+      sm: 'sm:max-w-[27rem]',
+      md: 'md:max-w-[31rem]',
+      lg: 'lg:absolute lg:bottom-[4%] lg:right-[4%] lg:mt-0 lg:w-[46%] lg:max-w-none',
+      xl: 'xl:right-[6%] xl:w-[44%]',
+    },
+    shadow: {
+      base:
+        'absolute inset-x-[14%] bottom-[6%] h-[16%] rounded-[50%] bg-[radial-gradient(circle,rgba(63,41,24,0.4),rgba(63,41,24,0.16)_42%,transparent_74%)] blur-2xl',
+    },
+    image: {
+      base:
+        'relative z-10 h-auto w-full object-contain object-bottom drop-shadow-[0_24px_60px_rgba(44,24,10,0.32)]',
+      lg: 'lg:max-h-[78vh]',
+    },
+    motionClassName: 'career-journey-role-drift',
+  },
+
+  /* 三张装饰图片。
+     调整规则：
+     - 手机先看 base / sm
+     - 桌面先看 lg / xl
+     - 左右移动改 left/right
+     - 上下移动改 top/bottom
+     - 尺寸改 width
+     - 每张图的 dataKey 只是测试和定位锚点，不建议改 */
+  decorativeLayouts: {
+    championCard: {
+      /* 冠军卡：右上角小金卡。 */
+      position: {
+        base: 'right-[40%] top-[20%]',
+        sm: 'sm:right-[8%] sm:top-[41%]',
+        lg: 'lg:right-[3%] lg:top-[2%]',
+        xl: 'xl:right-[-2%]',
+      },
+      width: {
+        base: 'w-[9rem]',
+        sm: 'sm:w-[10.5rem]',
+        lg: 'lg:w-[clamp(10rem,12vw,14.5rem)]',
+      },
+      motionClassName: 'career-journey-float-champion',
+      dataKey: 'champion',
+    },
+    commerceIcon: {
+      /* 地球图：左下角跨境电商图标。 */
+      position: {
+        base: 'bottom-[9%] left-[4%]',
+        sm: 'sm:bottom-[8%] sm:left-[6%]',
+        lg: 'lg:bottom-[2%] lg:left-[7%]',
+        xl: 'xl:left-[-2%]',
+      },
+      width: {
+        base: 'w-[6rem]',
+        sm: 'sm:w-[7rem]',
+        lg: 'lg:w-[clamp(7rem,8vw,9rem)]',
+      },
+      motionClassName: 'career-journey-float-slow',
+      dataKey: 'commerce',
+    },
+    socialMediaIcon: {
+      /* 社媒图：靠近人物图左下区域的小图。 */
+      position: {
+        base: 'bottom-[18%] right-[4%]',
+        sm: 'sm:bottom-[16%] sm:right-[8%]',
+        lg: 'lg:bottom-[24%] lg:right-[16.5%]',
+        xl: 'xl:right-[48%]',
+      },
+      width: {
+        base: 'w-[7.4rem]',
+        sm: 'sm:w-[8.4rem]',
+        lg: 'lg:w-[clamp(8.5rem,10.8vw,12.2rem)]',
+      },
+      motionClassName: 'career-journey-float-fast',
+      dataKey: 'social',
+    },
+  } satisfies Record<'championCard' | 'commerceIcon' | 'socialMediaIcon', DecorativeLayout>,
+
+  /* 右下角 AIGC 金属字。
+     改位置看 wrapper，改字号也看 wrapper，改文案看 text.aigcBadge。
+     常用调整：
+     - 往左/右移动：改 right，lg:right-[8%]
+     - 往上/下移动：改 bottom
+     - 放大/缩小：改 text-[...] 或 clamp(...) */
+  aigcBadgeLayout: {
+    wrapper: {
+      base:
+        'pointer-events-none absolute bottom-[7%] right-[3%] z-20 text-[3rem] font-black uppercase leading-none tracking-[-0.08em] text-transparent opacity-80',
+      sm: 'sm:text-[3.8rem]',
+      md: 'md:text-[4.6rem]',
+      lg: 'lg:bottom-[-3%] lg:right-[4%] lg:text-[clamp(5rem,7vw,7.8rem)]',
+    },
+    motionClassName: 'career-journey-float-gold',
+    style: {
+      backgroundImage:
+        'linear-gradient(180deg, #f7e3a1 0%, #f0c86e 28%, #b97621 48%, #7f4d12 66%, #f4dd99 100%)',
+      WebkitBackgroundClip: 'text',
+      backgroundClip: 'text',
+      textShadow:
+        '0 2px 0 rgba(117, 73, 17, 0.38), 0 8px 18px rgba(108, 67, 21, 0.28), 0 0 1px rgba(255, 240, 190, 0.85)',
+    } satisfies CSSProperties,
+  },
+} as const;
 
 export default function CareerJourneySection() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -143,6 +280,14 @@ export default function CareerJourneySection() {
   const roleRevealClassName = isVisible
     ? 'translate-y-0 opacity-100 md:translate-y-0'
     : 'translate-y-10 opacity-0 md:translate-y-8';
+  const {
+    text,
+    brandLayout,
+    contentLayout,
+    roleLayout,
+    decorativeLayouts,
+    aigcBadgeLayout,
+  } = CAREER_JOURNEY_CONFIG;
 
   return (
     <section
@@ -166,126 +311,120 @@ export default function CareerJourneySection() {
 
       <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-[1600px] flex-col px-5 pb-10 pt-6 sm:px-8 md:px-10 lg:px-12 xl:px-16">
         <header
-          className={`relative z-20 max-w-fit transition-all duration-[1100ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${revealClassName}`}
+          className={joinClasses(
+            getResponsiveClasses(brandLayout.wrapper),
+            `transition-all duration-[1100ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${revealClassName}`,
+          )}
         >
-          <p className="font-serif text-[2rem] font-semibold uppercase tracking-[-0.05em] text-[#1d1511] sm:text-[2.4rem] lg:text-[2.8rem]">
-            XIAOCI
+          <p className={getResponsiveClasses(brandLayout.brandTitle)}>
+            {text.brand}
           </p>
-          <p className="-mt-2 text-base font-semibold tracking-[-0.03em] text-[#1f1713] sm:text-[1.35rem]">
-            Career Journey
+          <p className={getResponsiveClasses(brandLayout.subtitle)}>
+            {text.subtitle}
           </p>
         </header>
 
         <div className="relative z-10 flex flex-1 flex-col justify-between gap-10 pt-8 md:pt-10 lg:block lg:pt-0">
           <div
-            className={`relative z-20 max-w-[34rem] transition-all delay-100 duration-[1100ms] ease-[cubic-bezier(0.22,1,0.36,1)] md:pt-10 lg:absolute lg:left-[5%] lg:top-[17%] lg:w-[39%] lg:max-w-[38rem] xl:left-[6%] xl:top-[18%] xl:w-[37%] ${revealClassName}`}
+            data-career-block="content"
+            className={joinClasses(
+              getResponsiveClasses(contentLayout.wrapper),
+              `transition-all delay-100 duration-[1100ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${revealClassName}`,
+            )}
           >
-            <div className="mb-5 flex items-center gap-2 text-[0.78rem] font-semibold uppercase tracking-[0.16em] text-[#2e241d] sm:text-[0.85rem]">
-              <span aria-hidden="true" className="text-[1rem] leading-none">
+            <div className={getResponsiveClasses(contentLayout.eyebrowRow)}>
+              <span aria-hidden="true" className={getResponsiveClasses(contentLayout.eyebrowArrow)}>
                 ↗
               </span>
-              <span>CAREER JOURNEY</span>
+              <span>{text.eyebrow}</span>
             </div>
 
             <h2
               id="career-journey-title"
-              className="max-w-[12ch] font-sans text-[3.6rem] leading-[0.88] font-black tracking-[-0.08em] text-[#31251d] sm:text-[4.6rem] md:text-[5.3rem] lg:text-[clamp(4.8rem,6vw,7rem)]"
+              data-career-block="title"
+              className={getResponsiveClasses(contentLayout.title)}
             >
-              {CAREER_TITLE_LINES.map((line) => (
+              {text.titleLines.map((line) => (
                 <span key={line} className="block whitespace-nowrap">
                   {line}
                 </span>
               ))}
             </h2>
 
-            <p className="mt-6 max-w-[32rem] text-[1rem] leading-[1.35] text-[#2c221b] sm:mt-7 sm:text-[1.08rem] md:max-w-[31rem] lg:mt-8 lg:text-[clamp(1rem,1.2vw,1.35rem)]">
-              {CAREER_BODY}
+            <p className={getResponsiveClasses(contentLayout.body)}>
+              {text.body}
             </p>
           </div>
 
           <div
-            className={`career-journey-role-wrap relative mx-auto mt-2 w-full max-w-[24rem] transition-all delay-200 duration-[1200ms] ease-[cubic-bezier(0.22,1,0.36,1)] sm:max-w-[27rem] md:max-w-[31rem] lg:absolute lg:bottom-[4%] lg:right-[4%] lg:mt-0 lg:w-[46%] lg:max-w-none xl:right-[6%] xl:w-[44%] ${roleRevealClassName} ${prefersReducedMotion ? '' : 'career-journey-role-drift'
-              }`}
+            data-career-block="role"
+            className={joinClasses(
+              getResponsiveClasses(roleLayout.wrapper),
+              `transition-all delay-200 duration-[1200ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${roleRevealClassName}`,
+              prefersReducedMotion ? '' : roleLayout.motionClassName,
+            )}
           >
-            <div className="absolute inset-x-[14%] bottom-[6%] h-[16%] rounded-[50%] bg-[radial-gradient(circle,rgba(63,41,24,0.4),rgba(63,41,24,0.16)_42%,transparent_74%)] blur-2xl" />
+            <div className={getResponsiveClasses(roleLayout.shadow)} />
             <img
               src={CAREER_ASSETS.role}
               alt="A racing-suited figure looking toward the horizon at sunset"
-              className="relative z-10 h-auto w-full object-contain object-bottom drop-shadow-[0_24px_60px_rgba(44,24,10,0.32)] lg:max-h-[78vh]"
+              className={getResponsiveClasses(roleLayout.image)}
             />
           </div>
 
           <div className="pointer-events-none absolute inset-0 z-20">
-            {/* 冠军卡：具体位置参数已抽到文件顶部的 DECORATIVE_LAYOUTS.championCard。 */}
             <img
               src={CAREER_ASSETS.championCard}
               alt=""
               aria-hidden="true"
+              data-career-card={decorativeLayouts.championCard.dataKey}
               className={joinClasses(
                 'absolute rounded-[0.2rem] shadow-[0_18px_38px_rgba(82,55,18,0.2)]',
-                DECORATIVE_LAYOUTS.championCard.position.base,
-                DECORATIVE_LAYOUTS.championCard.position.sm,
-                DECORATIVE_LAYOUTS.championCard.position.lg,
-                DECORATIVE_LAYOUTS.championCard.position.xl,
-                DECORATIVE_LAYOUTS.championCard.width.base,
-                DECORATIVE_LAYOUTS.championCard.width.sm,
-                DECORATIVE_LAYOUTS.championCard.width.lg,
-                DECORATIVE_LAYOUTS.championCard.width.xl,
-                prefersReducedMotion ? 'opacity-95' : `${DECORATIVE_LAYOUTS.championCard.motionClassName} opacity-95`,
+                getResponsiveClasses(decorativeLayouts.championCard.position),
+                getResponsiveClasses(decorativeLayouts.championCard.width),
+                prefersReducedMotion
+                  ? 'opacity-95'
+                  : `${decorativeLayouts.championCard.motionClassName} opacity-95`,
               )}
             />
-            {/* 地球图标：具体位置参数已抽到文件顶部的 DECORATIVE_LAYOUTS.commerceIcon。 */}
             <img
               src={CAREER_ASSETS.commerceIcon}
               alt=""
               aria-hidden="true"
+              data-career-card={decorativeLayouts.commerceIcon.dataKey}
               className={joinClasses(
                 'absolute drop-shadow-[0_14px_24px_rgba(67,52,38,0.16)]',
-                DECORATIVE_LAYOUTS.commerceIcon.position.base,
-                DECORATIVE_LAYOUTS.commerceIcon.position.sm,
-                DECORATIVE_LAYOUTS.commerceIcon.position.lg,
-                DECORATIVE_LAYOUTS.commerceIcon.position.xl,
-                DECORATIVE_LAYOUTS.commerceIcon.width.base,
-                DECORATIVE_LAYOUTS.commerceIcon.width.sm,
-                DECORATIVE_LAYOUTS.commerceIcon.width.lg,
-                DECORATIVE_LAYOUTS.commerceIcon.width.xl,
-                prefersReducedMotion ? '' : DECORATIVE_LAYOUTS.commerceIcon.motionClassName,
+                getResponsiveClasses(decorativeLayouts.commerceIcon.position),
+                getResponsiveClasses(decorativeLayouts.commerceIcon.width),
+                prefersReducedMotion ? '' : decorativeLayouts.commerceIcon.motionClassName,
               )}
             />
-            {/* 社媒卡：具体位置参数已抽到文件顶部的 DECORATIVE_LAYOUTS.socialMediaIcon。 */}
             <img
               src={CAREER_ASSETS.socialMediaIcon}
               alt=""
               aria-hidden="true"
+              data-career-card={decorativeLayouts.socialMediaIcon.dataKey}
               className={joinClasses(
                 'absolute drop-shadow-[0_18px_30px_rgba(67,52,38,0.16)]',
-                DECORATIVE_LAYOUTS.socialMediaIcon.position.base,
-                DECORATIVE_LAYOUTS.socialMediaIcon.position.sm,
-                DECORATIVE_LAYOUTS.socialMediaIcon.position.lg,
-                DECORATIVE_LAYOUTS.socialMediaIcon.position.xl,
-                DECORATIVE_LAYOUTS.socialMediaIcon.width.base,
-                DECORATIVE_LAYOUTS.socialMediaIcon.width.sm,
-                DECORATIVE_LAYOUTS.socialMediaIcon.width.lg,
-                DECORATIVE_LAYOUTS.socialMediaIcon.width.xl,
-                prefersReducedMotion ? 'opacity-95' : `${DECORATIVE_LAYOUTS.socialMediaIcon.motionClassName} opacity-95`,
+                getResponsiveClasses(decorativeLayouts.socialMediaIcon.position),
+                getResponsiveClasses(decorativeLayouts.socialMediaIcon.width),
+                prefersReducedMotion
+                  ? 'opacity-95'
+                  : `${decorativeLayouts.socialMediaIcon.motionClassName} opacity-95`,
               )}
             />
           </div>
 
           <div
+            data-career-block="aigc"
             aria-hidden="true"
-            className={`pointer-events-none absolute bottom-[7%] right-[3%] z-20 text-[3rem] font-black uppercase leading-none tracking-[-0.08em] text-transparent opacity-80 sm:text-[3.8rem] md:text-[4.6rem] lg:bottom-[6%] lg:right-[4%] lg:text-[clamp(5rem,7vw,7.8rem)] ${prefersReducedMotion ? '' : 'career-journey-float-gold'
-              }`}
-            style={{
-              backgroundImage:
-                'linear-gradient(180deg, #f7e3a1 0%, #f0c86e 28%, #b97621 48%, #7f4d12 66%, #f4dd99 100%)',
-              WebkitBackgroundClip: 'text',
-              backgroundClip: 'text',
-              textShadow:
-                '0 2px 0 rgba(117, 73, 17, 0.38), 0 8px 18px rgba(108, 67, 21, 0.28), 0 0 1px rgba(255, 240, 190, 0.85)',
-            }}
+            className={joinClasses(
+              getResponsiveClasses(aigcBadgeLayout.wrapper),
+              prefersReducedMotion ? '' : aigcBadgeLayout.motionClassName,
+            )}
+            style={aigcBadgeLayout.style}
           >
-            AIGC
+            {text.aigcBadge}
           </div>
         </div>
       </div>

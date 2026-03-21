@@ -18,5 +18,9 @@ test('renders the career journey poster content and decorative assets', () => {
   assert.match(markup, />AIGC</);
   assert.match(markup, /data-career-block="content"/);
   assert.match(markup, /data-career-block="title"/);
+  assert.match(markup, /data-career-block="role"/);
+  assert.match(markup, /data-career-block="aigc"/);
+  assert.match(markup, /data-career-card="champion"/);
+  assert.match(markup, /data-career-card="commerce"/);
   assert.match(markup, /data-career-card="social"/);
 });
