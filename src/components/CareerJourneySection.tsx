@@ -76,7 +76,7 @@ const CAREER_JOURNEY_CONFIG = {
     },
     brandTitle: {
       base:
-        'font-serif text-[2rem] font-semibold uppercase tracking-[-0.05em] text-[#1d1511]',
+        'font-serif text-[2rem] font-semibold tracking-[-0.05em] text-[#1d1511]',
       sm: 'sm:text-[2.4rem]',
       lg: 'lg:text-[1.49rem]',
       style: {
