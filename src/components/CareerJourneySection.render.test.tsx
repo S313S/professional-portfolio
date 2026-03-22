@@ -7,6 +7,7 @@ import CareerJourneySection from './CareerJourneySection';
 test('renders the career journey poster content and decorative assets', () => {
   const markup = renderToStaticMarkup(<CareerJourneySection />);
 
+  assert.match(markup, /id="career-journey-section"/);
   assert.match(markup, /CAREER JOURNEY/);
   assert.match(markup, /FROM CHANCE/);
   assert.match(markup, /TO CHOICE/);

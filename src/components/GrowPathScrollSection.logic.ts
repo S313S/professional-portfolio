@@ -55,6 +55,22 @@ export interface GrowPathFocusWheelState {
   shouldPreventScroll: boolean;
 }
 
+export interface GrowPathCareerSnapInput {
+  scrollY: number;
+  lastScrollY: number;
+  growPathTop: number;
+  growPathHeight: number;
+  careerTop: number;
+  viewportHeight: number;
+  growPathProgress: number;
+  hasSnappedOnCurrentExit: boolean;
+}
+
+export interface GrowPathCareerSnapState {
+  shouldSnap: boolean;
+  shouldResetLatch: boolean;
+}
+
 export const GROW_PATH_CARD_IDS: GrowPathCardId[] = [
   'growPath_01',
   'growPath_02',
@@ -76,6 +92,10 @@ const GROW_PATH_BACKGROUND_OPACITY = 0.62;
 const GROW_PATH_BACKGROUND_FILTER = 'blur(4px) saturate(0.88) brightness(0.96)';
 const GROW_PATH_FOCUS_Z_INDEX = 30;
 const GROW_PATH_BACKGROUND_Z_INDEX = 6;
+const CAREER_JOURNEY_SNAP_TOP_OFFSET_PX = 80;
+const SNAP_ENTRY_MAX_RATIO = 0.28;
+const SNAP_ENTRY_MIN_RATIO = -0.12;
+const SNAP_RESET_ABOVE_RATIO = 0.6;
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
@@ -212,6 +232,54 @@ export function getGrowPathWheelCaptureState({
 
 export function canFocusGrowPathCard(progress: number) {
   return clamp(progress, 0, 1) >= GROW_PATH_FOCUS_PROGRESS_THRESHOLD;
+}
+
+export function getGrowPathCareerSnapTargetY(careerTop: number) {
+  return Math.max(Math.round(careerTop - CAREER_JOURNEY_SNAP_TOP_OFFSET_PX), 0);
+}
+
+export function getGrowPathCareerSnapState({
+  scrollY,
+  lastScrollY,
+  growPathTop,
+  growPathHeight,
+  careerTop,
+  viewportHeight,
+  growPathProgress,
+  hasSnappedOnCurrentExit,
+}: GrowPathCareerSnapInput): GrowPathCareerSnapState {
+  if (viewportHeight <= 0 || growPathHeight <= 0) {
+    return {
+      shouldSnap: false,
+      shouldResetLatch: false,
+    };
+  }
+
+  const growPathBottom = growPathTop + growPathHeight;
+  const shouldResetLatch =
+    hasSnappedOnCurrentExit &&
+    (scrollY <= careerTop - viewportHeight * SNAP_RESET_ABOVE_RATIO || scrollY >= growPathBottom + viewportHeight);
+
+  if (
+    hasSnappedOnCurrentExit ||
+    scrollY <= lastScrollY ||
+    clamp(growPathProgress, 0, 1) < 1
+  ) {
+    return {
+      shouldSnap: false,
+      shouldResetLatch,
+    };
+  }
+
+  const topOffset = careerTop - scrollY;
+  const shouldSnap =
+    topOffset <= viewportHeight * SNAP_ENTRY_MAX_RATIO &&
+    topOffset >= viewportHeight * SNAP_ENTRY_MIN_RATIO;
+
+  return {
+    shouldSnap,
+    shouldResetLatch,
+  };
 }
 
 export function getGrowPathFocusVisuals(

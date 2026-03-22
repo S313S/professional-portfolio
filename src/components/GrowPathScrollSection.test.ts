@@ -7,6 +7,8 @@ import {
   DEFAULT_GROW_PATH_SCROLL_STATE,
   DEFAULT_GROW_PATH_WHEEL_STEP,
   GROW_PATH_CARD_IDS,
+  getGrowPathCareerSnapState,
+  getGrowPathCareerSnapTargetY,
   getGrowPathCardVisuals,
   getGrowPathWheelCaptureState,
   getGrowPathWheelState,
@@ -117,6 +119,88 @@ test('completed state releases native downward scrolling', () => {
   assert.deepEqual(wheelState.nextState, {
     progress: 1,
   });
+});
+
+test('completed grow-path state requests a downward snap when the career journey section enters the snap window', () => {
+  const snapState = getGrowPathCareerSnapState({
+    scrollY: 1660,
+    lastScrollY: 1600,
+    growPathTop: 1000,
+    growPathHeight: 900,
+    careerTop: 1900,
+    viewportHeight: 1000,
+    growPathProgress: 1,
+    hasSnappedOnCurrentExit: false,
+  });
+
+  assert.equal(snapState.shouldSnap, true);
+  assert.equal(snapState.shouldResetLatch, false);
+});
+
+test('grow-path snap stays disabled until the card stack is fully expanded', () => {
+  const snapState = getGrowPathCareerSnapState({
+    scrollY: 1660,
+    lastScrollY: 1600,
+    growPathTop: 1000,
+    growPathHeight: 900,
+    careerTop: 1900,
+    viewportHeight: 1000,
+    growPathProgress: 0.92,
+    hasSnappedOnCurrentExit: false,
+  });
+
+  assert.equal(snapState.shouldSnap, false);
+});
+
+test('grow-path snap does not trigger while scrolling upward', () => {
+  const snapState = getGrowPathCareerSnapState({
+    scrollY: 1600,
+    lastScrollY: 1660,
+    growPathTop: 1000,
+    growPathHeight: 900,
+    careerTop: 1900,
+    viewportHeight: 1000,
+    growPathProgress: 1,
+    hasSnappedOnCurrentExit: false,
+  });
+
+  assert.equal(snapState.shouldSnap, false);
+});
+
+test('grow-path snap does not retrigger after the current exit already snapped once', () => {
+  const snapState = getGrowPathCareerSnapState({
+    scrollY: 1660,
+    lastScrollY: 1600,
+    growPathTop: 1000,
+    growPathHeight: 900,
+    careerTop: 1900,
+    viewportHeight: 1000,
+    growPathProgress: 1,
+    hasSnappedOnCurrentExit: true,
+  });
+
+  assert.equal(snapState.shouldSnap, false);
+});
+
+test('grow-path snap latch resets after scrolling back above the career journey entry band', () => {
+  const snapState = getGrowPathCareerSnapState({
+    scrollY: 1240,
+    lastScrollY: 1320,
+    growPathTop: 1000,
+    growPathHeight: 900,
+    careerTop: 1900,
+    viewportHeight: 1000,
+    growPathProgress: 1,
+    hasSnappedOnCurrentExit: true,
+  });
+
+  assert.equal(snapState.shouldSnap, false);
+  assert.equal(snapState.shouldResetLatch, true);
+});
+
+test('career journey snap target aligns to the section top', () => {
+  assert.equal(getGrowPathCareerSnapTargetY(1900), 1820);
+  assert.equal(getGrowPathCareerSnapTargetY(-20), 0);
 });
 
 test('does not capture wheel input before the grow-path section reaches the viewport top', () => {

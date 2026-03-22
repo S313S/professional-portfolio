@@ -301,6 +301,7 @@ export default function CareerJourneySection() {
   return (
     <section
       ref={sectionRef}
+      id="career-journey-section"
       aria-labelledby="career-journey-title"
       className="relative isolate min-h-[100dvh] overflow-hidden bg-[#f6eee1] text-[#2b2018]"
     >
