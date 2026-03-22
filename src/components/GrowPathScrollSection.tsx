@@ -18,6 +18,7 @@ import {
 
 const MOBILE_MEDIA_QUERY = '(max-width: 767px), (pointer: coarse)';
 const CAREER_JOURNEY_SECTION_ID = 'career-journey-section';
+const CAREER_JOURNEY_SNAP_LOCK_MS = 520;
 const GROW_PATH_FOCUS_TRANSITION = '560ms cubic-bezier(0.22, 1, 0.36, 1)';
 const GROW_PATH_FOCUS_SHADOW = '0 38px 100px rgba(74, 52, 36, 0.24)';
 
@@ -203,6 +204,9 @@ export default function GrowPathScrollSection() {
   const selectedCardIdRef = useRef<GrowPathCardId | null>(null);
   const hasSnappedOnCurrentExitRef = useRef(false);
   const lastScrollYRef = useRef(0);
+  const careerSnapLockRef = useRef(false);
+  const careerSnapTargetYRef = useRef(0);
+  const careerSnapUnlockTimeoutRef = useRef<number | null>(null);
   const focusFrameRef = useRef<number | null>(null);
   const focusCloseTimeoutRef = useRef<number | null>(null);
 
@@ -236,6 +240,15 @@ export default function GrowPathScrollSection() {
     if (focusCloseTimeoutRef.current !== null) {
       window.clearTimeout(focusCloseTimeoutRef.current);
       focusCloseTimeoutRef.current = null;
+    }
+  };
+
+  const clearCareerSnapLock = () => {
+    careerSnapLockRef.current = false;
+
+    if (careerSnapUnlockTimeoutRef.current !== null) {
+      window.clearTimeout(careerSnapUnlockTimeoutRef.current);
+      careerSnapUnlockTimeoutRef.current = null;
     }
   };
 
@@ -311,6 +324,7 @@ export default function GrowPathScrollSection() {
 
       if (nextIsMobile) {
         hasSnappedOnCurrentExitRef.current = false;
+        clearCareerSnapLock();
         closeFocus(true);
         resetState();
       }
@@ -353,17 +367,35 @@ export default function GrowPathScrollSection() {
       }
 
       if (snapState.shouldSnap) {
+        const targetScrollY = getGrowPathCareerSnapTargetY(careerJourneyTop);
         hasSnappedOnCurrentExitRef.current = true;
+        careerSnapLockRef.current = true;
+        careerSnapTargetYRef.current = targetScrollY;
+        if (careerSnapUnlockTimeoutRef.current !== null) {
+          window.clearTimeout(careerSnapUnlockTimeoutRef.current);
+        }
+
         window.scrollTo({
-          top: getGrowPathCareerSnapTargetY(careerJourneyTop),
+          top: targetScrollY,
           behavior: 'smooth',
         });
+
+        careerSnapUnlockTimeoutRef.current = window.setTimeout(() => {
+          window.scrollTo(0, careerSnapTargetYRef.current);
+          clearCareerSnapLock();
+        }, CAREER_JOURNEY_SNAP_LOCK_MS);
       }
 
       lastScrollYRef.current = window.scrollY;
     };
 
     const handleWheel = (event: WheelEvent) => {
+      if (careerSnapLockRef.current) {
+        event.preventDefault();
+        window.scrollTo(0, careerSnapTargetYRef.current);
+        return;
+      }
+
       const focusWheelState = getGrowPathFocusWheelState(selectedCardIdRef.current);
       if (selectedCardIdRef.current) {
         if (!focusWheelState.shouldPreventScroll) {
@@ -435,6 +467,7 @@ export default function GrowPathScrollSection() {
   }, [canFocusCards]);
 
   useEffect(() => () => clearFocusTimers(), []);
+  useEffect(() => () => clearCareerSnapLock(), []);
 
   if (isMobile) {
     return (

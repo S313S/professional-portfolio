@@ -92,7 +92,6 @@ const GROW_PATH_BACKGROUND_OPACITY = 0.62;
 const GROW_PATH_BACKGROUND_FILTER = 'blur(4px) saturate(0.88) brightness(0.96)';
 const GROW_PATH_FOCUS_Z_INDEX = 30;
 const GROW_PATH_BACKGROUND_Z_INDEX = 6;
-const CAREER_JOURNEY_SNAP_TOP_OFFSET_PX = 80;
 const SNAP_ENTRY_MAX_RATIO = 0.28;
 const SNAP_ENTRY_MIN_RATIO = -0.12;
 const SNAP_RESET_ABOVE_RATIO = 0.6;
@@ -235,7 +234,7 @@ export function canFocusGrowPathCard(progress: number) {
 }
 
 export function getGrowPathCareerSnapTargetY(careerTop: number) {
-  return Math.max(Math.round(careerTop - CAREER_JOURNEY_SNAP_TOP_OFFSET_PX), 0);
+  return Math.max(Math.round(careerTop), 0);
 }
 
 export function getGrowPathCareerSnapState({

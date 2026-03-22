@@ -199,7 +199,7 @@ test('grow-path snap latch resets after scrolling back above the career journey 
 });
 
 test('career journey snap target aligns to the section top', () => {
-  assert.equal(getGrowPathCareerSnapTargetY(1900), 1820);
+  assert.equal(getGrowPathCareerSnapTargetY(1900), 1900);
   assert.equal(getGrowPathCareerSnapTargetY(-20), 0);
 });
 
