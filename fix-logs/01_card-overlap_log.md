@@ -1,0 +1,7 @@
+1. **理解**：问题的根因不是 flex 布局错误，而是桌面端文本区保留了两层不应存在的视觉卡片。期望效果是正文与辅助文本直接排布在羊皮纸背景上，只保留内容流、装饰图标和 `"II"` 分隔线。
+2. **分析**：我检查了 `docs/diff-reports/2026-03-24_text-area-card-overlap/issues/01_card-overlap.md` 与 `src/components/CareerDetailSection.tsx` 的桌面端 JSX，确认 `data-career-detail-card-stack="desktop"` 内部的两个 `<article>` 分别带有 `rounded-[0.4rem]`、`border`、`bg-[rgba(...)]`、`shadow[...]`、`p-5`，这正是报告要求移除的卡片视觉层。同步检查了 `src/components/CareerDetailSection.render.test.tsx`，原测试并未约束这些类名被移除。
+3. **方案**：采用最小结构修复方案，保留外层桌面文本栈的 absolute 定位与文本顺序，仅将两个 `<article>` 改成无样式 `<div>`。这样不会影响三栏布局、图标、分隔线和现有交互逻辑，也避免引入额外定位调整。
+4. **改动**：修改了 `src/components/CareerDetailSection.tsx` 中桌面端文本区，将两层 `<article>` 改为普通 `<div>`，移除了卡片边框、背景、阴影、圆角和内边距；修改了 `src/components/CareerDetailSection.render.test.tsx`，新增对旧卡片类名不存在的断言，防止该视觉结构回归。
+5. **验证**：先执行 `node --import tsx --test src/components/CareerDetailSection.render.test.tsx`，确认新增断言先失败后通过；随后执行 `node --import tsx --test src/components/CareerDetailSection.logic.test.ts` 通过；执行 `npm run build` 通过；启动 `npm run dev` 后在 `http://127.0.0.1:3007` 上运行 `BASE_URL=http://127.0.0.1:3007 node test-career-detail-transition.cjs` 通过；最后使用 Playwright 截图 `/tmp/career-detail-section-fix.png` 复查，桌面文本区已直接显示在背景上。
+6. **遗留**：本轮没有发现需要进一步处理的结构性问题。右侧 aside 面板、标签区和滚动选择器未受影响。
+7. **可调参数**：本轮未增加额外 padding。若后续需要微调桌面文本与背景边缘的距离，可从 `src/components/CareerDetailSection.tsx` 的 `data-career-detail-card-stack="desktop"` 外层容器入手，只做极小横向内边距调整。

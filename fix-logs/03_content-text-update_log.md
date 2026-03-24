@@ -1,0 +1,7 @@
+1. **理解**：需要更新 `CAREER_DETAIL_RECORDS[0].contentByTab.sharingJourney` 的文案，使默认记录在 `Sharing Journey` tab 下显示设计稿要求的新标题与叙述，同时按已确认策略对 OCR 文案做轻度清洗。
+2. **分析**：我检查了 `docs/diff-reports/2026-03-24_text-area-card-overlap/issues/03_content-text-update.md` 和上一轮报告 `docs/diff-reports/2026-03-24_vintage-journal-layout-and-content-gaps/issues/02_content-text-update.md`，确认目标字段为 `eyebrow`、`headline`、`body`、`supportingTitle`、`supportingBody`、`annotation` 六项。仓库内没有更高优先级的原始文案来源，因此采用报告文案并修正常见 OCR 错词、重复片段和明显语义断裂。
+3. **方案**：直接更新第一条记录的 `sharingJourney` 数据，不改其余 record 或 tab。同步更新默认渲染测试，并在交互回归脚本里增加初始默认状态断言，保证新文案既能静态渲染，也能在页面真实加载后可见。
+4. **改动**：修改了 `src/components/CareerDetailSection.tsx` 中 `aurora-basin-expedition -> sharingJourney` 的六个字段；修改了 `src/components/CareerDetailSection.render.test.tsx` 的默认文案断言；修改了 `test-career-detail-transition.cjs`，增加对初始默认日期、眉标和 headline 的断言，保留原有滚轮/拖拽切换验证。
+5. **验证**：执行 `node --import tsx --test src/components/CareerDetailSection.render.test.tsx`，确认新文案断言先失败后通过；执行 `node --import tsx --test src/components/CareerDetailSection.logic.test.ts` 通过；执行 `npm run build` 通过；在本地 dev server 上运行 `BASE_URL=http://127.0.0.1:3007 node test-career-detail-transition.cjs` 通过，证明默认文案与交互切换都正常；Playwright 截图 `/tmp/career-detail-section-fix.png` 中也可见默认 headline 为 `Chief Surveyor & Field Archivist`。
+6. **遗留**：OCR 来源并非权威原稿，因此当前版本属于“设计还原用清洗版文案”。如果后续拿到更准确原文，可直接替换同一数据对象中的六个字段。
+7. **可调参数**：没有样式参数需要联动调整。若后续觉得文案长度需要微调，只需修改 `src/components/CareerDetailSection.tsx` 中第一条记录 `sharingJourney` 的文本字段，不应牵动布局或交互代码。

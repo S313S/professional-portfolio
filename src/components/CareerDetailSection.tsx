@@ -1,0 +1,884 @@
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type PointerEvent as ReactPointerEvent,
+} from 'react';
+import { Anchor, Shield } from 'lucide-react';
+
+import {
+  getCareerDetailDragGestureState,
+  getCareerDetailSnapState,
+  getCareerDetailSnapTargetY,
+  getCareerDetailWheelState,
+  isCareerDetailSectionPinned,
+} from './CareerDetailSection.logic';
+
+const CAREER_DETAIL_ASSETS = {
+  background: '/images/careerDetail_bg.png',
+  sharingJourney: '/images/careerDetail_share_icon.png',
+  workExperience: '/images/careerDetail_career_icon.png',
+  industryKnowledge: '/images/careerDetail_Industry knowledge_icon.png',
+  scrollSelector: '/images/careerDetail_scroll_icon.png',
+  map: '/images/careerDetail_map.png',
+} as const;
+
+export type CareerDetailTabKey = 'sharingJourney' | 'workExperience' | 'industryKnowledge';
+
+interface Size {
+  width: number;
+  height: number;
+}
+
+interface PixelRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+interface CareerDetailContentBlock {
+  eyebrow: string;
+  headline: string;
+  body: string;
+  supportingTitle: string;
+  supportingBody: string;
+  annotation: string;
+}
+
+interface CareerDetailRecord {
+  id: string;
+  label: string;
+  locationLine: string;
+  dateTitle: string;
+  contentByTab: Record<CareerDetailTabKey, CareerDetailContentBlock>;
+}
+
+const CAREER_DETAIL_RECORDS: CareerDetailRecord[] = [
+  {
+    id: 'aurora-basin-expedition',
+    label: 'Aurora Basin Expedition',
+    locationLine: 'Location: Latitude 45.4215° N',
+    dateTitle: 'October 14th, 1894',
+    contentByTab: {
+      sharingJourney: {
+        eyebrow: 'Chronicle I:',
+        headline: 'Chief Surveyor & Field Archivist',
+        body:
+          'Appointed by the Royal Geographical Society to chart the uncharted territories of the Inner Rim. Led the creation of more than forty-two high-fidelity topographical surveys using experimental lunar triangulation methods. Orchestrated the 1892 expedition through the Silent Valley, enduring three months of total isolation to capture the auroral shift.',
+        supportingTitle: 'Instrument Calibration Specialist',
+        supportingBody:
+          "Pioneered the integration of brass analytical engines with traditional celestial sextants. Reduced celestial navigation error margins by 14.2% across the fleet. Served as the primary consultant for the HMS Discovery's deep-water Sima Trench sounding, ensuring accurate depth charting in the Marianas.",
+        annotation: '[Expanded archive: HMS Discovery sounding error-correction data]',
+      },
+      workExperience: {
+        eyebrow: 'Chronicle II: Work Experience',
+        headline: 'Instrument Calibration Specialist',
+        body:
+          'I moved from scattered support work into more deliberate systems thinking, building repeatable workflows, tightening delivery, and learning how to make ambiguity legible for teams under pressure.',
+        supportingTitle: 'Making Motion Traceable',
+        supportingBody:
+          'From campaign ops to AI-enabled execution, the work shifted from “finishing tasks” to building a process that other people could trust, inspect, and extend.',
+        annotation: 'Field ledger updated with each operating model revision.',
+      },
+      industryKnowledge: {
+        eyebrow: 'Chronicle III: Industry Knowledge',
+        headline: 'Surveying the New Frontier',
+        body:
+          'As the market tilted toward AI, I stopped treating trends as headlines and began mapping them as infrastructure shifts: tooling, behavior change, distribution costs, and the hidden work needed for adoption.',
+        supportingTitle: 'Reading the Weather Correctly',
+        supportingBody:
+          'That lens made it easier to separate durable capability from surface excitement, and to identify where product intuition still needed evidence from operators and users.',
+        annotation: 'Expanded from dispatches, market scans, and operator interviews.',
+      },
+    },
+  },
+  {
+    id: 'signal-house-residency',
+    label: 'Signal House Residency',
+    locationLine: 'Location: Latitude 31.2304° N',
+    dateTitle: 'May 3rd, 1901',
+    contentByTab: {
+      sharingJourney: {
+        eyebrow: 'Chronicle I: Sharing Journey',
+        headline: 'Letters Sent Back To Shore',
+        body:
+          'By the second chapter, sharing was less about confession and more about pattern recognition. I began writing for people standing at the same crossroads, not just for the version of me that survived them.',
+        supportingTitle: 'From Memory To Navigation',
+        supportingBody:
+          'The stories became more useful once they were organized around decisions, tradeoffs, and consequences instead of mood alone.',
+        annotation: 'Annotated for future wayfinders moving between craft and change.',
+      },
+      workExperience: {
+        eyebrow: 'Chronicle II: Work Experience',
+        headline: 'Workroom Systems Cartographer',
+        body:
+          'This phase was defined by synthesis: aligning creators, operators, and AI workflows around the same execution rhythm so experiments could become a repeatable practice instead of isolated wins.',
+        supportingTitle: 'Where The Friction Hid',
+        supportingBody:
+          'Most bottlenecks were not technical. They lived in handoffs, unclear expectations, and unspoken assumptions about quality, speed, and ownership.',
+        annotation: 'Compiled after multiple cycles of process redesign.',
+      },
+      industryKnowledge: {
+        eyebrow: 'Chronicle III: Industry Knowledge',
+        headline: 'Signal Patterns Across The Trade Routes',
+        body:
+          'I catalogued patterns from docks, dispatches, and demand maps, then used them to understand how AI, content, and commerce were beginning to co-produce each other instead of moving as separate streams.',
+        supportingTitle: 'Demand Leaves Repeating Marks',
+        supportingBody:
+          'The more I tracked distribution behavior, the clearer it became that good strategy depended on seeing ecosystem feedback loops early, before they hardened into consensus.',
+        annotation: 'Margin note: watch the channels where product utility meets social proof.',
+      },
+    },
+  },
+  {
+    id: 'northwind-relay-office',
+    label: 'Northwind Relay Office',
+    locationLine: 'Location: Latitude 64.1466° N',
+    dateTitle: 'January 18th, 1908',
+    contentByTab: {
+      sharingJourney: {
+        eyebrow: 'Chronicle I: Sharing Journey',
+        headline: 'Dispatches Written Between Storm Fronts',
+        body:
+          'Sharing entered a steadier phase here. I stopped polishing every sentence for approval and started publishing notes that were timely, specific, and useful enough to travel on their own.',
+        supportingTitle: 'Trust Built Through Cadence',
+        supportingBody:
+          'Consistency changed the relationship with the audience. Repetition made the voice clearer, and clearer structure made the ideas easier to carry into someone else’s real work.',
+        annotation: 'Filed during a season of frequent public dispatches and editorial resets.',
+      },
+      workExperience: {
+        eyebrow: 'Chronicle II: Work Experience',
+        headline: 'Relay Operations Lead',
+        body:
+          'Work became less about isolated execution and more about orchestration: sequencing people, tools, and handoffs so momentum survived context switches instead of dying inside them.',
+        supportingTitle: 'Handoffs Became The Real Product',
+        supportingBody:
+          'The strongest systems were not the flashiest ones. They were the ones where the next person always knew what had happened, what mattered, and what to do next.',
+        annotation: 'Operational notes preserved from multi-team delivery cycles.',
+      },
+      industryKnowledge: {
+        eyebrow: 'Chronicle III: Industry Knowledge',
+        headline: 'Relay Signals Across Emerging Markets',
+        body:
+          'I began reading market shifts through velocity: which tools shortened cycle time, which channels amplified demand, and which signals looked loud only because measurement lagged behind behavior.',
+        supportingTitle: 'Speed Changed What Counted',
+        supportingBody:
+          'Once AI compressed production time, strategic advantage moved upstream toward taste, distribution, and judgment under uncertainty.',
+        annotation: 'Indexed from trend scans, launch monitoring, and operator debriefs.',
+      },
+    },
+  },
+  {
+    id: 'glass-harbor-ledger',
+    label: 'Glass Harbor Ledger',
+    locationLine: 'Location: Latitude 22.3193° N',
+    dateTitle: 'August 27th, 1912',
+    contentByTab: {
+      sharingJourney: {
+        eyebrow: 'Chronicle I: Sharing Journey',
+        headline: 'What Stayed After The Applause Faded',
+        body:
+          'By this chapter, sharing was no longer about output volume. It became an editorial filter: deciding what was durable enough to archive, what was situational, and what only mattered because I was standing too close to it.',
+        supportingTitle: 'Editing For Signal, Not Noise',
+        supportingBody:
+          'That discipline made each piece lighter, sharper, and more transferable. Fewer stories needed to say more.',
+        annotation: 'Archived after a long pass of pruning, sequencing, and reframing.',
+      },
+      workExperience: {
+        eyebrow: 'Chronicle II: Work Experience',
+        headline: 'Ledger Systems Steward',
+        body:
+          'I moved deeper into system stewardship: maintaining quality across repeated cycles, spotting where process debt accumulated, and refining the rules that kept execution fast without making it brittle.',
+        supportingTitle: 'Maintenance Was Strategic Work',
+        supportingBody:
+          'The hidden value came from upkeep. Small structural corrections prevented expensive downstream confusion.',
+        annotation: 'Compiled from retrospectives, maintenance logs, and QA reviews.',
+      },
+      industryKnowledge: {
+        eyebrow: 'Chronicle III: Industry Knowledge',
+        headline: 'Harbor Economics Of The AI Trade',
+        body:
+          'The pattern was clearer now: AI advantage rarely lived in the model alone. It emerged where workflow design, audience understanding, and operational discipline reinforced each other.',
+        supportingTitle: 'Infrastructure Wins Quietly',
+        supportingBody:
+          'Markets often celebrate interfaces first and infrastructure later, but lasting leverage usually arrives in the opposite order.',
+        annotation: 'Cross-referenced against product launches, monetization shifts, and channel behavior.',
+      },
+    },
+  },
+];
+
+const CAREER_DETAIL_TABS: Array<{
+  key: CareerDetailTabKey;
+  label: string;
+  imageSrc: string;
+}> = [
+  {
+    key: 'sharingJourney',
+    label: 'Sharing Journey',
+    imageSrc: CAREER_DETAIL_ASSETS.sharingJourney,
+  },
+  {
+    key: 'workExperience',
+    label: 'Work Experience',
+    imageSrc: CAREER_DETAIL_ASSETS.workExperience,
+  },
+  {
+    key: 'industryKnowledge',
+    label: 'Industry Knowledge',
+    imageSrc: CAREER_DETAIL_ASSETS.industryKnowledge,
+  },
+];
+
+const CAREER_DETAIL_BACKGROUND_SIZE: Size = {
+  width: 5574,
+  height: 3010,
+};
+
+const CAREER_DETAIL_DEFAULT_STAGE_SIZE: Size = {
+  width: 1600,
+  height: 900,
+};
+
+const CAREER_DETAIL_DRAG_SWITCH_THRESHOLD = 72;
+const CAREER_DETAIL_WHEEL_SWITCH_THRESHOLD = 80;
+const CAREER_DETAIL_WHEEL_SWITCH_COOLDOWN_MS = 220;
+
+// Desktop-only manual tuning zone:
+// These numbers are the original background-image pixel bounds that the three
+// interactive paper buttons should cover 1:1. If you need to hand-tune the
+// overlay later, edit ONLY these x/y/width/height values.
+const CAREER_DETAIL_DESKTOP_TAB_PIXEL_RECTS: Record<CareerDetailTabKey, PixelRect> = {
+  sharingJourney: {
+    x: 288,
+    y: 252,
+    width: 1332,
+    height: 720,
+  },
+  workExperience: {
+    x: 300,
+    y: 1040,
+    width: 1320,
+    height: 708,
+  },
+  industryKnowledge: {
+    x: 252,
+    y: 1800,
+    width: 1380,
+    height: 726,
+  },
+};
+
+const getCoveredImageFrame = (containerSize: Size, imageSize: Size) => {
+  const scale = Math.max(containerSize.width / imageSize.width, containerSize.height / imageSize.height);
+  const width = imageSize.width * scale;
+  const height = imageSize.height * scale;
+
+  return {
+    scale,
+    left: (containerSize.width - width) / 2,
+    top: (containerSize.height - height) / 2,
+  };
+};
+
+const getDesktopTabStyle = (tabKey: CareerDetailTabKey, stageSize: Size) => {
+  const imageFrame = getCoveredImageFrame(stageSize, CAREER_DETAIL_BACKGROUND_SIZE);
+  const rect = CAREER_DETAIL_DESKTOP_TAB_PIXEL_RECTS[tabKey];
+
+  return {
+    left: `${imageFrame.left + rect.x * imageFrame.scale}px`,
+    top: `${imageFrame.top + rect.y * imageFrame.scale}px`,
+    width: `${rect.width * imageFrame.scale}px`,
+    height: `${rect.height * imageFrame.scale}px`,
+  };
+};
+
+const joinClasses = (...classNames: Array<string | false | null | undefined>) =>
+  classNames.filter(Boolean).join(' ');
+
+export default function CareerDetailSection() {
+  const sectionRef = useRef<HTMLElement>(null);
+  const hasSnappedOnCurrentEntryRef = useRef(false);
+  const lastScrollYRef = useRef(0);
+  const selectedRecordIdRef = useRef(CAREER_DETAIL_RECORDS[0]?.id ?? '');
+  const selectorDragStateRef = useRef<{
+    pointerId: number | null;
+    dragStartY: number | null;
+    hasCommittedInGesture: boolean;
+  }>({
+    pointerId: null,
+    dragStartY: null,
+    hasCommittedInGesture: false,
+  });
+  const wheelDeltaAccumulatorRef = useRef(0);
+  const lastWheelDirectionRef = useRef(0);
+  const lastWheelSwitchAtRef = useRef(0);
+  const [sectionSize, setSectionSize] = useState<Size>(CAREER_DETAIL_DEFAULT_STAGE_SIZE);
+  const [selectedRecordId, setSelectedRecordId] = useState(CAREER_DETAIL_RECORDS[0]?.id ?? '');
+  const [selectedTab, setSelectedTab] = useState<CareerDetailTabKey>('sharingJourney');
+  const [isSelectorDragging, setIsSelectorDragging] = useState(false);
+
+  const selectedRecord = useMemo(
+    () =>
+      CAREER_DETAIL_RECORDS.find((record) => record.id === selectedRecordId) ??
+      CAREER_DETAIL_RECORDS[0],
+    [selectedRecordId],
+  );
+  const selectedRecordIndex = Math.max(
+    CAREER_DETAIL_RECORDS.findIndex((record) => record.id === selectedRecord.id),
+    0,
+  );
+
+  const selectedContent = selectedRecord.contentByTab[selectedTab];
+  const desktopTabStyles = useMemo(
+    () =>
+      Object.fromEntries(
+        CAREER_DETAIL_TABS.map((tab) => [tab.key, getDesktopTabStyle(tab.key, sectionSize)]),
+      ) as Record<CareerDetailTabKey, CSSProperties>,
+    [sectionSize],
+  );
+  const selectorThumbStyle = useMemo(() => {
+    const progress =
+      CAREER_DETAIL_RECORDS.length <= 1 ? 0.5 : selectedRecordIndex / (CAREER_DETAIL_RECORDS.length - 1);
+
+    return {
+      top: `${8 + progress * 84}%`,
+    } satisfies CSSProperties;
+  }, [selectedRecordIndex]);
+
+  const commitSelectedRecordId = (recordId: string) => {
+    selectedRecordIdRef.current = recordId;
+    setSelectedRecordId(recordId);
+  };
+
+  const resetSelectorDrag = () => {
+    selectorDragStateRef.current = {
+      pointerId: null,
+      dragStartY: null,
+      hasCommittedInGesture: false,
+    };
+    setIsSelectorDragging(false);
+  };
+
+  const handleSelectorPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === 'mouse' && event.button !== 0) {
+      return;
+    }
+
+    const section = sectionRef.current;
+    if (section) {
+      const sectionTop = section.getBoundingClientRect().top + window.scrollY;
+      window.scrollTo({
+        top: getCareerDetailSnapTargetY(sectionTop),
+        behavior: 'auto',
+      });
+    }
+
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    selectorDragStateRef.current = {
+      pointerId: event.pointerId,
+      dragStartY: event.clientY,
+      hasCommittedInGesture: false,
+    };
+    setIsSelectorDragging(true);
+  };
+
+  const handleSelectorPointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const dragState = selectorDragStateRef.current;
+    if (dragState.pointerId !== event.pointerId) {
+      return;
+    }
+
+    const activeIndex = CAREER_DETAIL_RECORDS.findIndex(
+      (record) => record.id === selectedRecordIdRef.current,
+    );
+    const gestureState = getCareerDetailDragGestureState({
+      dragStartY: dragState.dragStartY,
+      currentY: event.clientY,
+      threshold: CAREER_DETAIL_DRAG_SWITCH_THRESHOLD,
+      activeIndex: activeIndex >= 0 ? activeIndex : 0,
+      recordCount: CAREER_DETAIL_RECORDS.length,
+      hasCommittedInGesture: dragState.hasCommittedInGesture,
+    });
+
+    if (!gestureState.shouldCommitSwitch) {
+      return;
+    }
+
+    event.preventDefault();
+    selectorDragStateRef.current = {
+      ...dragState,
+      hasCommittedInGesture: gestureState.hasCommittedInGesture,
+    };
+
+    const nextRecord = CAREER_DETAIL_RECORDS[gestureState.nextIndex];
+    if (nextRecord) {
+      commitSelectedRecordId(nextRecord.id);
+    }
+  };
+
+  const handleSelectorPointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (selectorDragStateRef.current.pointerId !== event.pointerId) {
+      return;
+    }
+
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+
+    resetSelectorDrag();
+  };
+
+  useEffect(() => {
+    selectedRecordIdRef.current = selectedRecordId;
+  }, [selectedRecordId]);
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section) {
+      return;
+    }
+
+    lastScrollYRef.current = window.scrollY;
+
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+      const sectionTop = section.getBoundingClientRect().top + scrollY;
+      const sectionHeight = section.offsetHeight;
+      const snapState = getCareerDetailSnapState({
+        scrollY,
+        lastScrollY: lastScrollYRef.current,
+        sectionTop,
+        sectionHeight,
+        viewportHeight: window.innerHeight,
+        hasSnappedOnCurrentEntry: hasSnappedOnCurrentEntryRef.current,
+      });
+
+      if (snapState.shouldResetLatch) {
+        hasSnappedOnCurrentEntryRef.current = false;
+      }
+
+      if (snapState.shouldSnap) {
+        hasSnappedOnCurrentEntryRef.current = true;
+        window.scrollTo({
+          top: getCareerDetailSnapTargetY(sectionTop),
+          behavior: 'smooth',
+        });
+      }
+
+      lastScrollYRef.current = scrollY;
+    };
+
+    const handleWheel = (event: WheelEvent) => {
+      if (!window.matchMedia('(min-width: 1024px)').matches) {
+        wheelDeltaAccumulatorRef.current = 0;
+        lastWheelDirectionRef.current = 0;
+        return;
+      }
+
+      const sectionTop = section.getBoundingClientRect().top + window.scrollY;
+      const activeIndex = CAREER_DETAIL_RECORDS.findIndex(
+        (record) => record.id === selectedRecordIdRef.current,
+      );
+      const wheelState = getCareerDetailWheelState({
+        deltaY: event.deltaY,
+        activeIndex: activeIndex >= 0 ? activeIndex : 0,
+        recordCount: CAREER_DETAIL_RECORDS.length,
+        isSectionPinned: isCareerDetailSectionPinned(window.scrollY, sectionTop),
+      });
+
+      if (!wheelState.shouldPreventScroll) {
+        wheelDeltaAccumulatorRef.current = 0;
+        lastWheelDirectionRef.current = 0;
+        return;
+      }
+
+      event.preventDefault();
+      window.scrollTo({
+        top: getCareerDetailSnapTargetY(sectionTop),
+        behavior: 'auto',
+      });
+
+      const direction = Math.sign(event.deltaY);
+      if (direction === 0) {
+        return;
+      }
+
+      if (direction !== lastWheelDirectionRef.current) {
+        wheelDeltaAccumulatorRef.current = 0;
+      }
+
+      lastWheelDirectionRef.current = direction;
+      wheelDeltaAccumulatorRef.current += event.deltaY;
+
+      const now = window.performance?.now?.() ?? Date.now();
+      const hasReachedThreshold =
+        Math.abs(wheelDeltaAccumulatorRef.current) >= CAREER_DETAIL_WHEEL_SWITCH_THRESHOLD;
+      const isCoolingDown =
+        now - lastWheelSwitchAtRef.current < CAREER_DETAIL_WHEEL_SWITCH_COOLDOWN_MS;
+
+      if (!hasReachedThreshold || isCoolingDown) {
+        return;
+      }
+
+      wheelDeltaAccumulatorRef.current = 0;
+      lastWheelSwitchAtRef.current = now;
+
+      const nextRecord = CAREER_DETAIL_RECORDS[wheelState.nextIndex];
+      if (nextRecord) {
+        commitSelectedRecordId(nextRecord.id);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('wheel', handleWheel, { passive: false });
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('wheel', handleWheel);
+    };
+  }, []);
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section || typeof ResizeObserver === 'undefined') {
+      return;
+    }
+
+    const updateSectionSize = () => {
+      setSectionSize({
+        width: section.clientWidth,
+        height: section.clientHeight,
+      });
+    };
+
+    updateSectionSize();
+
+    const resizeObserver = new ResizeObserver(() => {
+      updateSectionSize();
+    });
+
+    resizeObserver.observe(section);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
+
+  return (
+    <section
+      ref={sectionRef}
+      id="career-detail-section"
+      aria-labelledby="career-detail-date-title"
+      className="relative min-h-[100dvh] overflow-hidden bg-[#ece2d0] text-[#2b2119]"
+    >
+      <div className="absolute inset-0">
+        <img
+          src={CAREER_DETAIL_ASSETS.background}
+          alt=""
+          aria-hidden="true"
+          className="h-full w-full object-cover object-center"
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(239,228,211,0.16)_0%,rgba(246,240,229,0.06)_42%,rgba(238,228,213,0.18)_100%)]" />
+      </div>
+
+      {/* Desktop paper-button overlay.
+          This layer uses background-image pixel coordinates so the interactive
+          buttons stay locked to the baked-in paper art even when object-cover
+          changes the rendered image scale/crop. */}
+      <div
+        data-career-detail-tab-overlay="desktop"
+        data-career-detail-tab-positioning="background-pixel-lock"
+        className="pointer-events-none absolute inset-0 z-10 hidden lg:block"
+      >
+        {CAREER_DETAIL_TABS.map((tab) => {
+          const isActive = tab.key === selectedTab;
+
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              data-career-detail-tab={tab.key}
+              aria-label={tab.label}
+              aria-pressed={isActive}
+              style={desktopTabStyles[tab.key]}
+              className={joinClasses(
+                'group pointer-events-auto absolute overflow-hidden bg-transparent p-0 text-left transition-transform duration-500',
+                isActive
+                  ? 'z-10 scale-[1.015]'
+                  : 'z-0 opacity-[0.98] hover:-translate-y-0.5 hover:opacity-100',
+              )}
+              onClick={() => setSelectedTab(tab.key)}
+            >
+              <img
+                src={tab.imageSrc}
+                alt=""
+                aria-hidden="true"
+                className={joinClasses(
+                  'absolute inset-0 h-full w-full max-w-none drop-shadow-[0_18px_24px_rgba(58,42,26,0.16)] transition-[filter,transform] duration-500',
+                  isActive
+                    ? 'brightness-[1.02] saturate-[1.02]'
+                    : 'brightness-[0.98] group-hover:brightness-[1.01]',
+                )}
+              />
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="relative z-20 mx-auto min-h-[100dvh] max-w-[1600px] px-5 py-8 sm:px-8 lg:px-10">
+        <div className="flex min-h-[calc(100dvh-4rem)] flex-col gap-8 lg:hidden">
+          <div className="rounded-[2rem] border border-[#8b735c]/15 bg-[#f7f1e7]/84 p-5 shadow-[0_24px_80px_rgba(83,60,37,0.14)] backdrop-blur-[2px]">
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#7d6957]">
+              {selectedRecord.locationLine}
+            </p>
+            <h2
+              id="career-detail-date-title"
+              data-career-detail-block="date-title"
+              className="mt-3 font-serif text-[2.6rem] leading-none tracking-[-0.05em] text-[#2c2118]"
+            >
+              {selectedRecord.dateTitle}
+            </h2>
+
+            <div className="mt-5 flex gap-3 overflow-x-auto pb-1">
+              {CAREER_DETAIL_TABS.map((tab) => {
+                const isActive = tab.key === selectedTab;
+
+                return (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    data-career-detail-tab={tab.key}
+                    aria-label={tab.label}
+                    aria-pressed={isActive}
+                    className={joinClasses(
+                      'shrink-0 rounded-[1rem] border border-transparent bg-transparent p-0 transition-transform duration-300',
+                      isActive ? 'scale-[1.02]' : 'opacity-80',
+                    )}
+                    onClick={() => setSelectedTab(tab.key)}
+                  >
+                    <img src={tab.imageSrc} alt="" aria-hidden="true" className="w-[10rem]" />
+                  </button>
+                );
+              })}
+            </div>
+
+            <label className="mt-5 block">
+              <span className="mb-2 block text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-[#7e6654]">
+                Record
+              </span>
+              <select
+                data-career-detail-select="record"
+                className="w-full rounded-[1rem] border border-[#8d7660]/25 bg-[#fbf7f1]/90 px-4 py-3 text-sm font-medium text-[#3a2d22] outline-none"
+                value={selectedRecord.id}
+                onChange={(event) => commitSelectedRecordId(event.target.value)}
+              >
+                {CAREER_DETAIL_RECORDS.map((record) => (
+                  <option key={record.id} value={record.id}>
+                    {record.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <article className="rounded-[2rem] border border-[#8b735c]/15 bg-[#f7f1e7]/84 p-5 shadow-[0_24px_80px_rgba(83,60,37,0.14)] backdrop-blur-[2px]">
+            <p
+              data-career-detail-block="eyebrow"
+              className="text-xs font-semibold uppercase tracking-[0.26em] text-[#7e6654]"
+            >
+              {selectedContent.eyebrow}
+            </p>
+            <h3 className="mt-3 max-w-[16ch] font-serif text-[2.2rem] leading-[0.94] tracking-[-0.04em] text-[#2d241c]">
+              {selectedContent.headline}
+            </h3>
+            <p
+              data-career-detail-block="body"
+              className="mt-4 text-[1rem] leading-[1.65] text-[#332821]"
+            >
+              {selectedContent.body}
+            </p>
+            <div className="mt-6 rounded-[1.3rem] border border-[#8f775f]/18 bg-white/45 p-4">
+              <p className="font-serif text-[1.4rem] leading-none tracking-[-0.03em] text-[#2f251d]">
+                {selectedContent.supportingTitle}
+              </p>
+              <p className="mt-3 text-[0.98rem] leading-[1.6] text-[#3c2f24]">
+                {selectedContent.supportingBody}
+              </p>
+            </div>
+            <p className="mt-4 text-sm italic leading-[1.5] text-[#5e4d40]">
+              {selectedContent.annotation}
+            </p>
+          </article>
+        </div>
+
+        <div className="relative hidden min-h-[calc(100dvh-4rem)] lg:block">
+          <div className="absolute left-[35%] top-[2.5%] w-[44%]">
+            <p className="text-[0.82rem] font-semibold uppercase tracking-[0.28em] text-[#7f6854]">
+              {selectedRecord.locationLine}
+            </p>
+            <h2
+              id="career-detail-date-title"
+              data-career-detail-block="date-title"
+              className="mt-3 font-serif text-[clamp(4.4rem,5vw,5.8rem)] leading-none tracking-[-0.06em] text-[#241b14]"
+            >
+              {selectedRecord.dateTitle}
+            </h2>
+          </div>
+
+          <div
+            data-career-detail-selector="desktop"
+            className="absolute right-[0.9%] top-[10.5%] z-20 flex h-[68%] w-[6.2rem] items-center justify-center"
+          >
+            <select
+              data-career-detail-select="record"
+              aria-label="Career detail record"
+              className="sr-only"
+              value={selectedRecord.id}
+              onChange={(event) => commitSelectedRecordId(event.target.value)}
+            >
+              {CAREER_DETAIL_RECORDS.map((record) => (
+                <option key={record.id} value={record.id}>
+                  {record.label}
+                </option>
+              ))}
+            </select>
+
+            <img
+              src={CAREER_DETAIL_ASSETS.scrollSelector}
+              alt=""
+              aria-hidden="true"
+              className="absolute inset-y-0 left-1/2 h-full -translate-x-1/2 object-contain opacity-95"
+            />
+
+            <div
+              data-career-detail-drag-track="desktop"
+              className="absolute inset-y-[8%] left-1/2 z-10 w-[2.6rem] -translate-x-1/2 touch-none"
+              onPointerDown={handleSelectorPointerDown}
+              onPointerMove={handleSelectorPointerMove}
+              onPointerUp={handleSelectorPointerUp}
+              onPointerCancel={handleSelectorPointerUp}
+              onLostPointerCapture={resetSelectorDrag}
+            >
+              <div
+                data-career-detail-drag-thumb="desktop"
+                style={selectorThumbStyle}
+                className={joinClasses(
+                  'absolute left-1/2 h-[4.4rem] w-[1.45rem] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#8f775f]/30 bg-[rgba(247,241,231,0.84)] shadow-[0_10px_24px_rgba(92,69,45,0.18)] transition-[top,box-shadow,transform] duration-300',
+                  isSelectorDragging
+                    ? 'cursor-grabbing scale-[1.03] shadow-[0_14px_28px_rgba(92,69,45,0.24)]'
+                    : 'cursor-grab',
+                )}
+              >
+                <span className="absolute left-1/2 top-1/2 h-[2.6rem] w-[0.18rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#a7927c]/55" />
+              </div>
+            </div>
+
+            <div className="absolute inset-y-[8%] right-[10%] flex flex-col items-center justify-between">
+              {CAREER_DETAIL_RECORDS.map((record) => {
+                const isSelected = record.id === selectedRecord.id;
+
+                return (
+                  <button
+                    key={record.id}
+                    type="button"
+                    data-career-detail-record-button={record.id}
+                    aria-label={record.label}
+                    aria-pressed={isSelected}
+                    className={joinClasses(
+                      'rounded-full px-2 py-1 text-[0.72rem] font-medium tracking-[0.08em] text-[#5f4d3f] transition-all duration-300 [writing-mode:vertical-rl]',
+                      isSelected
+                        ? 'bg-[rgba(247,241,231,0.88)] text-[#2e241b] shadow-[0_8px_18px_rgba(92,69,45,0.12)]'
+                        : 'bg-[rgba(247,241,231,0.55)] hover:bg-[rgba(247,241,231,0.75)]',
+                    )}
+                    onClick={() => commitSelectedRecordId(record.id)}
+                  >
+                    {record.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div
+            data-career-detail-card-stack="desktop"
+            className="absolute left-[37%] top-[22%] flex w-[29%] flex-col"
+          >
+            <div>
+              <Shield
+                data-career-detail-icon="shield"
+                aria-hidden="true"
+                className="mb-2 h-6 w-6 text-[#7f6854]/40"
+                strokeWidth={1.6}
+              />
+              <p
+                data-career-detail-block="eyebrow"
+                className="text-[0.74rem] font-semibold uppercase tracking-[0.24em] text-[#7f6853]"
+              >
+                {selectedContent.eyebrow}
+              </p>
+              <h3 className="mt-3 max-w-[12ch] font-serif text-[clamp(2.4rem,2.6vw,3rem)] leading-[0.92] tracking-[-0.04em] text-[#251c15]">
+                {selectedContent.headline}
+              </h3>
+              <p
+                data-career-detail-block="body"
+                className="mt-4 text-[1.02rem] leading-[1.55] text-[#322720]"
+              >
+                {selectedContent.body}
+              </p>
+            </div>
+
+            <div
+              data-career-detail-divider="chapter-ii"
+              className="flex items-center gap-3 py-4"
+            >
+              <div className="h-px flex-1 bg-[#8f775f]/30" />
+              <span className="font-serif text-sm tracking-[0.28em] text-[#7f6854]/60">II</span>
+              <div className="h-px flex-1 bg-[#8f775f]/30" />
+            </div>
+
+            <div>
+              <Anchor
+                data-career-detail-icon="anchor"
+                aria-hidden="true"
+                className="mb-2 h-5 w-5 text-[#7f6854]/40"
+                strokeWidth={1.8}
+              />
+              <h4 className="font-serif text-[clamp(2.1rem,2.2vw,2.8rem)] leading-[0.95] tracking-[-0.04em] text-[#261d16]">
+                {selectedContent.supportingTitle}
+              </h4>
+              <p className="mt-3 text-[1rem] leading-[1.55] text-[#342821]">
+                {selectedContent.supportingBody}
+              </p>
+            </div>
+          </div>
+
+          <aside className="absolute right-[7.5%] top-[19.5%] w-[25%] rounded-[0.55rem] border border-[#8f775f]/20 bg-[rgba(247,242,234,0.58)] p-5 shadow-[0_20px_46px_rgba(68,50,35,0.07)]">
+            <span
+              data-career-detail-block="classified"
+              className="absolute right-4 top-3 text-[0.65rem] uppercase tracking-[0.3em] text-[#7f6854]/50"
+            >
+              CLASSIFIED
+            </span>
+            <div className="mt-2 aspect-[0.83/1] w-full overflow-hidden rounded-[0.3rem] border border-[#8f775f]/18 bg-[rgba(255,255,255,0.28)]">
+              <img
+                src={CAREER_DETAIL_ASSETS.map}
+                alt="Topographic map"
+                className="h-full w-full object-cover"
+              />
+            </div>
+            <p className="mt-2 text-[0.7rem] text-[#7f6854]">X: 14.22 / 9-98.11</p>
+            <p className="text-[0.7rem] italic text-[#7f6854]">&quot;Magnetic variance noted&quot;</p>
+            <p className="mt-4 text-sm leading-[1.55] italic text-[#5f4d3f]">
+              {selectedContent.annotation}
+            </p>
+          </aside>
+        </div>
+      </div>
+    </section>
+  );
+}

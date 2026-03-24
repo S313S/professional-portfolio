@@ -10,6 +10,8 @@ import {
   getGrowPathCareerSnapState,
   getGrowPathCareerSnapTargetY,
   getGrowPathCardVisuals,
+  getGrowPathRepinMode,
+  getGrowPathSoftRepinScrollTop,
   getGrowPathWheelCaptureState,
   getGrowPathWheelState,
 } from './GrowPathScrollSection.logic.ts';
@@ -201,6 +203,76 @@ test('grow-path snap latch resets after scrolling back above the career journey 
 test('career journey snap target aligns to the section top', () => {
   assert.equal(getGrowPathCareerSnapTargetY(1900), 1900);
   assert.equal(getGrowPathCareerSnapTargetY(-20), 0);
+});
+
+test('entry from below-top offset requests a soft repin instead of an immediate snap', () => {
+  assert.equal(getGrowPathRepinMode(1240, 1000), 'soft');
+});
+
+test('entry drift within the tolerance band pins immediately without soft repin', () => {
+  assert.equal(getGrowPathRepinMode(1008, 1000), 'immediate');
+});
+
+test('soft repin interpolation eases between the current and target scroll positions', () => {
+  assert.equal(getGrowPathSoftRepinScrollTop(1240, 1000, 0), 1240);
+  assert.equal(getGrowPathSoftRepinScrollTop(1240, 1000, 1), 1000);
+
+  const midpoint = getGrowPathSoftRepinScrollTop(1240, 1000, 0.5);
+  assert.ok(midpoint < 1240);
+  assert.ok(midpoint > 1000);
+});
+
+test('soft repin interpolation slightly overshoots near the end to create a spring pull-back', () => {
+  const nearEnd = getGrowPathSoftRepinScrollTop(1240, 1000, 0.92);
+  assert.ok(nearEnd < 1000, `Expected a small overshoot below the target. Got ${nearEnd}`);
+});
+
+test('soft repin keeps swallowing downward wheel input without requesting a hard snap', () => {
+  assert.equal(
+    typeof (growPathLogic as Record<string, unknown>).getGrowPathSoftRepinWheelState,
+    'function',
+  );
+
+  const getGrowPathSoftRepinWheelState = (
+    growPathLogic as unknown as {
+      getGrowPathSoftRepinWheelState: (
+        isSoftRepinning: boolean,
+        deltaY: number,
+      ) => {
+        shouldPreventScroll: boolean;
+        shouldCancelRepin: boolean;
+      };
+    }
+  ).getGrowPathSoftRepinWheelState;
+
+  assert.deepEqual(getGrowPathSoftRepinWheelState(true, 120), {
+    shouldPreventScroll: true,
+    shouldCancelRepin: false,
+  });
+});
+
+test('soft repin lets upward wheel input cancel the pull-back', () => {
+  assert.equal(
+    typeof (growPathLogic as Record<string, unknown>).getGrowPathSoftRepinWheelState,
+    'function',
+  );
+
+  const getGrowPathSoftRepinWheelState = (
+    growPathLogic as unknown as {
+      getGrowPathSoftRepinWheelState: (
+        isSoftRepinning: boolean,
+        deltaY: number,
+      ) => {
+        shouldPreventScroll: boolean;
+        shouldCancelRepin: boolean;
+      };
+    }
+  ).getGrowPathSoftRepinWheelState;
+
+  assert.deepEqual(getGrowPathSoftRepinWheelState(true, -120), {
+    shouldPreventScroll: false,
+    shouldCancelRepin: true,
+  });
 });
 
 test('does not capture wheel input before the grow-path section reaches the viewport top', () => {

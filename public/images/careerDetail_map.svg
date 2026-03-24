@@ -1,0 +1,53 @@
+<svg width="960" height="1160" viewBox="0 0 960 1160" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="960" height="1160" fill="#F4EFE6"/>
+  <rect x="34" y="34" width="892" height="1092" rx="14" fill="#F7F1E8" stroke="#B7A693" stroke-width="3"/>
+  <rect x="76" y="92" width="808" height="930" rx="10" fill="#F8F3EA" stroke="#C7B8A7" stroke-width="2"/>
+  <g opacity="0.85" stroke="#7D7265" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M171 297C261 201 402 170 524 173C642 175 742 226 804 313"/>
+    <path d="M165 349C252 263 399 229 523 232C645 235 739 276 798 357"/>
+    <path d="M158 405C244 322 393 286 524 290C654 293 743 331 792 406"/>
+    <path d="M152 455C241 378 392 341 528 345C661 349 748 381 788 456"/>
+    <path d="M149 507C242 432 397 391 534 396C669 401 751 435 783 509"/>
+    <path d="M148 559C245 487 399 447 539 451C677 456 761 491 780 560"/>
+    <path d="M150 614C246 547 404 504 546 507C684 510 767 541 777 612"/>
+    <path d="M153 665C252 601 407 561 551 564C693 567 773 595 776 665"/>
+    <path d="M158 721C257 659 415 618 559 620C697 622 779 648 776 718"/>
+    <path d="M165 776C269 718 424 679 568 679C706 680 786 706 777 773"/>
+    <path d="M173 829C280 777 437 742 580 740C715 739 790 761 775 825"/>
+  </g>
+  <g opacity="0.55" stroke="#9F9488" stroke-width="2">
+    <path d="M133 250H831"/>
+    <path d="M129 315H835"/>
+    <path d="M127 380H837"/>
+    <path d="M125 445H839"/>
+    <path d="M124 510H840"/>
+    <path d="M124 575H840"/>
+    <path d="M126 640H838"/>
+    <path d="M131 705H833"/>
+    <path d="M137 770H827"/>
+    <path d="M145 835H819"/>
+  </g>
+  <g opacity="0.7" stroke="#8C8175" stroke-width="2">
+    <path d="M215 161V1018"/>
+    <path d="M319 156V1023"/>
+    <path d="M423 151V1028"/>
+    <path d="M527 150V1029"/>
+    <path d="M631 154V1025"/>
+    <path d="M735 162V1017"/>
+  </g>
+  <g opacity="0.75" stroke="#6A6158" stroke-width="6" stroke-linecap="round">
+    <path d="M239 289L389 411L512 405L609 511L714 529"/>
+    <path d="M216 487L346 578L473 585L579 703L690 744"/>
+    <path d="M267 694L362 739L514 742L600 821L679 850"/>
+  </g>
+  <g opacity="0.2" fill="#8F7E69">
+    <circle cx="254" cy="287" r="18"/>
+    <circle cx="516" cy="406" r="16"/>
+    <circle cx="579" cy="702" r="16"/>
+    <circle cx="679" cy="850" r="14"/>
+  </g>
+  <path d="M694 950C714 930 737 922 761 919C781 916 802 920 823 940" stroke="#8F7E69" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="792" cy="949" r="40" stroke="#B7A693" stroke-width="3"/>
+  <path d="M780 923L807 943L783 975" stroke="#8F7E69" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="145" y="980" fill="#63594F" font-size="32" font-family="Georgia, 'Times New Roman', serif">Observations on the Archipelago: Survey Fragment 08</text>
+</svg>

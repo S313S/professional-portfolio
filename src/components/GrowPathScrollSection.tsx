@@ -1,8 +1,10 @@
-import { startTransition, useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { flushSync } from 'react-dom';
 
 import {
   DEFAULT_GROW_PATH_SCROLL_STATE,
   DEFAULT_GROW_PATH_WHEEL_STEP,
+  GROW_PATH_SOFT_REPIN_DURATION_MS,
   GROW_PATH_CARD_IDS,
   canFocusGrowPathCard,
   getGrowPathCardVisuals,
@@ -10,6 +12,9 @@ import {
   getGrowPathCareerSnapTargetY,
   getGrowPathFocusVisuals,
   getGrowPathFocusWheelState,
+  getGrowPathRepinMode,
+  getGrowPathSoftRepinScrollTop,
+  getGrowPathSoftRepinWheelState,
   getGrowPathWheelCaptureState,
   type GrowPathCardVisual,
   type GrowPathCardId,
@@ -18,7 +23,6 @@ import {
 
 const MOBILE_MEDIA_QUERY = '(max-width: 767px), (pointer: coarse)';
 const CAREER_JOURNEY_SECTION_ID = 'career-journey-section';
-const CAREER_JOURNEY_SNAP_LOCK_MS = 520;
 const GROW_PATH_FOCUS_TRANSITION = '560ms cubic-bezier(0.22, 1, 0.36, 1)';
 const GROW_PATH_FOCUS_SHADOW = '0 38px 100px rgba(74, 52, 36, 0.24)';
 
@@ -204,9 +208,10 @@ export default function GrowPathScrollSection() {
   const selectedCardIdRef = useRef<GrowPathCardId | null>(null);
   const hasSnappedOnCurrentExitRef = useRef(false);
   const lastScrollYRef = useRef(0);
-  const careerSnapLockRef = useRef(false);
-  const careerSnapTargetYRef = useRef(0);
-  const careerSnapUnlockTimeoutRef = useRef<number | null>(null);
+  const softRepinFrameRef = useRef<number | null>(null);
+  const softRepinStartTimeRef = useRef<number | null>(null);
+  const softRepinStartYRef = useRef(0);
+  const softRepinTargetYRef = useRef(0);
   const focusFrameRef = useRef<number | null>(null);
   const focusCloseTimeoutRef = useRef<number | null>(null);
 
@@ -221,7 +226,7 @@ export default function GrowPathScrollSection() {
 
   const commitState = (nextState: GrowPathScrollState) => {
     stateRef.current = nextState;
-    startTransition(() => {
+    flushSync(() => {
       setScrollState(nextState);
     });
   };
@@ -243,13 +248,67 @@ export default function GrowPathScrollSection() {
     }
   };
 
-  const clearCareerSnapLock = () => {
-    careerSnapLockRef.current = false;
-
-    if (careerSnapUnlockTimeoutRef.current !== null) {
-      window.clearTimeout(careerSnapUnlockTimeoutRef.current);
-      careerSnapUnlockTimeoutRef.current = null;
+  const clearSoftRepin = () => {
+    if (softRepinFrameRef.current !== null) {
+      cancelAnimationFrame(softRepinFrameRef.current);
+      softRepinFrameRef.current = null;
     }
+
+    softRepinStartTimeRef.current = null;
+  };
+
+  const pinToScrollTarget = (targetScrollY: number) => {
+    clearSoftRepin();
+    softRepinTargetYRef.current = targetScrollY;
+    window.scrollTo(0, targetScrollY);
+  };
+
+  const startSoftRepin = (targetScrollY: number) => {
+    if (softRepinFrameRef.current !== null) {
+      return;
+    }
+
+    softRepinStartYRef.current = window.scrollY;
+    softRepinTargetYRef.current = targetScrollY;
+    softRepinStartTimeRef.current = null;
+
+    const step = (timestamp: number) => {
+      if (softRepinStartTimeRef.current === null) {
+        softRepinStartTimeRef.current = timestamp;
+      }
+
+      const elapsed = timestamp - softRepinStartTimeRef.current;
+      const progress = Math.min(elapsed / GROW_PATH_SOFT_REPIN_DURATION_MS, 1);
+      const nextScrollTop = getGrowPathSoftRepinScrollTop(
+        softRepinStartYRef.current,
+        softRepinTargetYRef.current,
+        progress,
+      );
+
+      window.scrollTo(0, nextScrollTop);
+
+      if (progress < 1) {
+        softRepinFrameRef.current = requestAnimationFrame(step);
+        return;
+      }
+
+      softRepinFrameRef.current = null;
+      softRepinStartTimeRef.current = null;
+    };
+
+    softRepinFrameRef.current = requestAnimationFrame(step);
+  };
+
+  const repinToTarget = (targetScrollY: number) => {
+    const repinMode = getGrowPathRepinMode(window.scrollY, targetScrollY);
+
+    if (repinMode === 'immediate') {
+      pinToScrollTarget(targetScrollY);
+      return repinMode;
+    }
+
+    startSoftRepin(targetScrollY);
+    return repinMode;
   };
 
   const clearFocusState = () => {
@@ -324,7 +383,7 @@ export default function GrowPathScrollSection() {
 
       if (nextIsMobile) {
         hasSnappedOnCurrentExitRef.current = false;
-        clearCareerSnapLock();
+        clearSoftRepin();
         closeFocus(true);
         resetState();
       }
@@ -344,6 +403,11 @@ export default function GrowPathScrollSection() {
     lastScrollYRef.current = window.scrollY;
 
     const handleScroll = () => {
+      if (softRepinFrameRef.current !== null) {
+        lastScrollYRef.current = window.scrollY;
+        return;
+      }
+
       const metrics = getSectionMetrics();
       const careerJourneyTop = getCareerJourneyTop();
       if (!metrics || careerJourneyTop === null) {
@@ -369,30 +433,25 @@ export default function GrowPathScrollSection() {
       if (snapState.shouldSnap) {
         const targetScrollY = getGrowPathCareerSnapTargetY(careerJourneyTop);
         hasSnappedOnCurrentExitRef.current = true;
-        careerSnapLockRef.current = true;
-        careerSnapTargetYRef.current = targetScrollY;
-        if (careerSnapUnlockTimeoutRef.current !== null) {
-          window.clearTimeout(careerSnapUnlockTimeoutRef.current);
-        }
-
-        window.scrollTo({
-          top: targetScrollY,
-          behavior: 'smooth',
-        });
-
-        careerSnapUnlockTimeoutRef.current = window.setTimeout(() => {
-          window.scrollTo(0, careerSnapTargetYRef.current);
-          clearCareerSnapLock();
-        }, CAREER_JOURNEY_SNAP_LOCK_MS);
+        repinToTarget(targetScrollY);
       }
 
       lastScrollYRef.current = window.scrollY;
     };
 
     const handleWheel = (event: WheelEvent) => {
-      if (careerSnapLockRef.current) {
+      const softRepinWheelState = getGrowPathSoftRepinWheelState(
+        softRepinFrameRef.current !== null,
+        event.deltaY,
+      );
+
+      if (softRepinWheelState.shouldPreventScroll) {
         event.preventDefault();
-        window.scrollTo(0, careerSnapTargetYRef.current);
+        return;
+      }
+
+      if (softRepinWheelState.shouldCancelRepin) {
+        clearSoftRepin();
         return;
       }
 
@@ -425,7 +484,7 @@ export default function GrowPathScrollSection() {
 
       event.preventDefault();
       if (captureState.targetScrollY !== null) {
-        window.scrollTo(0, captureState.targetScrollY);
+        repinToTarget(captureState.targetScrollY);
       }
       commitState(captureState.nextState);
     };
@@ -467,7 +526,7 @@ export default function GrowPathScrollSection() {
   }, [canFocusCards]);
 
   useEffect(() => () => clearFocusTimers(), []);
-  useEffect(() => () => clearCareerSnapLock(), []);
+  useEffect(() => () => clearSoftRepin(), []);
 
   if (isMobile) {
     return (

@@ -26,6 +26,11 @@ const baseUrl = process.env.BASE_URL || 'http://127.0.0.1:3000';
     await page.waitForTimeout(120);
   }
 
+  for (let index = 0; index < 6; index += 1) {
+    await page.mouse.wheel(0, 120);
+    await page.waitForTimeout(24);
+  }
+
   await page.waitForTimeout(500);
 
   const result = await page.evaluate(() => {
@@ -46,8 +51,9 @@ const baseUrl = process.env.BASE_URL || 'http://127.0.0.1:3000';
     `Expected CareerJourneySection to snap flush to the viewport top. Got careerRectTop=${result.careerRectTop}, scrollY=${result.scrollY}, careerTop=${result.careerTop}`,
   );
 
-  await browser.close();
+  await browser.close().catch(() => {});
+  process.exit(0);
 })().catch((error) => {
   console.error(error);
-  process.exitCode = 1;
+  process.exit(1);
 });

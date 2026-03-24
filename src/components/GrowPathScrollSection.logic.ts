@@ -71,6 +71,13 @@ export interface GrowPathCareerSnapState {
   shouldResetLatch: boolean;
 }
 
+export type GrowPathRepinMode = 'immediate' | 'soft';
+
+export interface GrowPathSoftRepinWheelState {
+  shouldPreventScroll: boolean;
+  shouldCancelRepin: boolean;
+}
+
 export const GROW_PATH_CARD_IDS: GrowPathCardId[] = [
   'growPath_01',
   'growPath_02',
@@ -79,6 +86,8 @@ export const GROW_PATH_CARD_IDS: GrowPathCardId[] = [
 ];
 
 export const DEFAULT_GROW_PATH_WHEEL_STEP = 0.14;
+export const GROW_PATH_SOFT_REPIN_TOLERANCE_PX = 12;
+export const GROW_PATH_SOFT_REPIN_DURATION_MS = 520;
 
 export const DEFAULT_GROW_PATH_SCROLL_STATE: GrowPathScrollState = {
   progress: 0,
@@ -99,6 +108,59 @@ const SNAP_RESET_ABOVE_RATIO = 0.6;
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
 const easeOutCubic = (value: number) => 1 - Math.pow(1 - value, 3);
+const GROW_PATH_SOFT_REPIN_SPRING_START = 0.78;
+const GROW_PATH_SOFT_REPIN_SPRING_AMPLITUDE = 0.008;
+
+export function getGrowPathRepinMode(
+  scrollY: number,
+  targetScrollY: number,
+  tolerance = GROW_PATH_SOFT_REPIN_TOLERANCE_PX,
+): GrowPathRepinMode {
+  return Math.abs(scrollY - targetScrollY) <= tolerance ? 'immediate' : 'soft';
+}
+
+export function getGrowPathSoftRepinScrollTop(
+  startScrollY: number,
+  targetScrollY: number,
+  progress: number,
+) {
+  const safeProgress = clamp(progress, 0, 1);
+  const baseProgress = easeOutCubic(safeProgress);
+  const springPhase =
+    safeProgress <= GROW_PATH_SOFT_REPIN_SPRING_START
+      ? 0
+      : (safeProgress - GROW_PATH_SOFT_REPIN_SPRING_START) / (1 - GROW_PATH_SOFT_REPIN_SPRING_START);
+  const springOffset =
+    springPhase > 0
+      ? GROW_PATH_SOFT_REPIN_SPRING_AMPLITUDE * springPhase * Math.sin(Math.PI * springPhase)
+      : 0;
+  const easedProgress = baseProgress + springOffset;
+  return startScrollY + (targetScrollY - startScrollY) * easedProgress;
+}
+
+export function getGrowPathSoftRepinWheelState(
+  isSoftRepinning: boolean,
+  deltaY: number,
+): GrowPathSoftRepinWheelState {
+  if (!isSoftRepinning || deltaY === 0) {
+    return {
+      shouldPreventScroll: false,
+      shouldCancelRepin: false,
+    };
+  }
+
+  if (deltaY > 0) {
+    return {
+      shouldPreventScroll: true,
+      shouldCancelRepin: false,
+    };
+  }
+
+  return {
+    shouldPreventScroll: false,
+    shouldCancelRepin: true,
+  };
+}
 
 const CARD_ENTRY_SEGMENTS: Record<
   GrowPathCardId,
@@ -112,7 +174,7 @@ const CARD_ENTRY_SEGMENTS: Record<
   }
 > = {
   growPath_01: {
-    start: 0.15,
+    start: 0.1,
     end: 0.35,
     entryTranslateX: -7,
     entryTranslateY: 24,
