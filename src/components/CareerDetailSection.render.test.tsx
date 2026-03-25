@@ -20,6 +20,7 @@ test('renders the career detail stage with desktop archive panel, custom selecto
   assert.match(markup, /data-career-detail-select="record"/);
   assert.match(markup, /data-career-detail-drag-track="desktop"/);
   assert.match(markup, /data-career-detail-drag-thumb="desktop"/);
+  assert.match(markup, /data-career-detail-drag-thumb-icon="desktop"/);
   assert.match(markup, /data-career-detail-record-button="aurora-basin-expedition"/);
   assert.match(markup, /data-career-detail-record-button="signal-house-residency"/);
   assert.match(markup, /data-career-detail-record-button="northwind-relay-office"/);
@@ -42,6 +43,14 @@ test('renders the career detail stage with desktop archive panel, custom selecto
   assert.match(markup, /Signal House Residency/);
   assert.match(markup, /Northwind Relay Office/);
   assert.match(markup, /Glass Harbor Ledger/);
+  assert.match(
+    markup,
+    /data-career-detail-drag-thumb-icon="desktop"[^>]*src="\/images\/careerDetail_scroll_icon\.png"/,
+  );
+  assert.doesNotMatch(
+    markup,
+    /class="absolute inset-y-0 left-1\/2 h-full -translate-x-1\/2 object-contain opacity-95"/,
+  );
 });
 
 test('renders the desktop text cards in a single flow stack instead of separate absolute blocks', () => {
@@ -59,6 +68,35 @@ test('renders the desktop text cards in a single flow stack instead of separate 
   );
   assert.doesNotMatch(markup, /top-\[59\.8%\]/);
   assert.doesNotMatch(markup, /top-\[63\.5%\]/);
+});
+
+test('renders the desktop text and date typography with the compact sizing from the latest QA spec', () => {
+  const markup = renderToStaticMarkup(<CareerDetailSection />);
+
+  assert.match(
+    markup,
+    /data-career-detail-block="date-title"[^>]*class="mt-3 font-serif text-\[clamp\(3\.6rem,4\.2vw,4\.8rem\)\] leading-none tracking-\[-0\.06em\] text-\[#241b14\]"/,
+  );
+  assert.match(
+    markup,
+    /<h3 class="mt-3 max-w-\[16ch\] font-serif text-\[clamp\(1\.8rem,2vw,2\.2rem\)\] leading-\[0\.92\] tracking-\[-0\.04em\] text-\[#251c15\]">/,
+  );
+  assert.match(
+    markup,
+    /data-career-detail-block="body"[^>]*class="mt-4 text-\[0\.92rem\] leading-\[1\.5\] text-\[#322720\]"/,
+  );
+  assert.match(
+    markup,
+    /data-career-detail-divider="chapter-ii"[^>]*class="flex items-center gap-3 py-2"/,
+  );
+  assert.match(
+    markup,
+    /<h4 class="font-serif text-\[clamp\(1\.6rem,1\.8vw,2rem\)\] leading-\[0\.95\] tracking-\[-0\.04em\] text-\[#261d16\]">/,
+  );
+  assert.match(
+    markup,
+    /<p class="mt-3 text-\[0\.9rem\] leading-\[1\.5\] text-\[#342821\]">/,
+  );
 });
 
 test('renders desktop tabs in the main stage coordinate system so they overlap the background markers', () => {

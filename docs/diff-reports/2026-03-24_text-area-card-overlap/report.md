@@ -1,12 +1,10 @@
-# 设计还原 QA 报告（第 2 轮 — 修正版）
+# 设计还原 QA 报告（第 3 轮）
 
 - **日期**：2026-03-24
-- **模块**：CareerDetailSection — 文本区域
-- **匹配得分**：5/10（较上轮 4/10 有改善：右侧面板已填充内容、图标已添加、卡片圆角已修正）
+- **模块**：CareerDetailSection — 文本区域 + 日期标题
+- **匹配得分**：6/10（较上轮改善：内容文案已更新、卡片容器已移除、元数据重复已修复）
 - **标注图**：[annotated-diff.png](./annotated-diff.png)
-- **上轮报告**：[../2026-03-24_vintage-journal-layout-and-content-gaps/](../2026-03-24_vintage-journal-layout-and-content-gaps/)
-
-> **修正说明**：初版报告中将问题 #1 误诊为"卡片重叠需改 flex 布局"。经用户确认，期望设计中根本**没有卡片容器**——文本应直接在羊皮纸背景上显示。已更新问题 #1 为"移除卡片容器"。
+- **期望设计参考**：[../careerDeatil_Demonstration.jpeg](../careerDeatil_Demonstration.jpeg)
 
 ---
 
@@ -14,12 +12,9 @@
 
 | 上轮问题 | 状态 |
 |---------|------|
-| #1 标签页重影 | ✅ 已改善 |
-| #3 右侧面板内容缺失 | ✅ 已填充（地图 + 元数据 + CLASSIFIED） |
-| #4 卡片透明度/圆角 | ✅ 已修正（但本轮需整体移除卡片） |
-| #5 章节分隔线 | ✅ 已添加 |
-| #6 装饰图标 | ✅ 已添加（Shield + Anchor） |
-| #2 内容文案更新 | ❌ 未执行 |
+| 卡片容器移除 | ✅ 已移除（article → div，无背景/边框/阴影） |
+| 元数据重复 | ✅ 已修复 |
+| 内容文案更新 | ✅ 已更新为正式文案 |
 
 ---
 
@@ -27,31 +22,30 @@
 
 | # | 严重程度 | 问题 | 文件 |
 |---|---------|------|------|
-| 1 | 🔴 严重 | 移除卡片容器，文本直接在背景上显示 | [issues/01_card-overlap.md](./issues/01_card-overlap.md) |
-| 2 | ✅ 已修复 | 右侧面板元数据重复（已解决） | [issues/02_metadata-duplicate.md](./issues/02_metadata-duplicate.md) |
-| 3 | 🟡 主要 | 内容文案未更新 | [issues/03_content-text-update.md](./issues/03_content-text-update.md) |
+| 1 | 🔴 严重 | 文本区域字号过大导致内容溢出 | [issues/01_text-area-font-overflow.md](./issues/01_text-area-font-overflow.md) |
+| 2 | 🟡 主要 | 日期标题布局优化 | [issues/02_date-title-layout.md](./issues/02_date-title-layout.md) |
 
 ---
 
 ## ✅ 正确部分（勿动）
 
 - 三栏布局结构
-- 外层 flex 容器的定位和流式排列（上轮修复的 absolute → flex 是正确的）
+- 外层 flex 容器的流式排列（无 absolute 子元素）
+- 卡片容器已正确移除（无背景/边框/阴影）
+- 文案内容已正确更新
 - 背景图片和 #ece2d0 色调
 - Playfair Display 衬线字体
-- 标签页位置和交互（含像素锁定定位）
-- 日期标题 "October 14th, 1894"
+- 标签页位置和交互
 - Shield/Anchor 装饰图标
-- 分隔线 "II" 的存在和样式
-- 右侧面板地图、坐标、CLASSIFIED 标签
+- 分隔线 "II" 的样式
+- 右侧面板（地图、坐标、CLASSIFIED）
 - 滚动吸附和移动端布局
 
 ---
 
 ## 修复流程
 
-1. **先修 #1（移除卡片容器）** — 这是核心视觉偏差，修复后文本区域的整体观感会大幅改善
-2. **跳过 #2** — 已修复
-3. **再修 #3（文案更新）** — 纯数据替换，在移除卡片后的布局中验证文案长度是否合理
-4. 每个问题修复后写 fix-log，验证通过再进入下一个
-5. 全部完成后重新运行 `/design2code diff` 进行第 3 轮对比
+1. **先修 #1（字号/布局溢出）** — 这是当前最突出的视觉问题
+2. **再修 #2（日期标题）** — 独立问题，但建议在 #1 之后处理（整体比例会变）
+3. 每个问题修复后写 fix-log
+4. 全部完成后重新运行 `/design2code diff` 进行下一轮对比

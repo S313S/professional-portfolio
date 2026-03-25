@@ -724,7 +724,7 @@ export default function CareerDetailSection() {
             <h2
               id="career-detail-date-title"
               data-career-detail-block="date-title"
-              className="mt-3 font-serif text-[clamp(4.4rem,5vw,5.8rem)] leading-none tracking-[-0.06em] text-[#241b14]"
+              className="mt-3 font-serif text-[clamp(3.6rem,4.2vw,4.8rem)] leading-none tracking-[-0.06em] text-[#241b14]"
             >
               {selectedRecord.dateTitle}
             </h2>
@@ -748,13 +748,6 @@ export default function CareerDetailSection() {
               ))}
             </select>
 
-            <img
-              src={CAREER_DETAIL_ASSETS.scrollSelector}
-              alt=""
-              aria-hidden="true"
-              className="absolute inset-y-0 left-1/2 h-full -translate-x-1/2 object-contain opacity-95"
-            />
-
             <div
               data-career-detail-drag-track="desktop"
               className="absolute inset-y-[8%] left-1/2 z-10 w-[2.6rem] -translate-x-1/2 touch-none"
@@ -768,13 +761,20 @@ export default function CareerDetailSection() {
                 data-career-detail-drag-thumb="desktop"
                 style={selectorThumbStyle}
                 className={joinClasses(
-                  'absolute left-1/2 h-[4.4rem] w-[1.45rem] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#8f775f]/30 bg-[rgba(247,241,231,0.84)] shadow-[0_10px_24px_rgba(92,69,45,0.18)] transition-[top,box-shadow,transform] duration-300',
+                  'absolute left-1/2 flex h-[7rem] w-[2rem] -translate-x-1/2 -translate-y-1/2 items-center justify-center transition-[top,transform] duration-300',
                   isSelectorDragging
-                    ? 'cursor-grabbing scale-[1.03] shadow-[0_14px_28px_rgba(92,69,45,0.24)]'
+                    ? 'cursor-grabbing scale-[1.03]'
                     : 'cursor-grab',
                 )}
               >
-                <span className="absolute left-1/2 top-1/2 h-[2.6rem] w-[0.18rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#a7927c]/55" />
+                <img
+                  data-career-detail-drag-thumb-icon="desktop"
+                  src={CAREER_DETAIL_ASSETS.scrollSelector}
+                  alt=""
+                  aria-hidden="true"
+                  draggable={false}
+                  className="pointer-events-none h-auto max-h-full w-[2rem] object-contain drop-shadow-[0_10px_24px_rgba(92,69,45,0.18)]"
+                />
               </div>
             </div>
 
@@ -821,12 +821,12 @@ export default function CareerDetailSection() {
               >
                 {selectedContent.eyebrow}
               </p>
-              <h3 className="mt-3 max-w-[12ch] font-serif text-[clamp(2.4rem,2.6vw,3rem)] leading-[0.92] tracking-[-0.04em] text-[#251c15]">
+              <h3 className="mt-3 max-w-[16ch] font-serif text-[clamp(1.8rem,2vw,2.2rem)] leading-[0.92] tracking-[-0.04em] text-[#251c15]">
                 {selectedContent.headline}
               </h3>
               <p
                 data-career-detail-block="body"
-                className="mt-4 text-[1.02rem] leading-[1.55] text-[#322720]"
+                className="mt-4 text-[0.92rem] leading-[1.5] text-[#322720]"
               >
                 {selectedContent.body}
               </p>
@@ -834,7 +834,7 @@ export default function CareerDetailSection() {
 
             <div
               data-career-detail-divider="chapter-ii"
-              className="flex items-center gap-3 py-4"
+              className="flex items-center gap-3 py-2"
             >
               <div className="h-px flex-1 bg-[#8f775f]/30" />
               <span className="font-serif text-sm tracking-[0.28em] text-[#7f6854]/60">II</span>
@@ -848,10 +848,10 @@ export default function CareerDetailSection() {
                 className="mb-2 h-5 w-5 text-[#7f6854]/40"
                 strokeWidth={1.8}
               />
-              <h4 className="font-serif text-[clamp(2.1rem,2.2vw,2.8rem)] leading-[0.95] tracking-[-0.04em] text-[#261d16]">
+              <h4 className="font-serif text-[clamp(1.6rem,1.8vw,2rem)] leading-[0.95] tracking-[-0.04em] text-[#261d16]">
                 {selectedContent.supportingTitle}
               </h4>
-              <p className="mt-3 text-[1rem] leading-[1.55] text-[#342821]">
+              <p className="mt-3 text-[0.9rem] leading-[1.5] text-[#342821]">
                 {selectedContent.supportingBody}
               </p>
             </div>
