@@ -675,6 +675,27 @@ export default function CareerDetailSection() {
             viewBox={`0 0 ${sectionSize.width} ${sectionSize.height}`}
             className="h-full w-full overflow-visible"
           >
+            <defs>
+              <marker
+                id="career-detail-connector-arrow"
+                data-career-detail-connector-arrowhead="desktop"
+                markerWidth="8"
+                markerHeight="8"
+                refX="6.5"
+                refY="4"
+                orient="auto"
+                markerUnits="strokeWidth"
+              >
+                <path
+                  d="M 0 0 L 8 4 L 0 8 L 2.2 4 z"
+                  style={{
+                    fill: 'rgba(116, 92, 67, 0.9)',
+                    stroke: 'rgba(92, 70, 48, 0.82)',
+                    strokeWidth: 0.7,
+                  }}
+                />
+              </marker>
+            </defs>
             {CAREER_DETAIL_TABS.map((tab) => {
               const isActive = tab.key === selectedTab;
 
@@ -686,28 +707,18 @@ export default function CareerDetailSection() {
                 >
                   <path
                     d={desktopConnectorPaths[tab.key]}
-                    pathLength={1}
                     className="transition-[opacity,stroke-dashoffset] duration-500 ease-out"
                     style={{
                       fill: 'none',
-                      stroke: 'rgba(101, 75, 51, 0.72)',
-                      strokeWidth: 2.15,
+                      stroke: 'rgba(116, 92, 67, 0.78)',
+                      strokeWidth: 2.05,
                       strokeLinecap: 'round',
                       strokeLinejoin: 'round',
                       opacity: isActive ? 1 : 0,
-                      strokeDasharray: 1,
-                      strokeDashoffset: isActive ? 0 : 1,
-                      filter: 'drop-shadow(0 1px 2px rgba(73, 51, 30, 0.12))',
-                    }}
-                  />
-                  <circle
-                    cx={sectionSize.width * CAREER_DETAIL_DESKTOP_TAB_CONNECTORS[tab.key].end.x}
-                    cy={sectionSize.height * CAREER_DETAIL_DESKTOP_TAB_CONNECTORS[tab.key].end.y}
-                    r={3.1}
-                    className="transition-opacity duration-500 ease-out"
-                    style={{
-                      fill: 'rgba(101, 75, 51, 0.82)',
-                      opacity: isActive ? 0.85 : 0,
+                      strokeDasharray: '7 10',
+                      strokeDashoffset: isActive ? 0 : 17,
+                      markerEnd: 'url(#career-detail-connector-arrow)',
+                      filter: 'drop-shadow(0 1px 2px rgba(86, 64, 43, 0.1))',
                     }}
                   />
                 </g>

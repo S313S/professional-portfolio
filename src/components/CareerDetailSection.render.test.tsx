@@ -106,9 +106,18 @@ test('renders desktop tabs in the main stage coordinate system so they overlap t
   assert.match(markup, /data-career-detail-tab-positioning="background-pixel-lock"/);
   assert.match(markup, /data-career-detail-connector-layer="desktop"/);
   assert.match(markup, /data-career-detail-connector-svg="desktop"/);
+  assert.match(markup, /data-career-detail-connector-arrowhead="desktop"/);
   assert.match(
     markup,
     /data-career-detail-connector="sharingJourney"[^>]*data-career-detail-connector-active="true"/,
+  );
+  assert.match(
+    markup,
+    /data-career-detail-connector="sharingJourney"[\s\S]*stroke-dasharray:[^;"']+/,
+  );
+  assert.match(
+    markup,
+    /data-career-detail-connector="sharingJourney"[\s\S]*marker-end:url\(#career-detail-connector-arrow\)/,
   );
   assert.match(
     markup,
