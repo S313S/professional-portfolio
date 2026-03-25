@@ -38,6 +38,18 @@ interface PixelRect {
   height: number;
 }
 
+interface Point {
+  x: number;
+  y: number;
+}
+
+interface CareerDetailTabConnector {
+  startOffset: Point;
+  controlA: Point;
+  controlB: Point;
+  end: Point;
+}
+
 interface CareerDetailContentBlock {
   eyebrow: string;
   headline: string;
@@ -271,6 +283,27 @@ const CAREER_DETAIL_DESKTOP_TAB_PIXEL_RECTS: Record<CareerDetailTabKey, PixelRec
   },
 };
 
+const CAREER_DETAIL_DESKTOP_TAB_CONNECTORS: Record<CareerDetailTabKey, CareerDetailTabConnector> = {
+  sharingJourney: {
+    startOffset: { x: 0.94, y: 0.42 },
+    controlA: { x: 0.31, y: 0.22 },
+    controlB: { x: 0.336, y: 0.3 },
+    end: { x: 0.36, y: 0.325 },
+  },
+  workExperience: {
+    startOffset: { x: 0.95, y: 0.5 },
+    controlA: { x: 0.31, y: 0.415 },
+    controlB: { x: 0.336, y: 0.43 },
+    end: { x: 0.36, y: 0.442 },
+  },
+  industryKnowledge: {
+    startOffset: { x: 0.94, y: 0.56 },
+    controlA: { x: 0.305, y: 0.63 },
+    controlB: { x: 0.334, y: 0.56 },
+    end: { x: 0.36, y: 0.56 },
+  },
+};
+
 const getCoveredImageFrame = (containerSize: Size, imageSize: Size) => {
   const scale = Math.max(containerSize.width / imageSize.width, containerSize.height / imageSize.height);
   const width = imageSize.width * scale;
@@ -293,6 +326,37 @@ const getDesktopTabStyle = (tabKey: CareerDetailTabKey, stageSize: Size) => {
     width: `${rect.width * imageFrame.scale}px`,
     height: `${rect.height * imageFrame.scale}px`,
   };
+};
+
+const getDesktopTabRect = (tabKey: CareerDetailTabKey, stageSize: Size): PixelRect => {
+  const imageFrame = getCoveredImageFrame(stageSize, CAREER_DETAIL_BACKGROUND_SIZE);
+  const rect = CAREER_DETAIL_DESKTOP_TAB_PIXEL_RECTS[tabKey];
+
+  return {
+    x: imageFrame.left + rect.x * imageFrame.scale,
+    y: imageFrame.top + rect.y * imageFrame.scale,
+    width: rect.width * imageFrame.scale,
+    height: rect.height * imageFrame.scale,
+  };
+};
+
+const getStagePoint = (stageSize: Size, point: Point): Point => ({
+  x: stageSize.width * point.x,
+  y: stageSize.height * point.y,
+});
+
+const getDesktopConnectorPath = (tabKey: CareerDetailTabKey, stageSize: Size) => {
+  const rect = getDesktopTabRect(tabKey, stageSize);
+  const connector = CAREER_DETAIL_DESKTOP_TAB_CONNECTORS[tabKey];
+  const start = {
+    x: rect.x + rect.width * connector.startOffset.x,
+    y: rect.y + rect.height * connector.startOffset.y,
+  };
+  const controlA = getStagePoint(stageSize, connector.controlA);
+  const controlB = getStagePoint(stageSize, connector.controlB);
+  const end = getStagePoint(stageSize, connector.end);
+
+  return `M ${start.x} ${start.y} C ${controlA.x} ${controlA.y}, ${controlB.x} ${controlB.y}, ${end.x} ${end.y}`;
 };
 
 const joinClasses = (...classNames: Array<string | false | null | undefined>) =>
@@ -337,6 +401,13 @@ export default function CareerDetailSection() {
       Object.fromEntries(
         CAREER_DETAIL_TABS.map((tab) => [tab.key, getDesktopTabStyle(tab.key, sectionSize)]),
       ) as Record<CareerDetailTabKey, CSSProperties>,
+    [sectionSize],
+  );
+  const desktopConnectorPaths = useMemo(
+    () =>
+      Object.fromEntries(
+        CAREER_DETAIL_TABS.map((tab) => [tab.key, getDesktopConnectorPath(tab.key, sectionSize)]),
+      ) as Record<CareerDetailTabKey, string>,
     [sectionSize],
   );
   const selectorThumbStyle = useMemo(() => {
@@ -592,8 +663,59 @@ export default function CareerDetailSection() {
       <div
         data-career-detail-tab-overlay="desktop"
         data-career-detail-tab-positioning="background-pixel-lock"
-        className="pointer-events-none absolute inset-0 z-10 hidden lg:block"
+        className="pointer-events-none absolute inset-0 z-30 hidden lg:block"
       >
+        <div
+          data-career-detail-connector-layer="desktop"
+          aria-hidden="true"
+          className="absolute inset-0"
+        >
+          <svg
+            data-career-detail-connector-svg="desktop"
+            viewBox={`0 0 ${sectionSize.width} ${sectionSize.height}`}
+            className="h-full w-full overflow-visible"
+          >
+            {CAREER_DETAIL_TABS.map((tab) => {
+              const isActive = tab.key === selectedTab;
+
+              return (
+                <g
+                  key={`${tab.key}-connector`}
+                  data-career-detail-connector={tab.key}
+                  data-career-detail-connector-active={isActive ? 'true' : 'false'}
+                >
+                  <path
+                    d={desktopConnectorPaths[tab.key]}
+                    pathLength={1}
+                    className="transition-[opacity,stroke-dashoffset] duration-500 ease-out"
+                    style={{
+                      fill: 'none',
+                      stroke: 'rgba(101, 75, 51, 0.72)',
+                      strokeWidth: 2.15,
+                      strokeLinecap: 'round',
+                      strokeLinejoin: 'round',
+                      opacity: isActive ? 1 : 0,
+                      strokeDasharray: 1,
+                      strokeDashoffset: isActive ? 0 : 1,
+                      filter: 'drop-shadow(0 1px 2px rgba(73, 51, 30, 0.12))',
+                    }}
+                  />
+                  <circle
+                    cx={sectionSize.width * CAREER_DETAIL_DESKTOP_TAB_CONNECTORS[tab.key].end.x}
+                    cy={sectionSize.height * CAREER_DETAIL_DESKTOP_TAB_CONNECTORS[tab.key].end.y}
+                    r={3.1}
+                    className="transition-opacity duration-500 ease-out"
+                    style={{
+                      fill: 'rgba(101, 75, 51, 0.82)',
+                      opacity: isActive ? 0.85 : 0,
+                    }}
+                  />
+                </g>
+              );
+            })}
+          </svg>
+        </div>
+
         {CAREER_DETAIL_TABS.map((tab) => {
           const isActive = tab.key === selectedTab;
 
@@ -601,15 +723,16 @@ export default function CareerDetailSection() {
             <button
               key={tab.key}
               type="button"
+              data-career-detail-tab-surface="desktop"
               data-career-detail-tab={tab.key}
               aria-label={tab.label}
               aria-pressed={isActive}
               style={desktopTabStyles[tab.key]}
               className={joinClasses(
-                'group pointer-events-auto absolute overflow-hidden bg-transparent p-0 text-left transition-transform duration-500',
+                'group pointer-events-auto absolute overflow-hidden bg-transparent p-0 text-left outline-none transition-[filter,opacity,transform] duration-500 focus-visible:ring-2 focus-visible:ring-[#73573f]/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[#efe4d5]',
                 isActive
-                  ? 'z-10 scale-[1.015]'
-                  : 'z-0 opacity-[0.98] hover:-translate-y-0.5 hover:opacity-100',
+                  ? 'z-20 scale-[1.022] -translate-y-0.5'
+                  : 'z-10 opacity-[0.94] hover:-translate-y-1 hover:scale-[1.01] hover:opacity-100',
               )}
               onClick={() => setSelectedTab(tab.key)}
             >
@@ -617,11 +740,12 @@ export default function CareerDetailSection() {
                 src={tab.imageSrc}
                 alt=""
                 aria-hidden="true"
+                draggable={false}
                 className={joinClasses(
-                  'absolute inset-0 h-full w-full max-w-none drop-shadow-[0_18px_24px_rgba(58,42,26,0.16)] transition-[filter,transform] duration-500',
+                  'absolute inset-0 h-full w-full max-w-none transition-[filter,transform] duration-500',
                   isActive
-                    ? 'brightness-[1.02] saturate-[1.02]'
-                    : 'brightness-[0.98] group-hover:brightness-[1.01]',
+                    ? 'drop-shadow-[0_24px_30px_rgba(58,42,26,0.22)] brightness-[1.045] saturate-[1.04]'
+                    : 'drop-shadow-[0_16px_22px_rgba(58,42,26,0.15)] brightness-[0.985] saturate-[0.98] group-hover:brightness-[1.015] group-hover:saturate-[1.01]',
                 )}
               />
             </button>
@@ -651,16 +775,28 @@ export default function CareerDetailSection() {
                   <button
                     key={tab.key}
                     type="button"
+                    data-career-detail-tab-surface="mobile"
                     data-career-detail-tab={tab.key}
                     aria-label={tab.label}
                     aria-pressed={isActive}
                     className={joinClasses(
-                      'shrink-0 rounded-[1rem] border border-transparent bg-transparent p-0 transition-transform duration-300',
-                      isActive ? 'scale-[1.02]' : 'opacity-80',
+                      'shrink-0 rounded-[1rem] border bg-transparent p-0 outline-none transition-[filter,opacity,transform] duration-300 focus-visible:ring-2 focus-visible:ring-[#73573f]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#f7f1e7]',
+                      isActive
+                        ? 'scale-[1.02] border-[#8f775f]/22 bg-[rgba(255,249,241,0.38)] shadow-[0_12px_24px_rgba(83,60,37,0.12)]'
+                        : 'border-transparent opacity-80 hover:opacity-100',
                     )}
                     onClick={() => setSelectedTab(tab.key)}
                   >
-                    <img src={tab.imageSrc} alt="" aria-hidden="true" className="w-[10rem]" />
+                    <img
+                      src={tab.imageSrc}
+                      alt=""
+                      aria-hidden="true"
+                      draggable={false}
+                      className={joinClasses(
+                        'w-[10rem] transition-[filter,transform] duration-300',
+                        isActive ? 'brightness-[1.03]' : 'brightness-[0.98]',
+                      )}
+                    />
                   </button>
                 );
               })}

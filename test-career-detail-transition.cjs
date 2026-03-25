@@ -94,6 +94,62 @@ const baseUrl = process.env.BASE_URL || 'http://127.0.0.1:3000';
   assert.match(dragUpdated.eyebrow, /Chronicle I: Sharing Journey/);
   assert.match(dragUpdated.body, /Sharing entered a steadier phase here/i);
 
+  await page
+    .locator('[data-career-detail-tab-surface="desktop"][data-career-detail-tab="workExperience"]')
+    .click();
+  await page.waitForTimeout(250);
+
+  const clickedWorkExperience = await page.evaluate(() => ({
+    eyebrow: document.querySelector('[data-career-detail-block="eyebrow"]')?.textContent ?? '',
+    headline: document.querySelector('h3')?.textContent ?? '',
+    body: document.querySelector('[data-career-detail-block="body"]')?.textContent ?? '',
+    workExperiencePressed:
+      document
+        .querySelector(
+          '[data-career-detail-tab-surface="desktop"][data-career-detail-tab="workExperience"]',
+        )
+        ?.getAttribute('aria-pressed') ?? '',
+    workExperienceConnectorActive:
+      document
+        .querySelector('[data-career-detail-connector="workExperience"]')
+        ?.getAttribute('data-career-detail-connector-active') ?? '',
+  }));
+
+  assert.match(clickedWorkExperience.eyebrow, /Chronicle II: Work Experience/);
+  assert.match(clickedWorkExperience.headline, /Relay Operations Lead/);
+  assert.match(clickedWorkExperience.body, /Work became less about isolated execution/i);
+  assert.equal(clickedWorkExperience.workExperiencePressed, 'true');
+  assert.equal(clickedWorkExperience.workExperienceConnectorActive, 'true');
+
+  await page
+    .locator(
+      '[data-career-detail-tab-surface="desktop"][data-career-detail-tab="industryKnowledge"]',
+    )
+    .click();
+  await page.waitForTimeout(250);
+
+  const clickedIndustryKnowledge = await page.evaluate(() => ({
+    eyebrow: document.querySelector('[data-career-detail-block="eyebrow"]')?.textContent ?? '',
+    headline: document.querySelector('h3')?.textContent ?? '',
+    body: document.querySelector('[data-career-detail-block="body"]')?.textContent ?? '',
+    industryKnowledgePressed:
+      document
+        .querySelector(
+          '[data-career-detail-tab-surface="desktop"][data-career-detail-tab="industryKnowledge"]',
+        )
+        ?.getAttribute('aria-pressed') ?? '',
+    industryKnowledgeConnectorActive:
+      document
+        .querySelector('[data-career-detail-connector="industryKnowledge"]')
+        ?.getAttribute('data-career-detail-connector-active') ?? '',
+  }));
+
+  assert.match(clickedIndustryKnowledge.eyebrow, /Chronicle III: Industry Knowledge/);
+  assert.match(clickedIndustryKnowledge.headline, /Relay Signals Across Emerging Markets/);
+  assert.match(clickedIndustryKnowledge.body, /I began reading market shifts through velocity/i);
+  assert.equal(clickedIndustryKnowledge.industryKnowledgePressed, 'true');
+  assert.equal(clickedIndustryKnowledge.industryKnowledgeConnectorActive, 'true');
+
   const archivePanel = await page.evaluate(() => ({
     classified: document.querySelector('[data-career-detail-block="classified"]')?.textContent ?? '',
   }));

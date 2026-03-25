@@ -104,9 +104,27 @@ test('renders desktop tabs in the main stage coordinate system so they overlap t
 
   assert.match(markup, /data-career-detail-tab-overlay="desktop"/);
   assert.match(markup, /data-career-detail-tab-positioning="background-pixel-lock"/);
+  assert.match(markup, /data-career-detail-connector-layer="desktop"/);
+  assert.match(markup, /data-career-detail-connector-svg="desktop"/);
+  assert.match(
+    markup,
+    /data-career-detail-connector="sharingJourney"[^>]*data-career-detail-connector-active="true"/,
+  );
+  assert.match(
+    markup,
+    /data-career-detail-connector="workExperience"[^>]*data-career-detail-connector-active="false"/,
+  );
+  assert.match(
+    markup,
+    /data-career-detail-connector="industryKnowledge"[^>]*data-career-detail-connector-active="false"/,
+  );
   assert.match(
     markup,
     /data-career-detail-tab="sharingJourney"[^>]*style="left:[^"]*px;top:[^"]*px;width:[^"]*px;height:[^"]*px"/,
+  );
+  assert.match(
+    markup,
+    /data-career-detail-tab="sharingJourney"[^>]*aria-pressed="true"/,
   );
   assert.match(
     markup,
@@ -114,6 +132,14 @@ test('renders desktop tabs in the main stage coordinate system so they overlap t
   );
   assert.match(
     markup,
+    /data-career-detail-tab="workExperience"[^>]*aria-pressed="false"/,
+  );
+  assert.match(
+    markup,
     /data-career-detail-tab="industryKnowledge"[^>]*style="left:[^"]*px;top:[^"]*px;width:[^"]*px;height:[^"]*px"/,
+  );
+  assert.match(
+    markup,
+    /data-career-detail-tab="industryKnowledge"[^>]*aria-pressed="false"/,
   );
 });
