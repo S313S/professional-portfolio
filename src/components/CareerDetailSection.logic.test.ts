@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 
 import {
   getCareerDetailDragGestureState,
+  getCareerDetailInitialSelectedEntryIdByCategory,
+  getCareerDetailResolvedEntryState,
   getCareerDetailSnapState,
   getCareerDetailSnapTargetY,
   getCareerDetailWheelState,
@@ -168,4 +170,60 @@ test('drag gesture switches upward to the previous record after one upward step'
   assert.equal(dragState.shouldCommitSwitch, true);
   assert.equal(dragState.nextIndex, 1);
   assert.equal(dragState.hasCommittedInGesture, true);
+});
+
+test('initial category selection defaults to the first entry of each category', () => {
+  const initialSelection = getCareerDetailInitialSelectedEntryIdByCategory([
+    {
+      key: 'sharingJourney',
+      entries: [{ id: 'sharing-1' }, { id: 'sharing-2' }],
+    },
+    {
+      key: 'workExperience',
+      entries: [{ id: 'work-1' }],
+    },
+    {
+      key: 'industryKnowledge',
+      entries: [],
+    },
+  ]);
+
+  assert.deepEqual(initialSelection, {
+    sharingJourney: 'sharing-1',
+    workExperience: 'work-1',
+    industryKnowledge: '',
+  });
+});
+
+test('resolved entry state restores the remembered entry when it still exists', () => {
+  const resolvedEntry = getCareerDetailResolvedEntryState({
+    entries: [{ id: 'sharing-1' }, { id: 'sharing-2' }],
+    selectedEntryId: 'sharing-2',
+  });
+
+  assert.equal(resolvedEntry.selectedEntryId, 'sharing-2');
+  assert.equal(resolvedEntry.selectedEntryIndex, 1);
+  assert.equal(resolvedEntry.selectedEntry?.id, 'sharing-2');
+});
+
+test('resolved entry state falls back to the first entry when the remembered one is missing', () => {
+  const resolvedEntry = getCareerDetailResolvedEntryState({
+    entries: [{ id: 'sharing-1' }, { id: 'sharing-2' }],
+    selectedEntryId: 'missing-entry',
+  });
+
+  assert.equal(resolvedEntry.selectedEntryId, 'sharing-1');
+  assert.equal(resolvedEntry.selectedEntryIndex, 0);
+  assert.equal(resolvedEntry.selectedEntry?.id, 'sharing-1');
+});
+
+test('resolved entry state exposes an empty selection for categories without entries', () => {
+  const resolvedEntry = getCareerDetailResolvedEntryState({
+    entries: [],
+    selectedEntryId: 'missing-entry',
+  });
+
+  assert.equal(resolvedEntry.selectedEntryId, '');
+  assert.equal(resolvedEntry.selectedEntryIndex, -1);
+  assert.equal(resolvedEntry.selectedEntry, null);
 });

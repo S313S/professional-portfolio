@@ -1,10 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { renderToStaticMarkup } from 'react-dom/server';
 
 import CareerDetailSection from './CareerDetailSection';
 
-test('renders the career detail stage with desktop archive panel, custom selector, and default sharing content', () => {
+test('renders the career detail stage with category-scoped bookmarks and default sharing logs', () => {
   const markup = renderToStaticMarkup(<CareerDetailSection />);
 
   assert.match(markup, /id="career-detail-section"/);
@@ -21,10 +22,11 @@ test('renders the career detail stage with desktop archive panel, custom selecto
   assert.match(markup, /data-career-detail-drag-track="desktop"/);
   assert.match(markup, /data-career-detail-drag-thumb="desktop"/);
   assert.match(markup, /data-career-detail-drag-thumb-icon="desktop"/);
-  assert.match(markup, /data-career-detail-record-button="aurora-basin-expedition"/);
-  assert.match(markup, /data-career-detail-record-button="signal-house-residency"/);
-  assert.match(markup, /data-career-detail-record-button="northwind-relay-office"/);
-  assert.match(markup, /data-career-detail-record-button="glass-harbor-ledger"/);
+  assert.match(markup, /data-career-detail-record-button="sharing-essay-first-post"/);
+  assert.match(markup, /data-career-detail-record-button="sharing-essay-pattern-library"/);
+  assert.match(markup, /data-career-detail-record-button="sharing-essay-editorial-rhythm"/);
+  assert.doesNotMatch(markup, /data-career-detail-record-button="work-system-campaign-ops"/);
+  assert.doesNotMatch(markup, /data-career-detail-record-button="industry-signal-ai-adoption"/);
   assert.match(markup, /CLASSIFIED/);
   assert.doesNotMatch(markup, /REF: E8\.22 \/ SECTOR 4/);
   assert.doesNotMatch(markup, /ELEV: 1,344M/);
@@ -33,16 +35,17 @@ test('renders the career detail stage with desktop archive panel, custom selecto
   assert.doesNotMatch(markup, /data-career-detail-divider="chapter-ii"/);
   assert.doesNotMatch(markup, /data-career-detail-icon="shield"/);
   assert.doesNotMatch(markup, /data-career-detail-icon="anchor"/);
-  assert.match(markup, /October 14th, 1894/);
-  assert.match(markup, /Chronicle I:/);
-  assert.match(markup, /Chief Surveyor &amp; Field Archivist/);
-  assert.match(markup, /Appointed by the Royal Geographical Society/);
-  assert.match(markup, /Instrument Calibration Specialist/);
-  assert.match(markup, /HMS Discovery/);
-  assert.match(markup, /Aurora Basin Expedition/);
-  assert.match(markup, /Signal House Residency/);
-  assert.match(markup, /Northwind Relay Office/);
-  assert.match(markup, /Glass Harbor Ledger/);
+  assert.match(markup, /April 12th, 2021/);
+  assert.match(markup, /Dispatch Log I: Sharing Journey/);
+  assert.match(markup, /Publishing Before It Felt Polished/);
+  assert.match(markup, /I started sharing small working notes before they felt complete/);
+  assert.match(markup, /The First Audience Was Future Me/);
+  assert.match(markup, /Marked after the first month of consistent public notes\./);
+  assert.match(markup, /First Public Notes/);
+  assert.match(markup, /Pattern Library/);
+  assert.match(markup, /Editorial Rhythm/);
+  assert.doesNotMatch(markup, /Campaign Ops Foundations/);
+  assert.doesNotMatch(markup, /AI Adoption Signals/);
   assert.match(
     markup,
     /data-career-detail-drag-thumb-icon="desktop"[^>]*src="\/images\/careerDetail_scroll_icon\.png"/,
@@ -53,27 +56,36 @@ test('renders the career detail stage with desktop archive panel, custom selecto
   );
 });
 
-test('renders the desktop text cards in a single flow stack instead of separate absolute blocks', () => {
+test('renders the desktop text content in separate upper and lower pinned regions', () => {
   const markup = renderToStaticMarkup(<CareerDetailSection />);
 
-  assert.match(markup, /data-career-detail-card-stack="desktop"/);
-  assert.match(markup, /data-career-detail-card-stack="desktop"[^>]*class="absolute left-\[37%\] top-\[22%\] flex w-\[29%\] flex-col"/);
-  assert.doesNotMatch(
+  assert.match(
     markup,
-    /rounded-\[0\.4rem\] border border-\[#8f775f\]\/30 bg-\[rgba\(249,244,236,0\.85\)\] p-5 shadow-\[0_18px_40px_rgba\(70,51,35,0\.08\)\]/,
+    /data-career-detail-card-stack="desktop-primary"[^>]*class="absolute left-\[37%\] top-\[22%\] w-\[29%\]"/,
   );
-  assert.doesNotMatch(
+  assert.match(
     markup,
-    /rounded-\[0\.4rem\] border border-\[#8f775f\]\/30 bg-\[rgba\(250,246,240,0\.88\)\] p-5 shadow-\[0_18px_40px_rgba\(70,51,35,0\.08\)\]/,
+    /data-career-detail-card-stack="desktop-secondary"[^>]*class="absolute left-\[37%\] top-\[63%\] w-\[29%\]"/,
   );
-  assert.doesNotMatch(markup, /top-\[59\.8%\]/);
-  assert.doesNotMatch(markup, /top-\[63\.5%\]/);
-  assert.doesNotMatch(markup, /data-career-detail-divider="chapter-ii"/);
-  assert.doesNotMatch(markup, /data-career-detail-icon="shield"/);
-  assert.doesNotMatch(markup, /data-career-detail-icon="anchor"/);
+  assert.doesNotMatch(markup, /data-career-detail-card-stack="desktop"[^>]*flex w-\[29%\] flex-col/);
 });
 
-test('renders the desktop text and date typography with the compact sizing from the latest QA spec', () => {
+test('keeps the default sharing bookmark rail on its original distributed spacing', () => {
+  const markup = renderToStaticMarkup(<CareerDetailSection />);
+
+  assert.match(markup, /data-career-detail-record-rail="desktop"/);
+  assert.match(markup, /data-career-detail-record-rail-layout="distributed"/);
+  assert.match(
+    markup,
+    /data-career-detail-record-rail="desktop"[^>]*class="[^"]*justify-between[^"]*"/,
+  );
+  assert.doesNotMatch(
+    markup,
+    /data-career-detail-record-rail="desktop"[^>]*class="[^"]*gap-\[1\.2rem\][^"]*"/,
+  );
+});
+
+test('renders the desktop and mobile text typography with non-clipping line heights from the latest QA spec', () => {
   const markup = renderToStaticMarkup(<CareerDetailSection />);
 
   assert.match(
@@ -82,16 +94,19 @@ test('renders the desktop text and date typography with the compact sizing from 
   );
   assert.match(
     markup,
-    /<h3 class="mt-3 max-w-\[16ch\] font-serif text-\[clamp\(1\.8rem,2vw,2\.2rem\)\] leading-\[0\.92\] tracking-\[-0\.04em\] text-\[#251c15\]">/,
+    /<h3 class="mt-3 max-w-\[24ch\] font-serif text-\[2\.2rem\] leading-none tracking-\[-0\.04em\] text-\[#2d241c\]">/,
+  );
+  assert.match(
+    markup,
+    /<h3 class="mt-3 max-w-\[24ch\] font-serif text-\[clamp\(1\.8rem,2vw,2\.2rem\)\] leading-none tracking-\[-0\.04em\] text-\[#251c15\]">/,
   );
   assert.match(
     markup,
     /data-career-detail-block="body"[^>]*class="mt-4 text-\[0\.92rem\] leading-\[1\.5\] text-\[#322720\]"/,
   );
-  assert.match(markup, /<div class="mt-6"><h4 class="font-serif text-\[clamp\(1\.6rem,1\.8vw,2rem\)\] leading-\[0\.95\] tracking-\[-0\.04em\] text-\[#261d16\]">/);
   assert.match(
     markup,
-    /<h4 class="font-serif text-\[clamp\(1\.6rem,1\.8vw,2rem\)\] leading-\[0\.95\] tracking-\[-0\.04em\] text-\[#261d16\]">/,
+    /data-career-detail-card-stack="desktop-secondary"[\s\S]*<h4 class="font-serif text-\[clamp\(1\.6rem,1\.8vw,2rem\)\] leading-none tracking-\[-0\.04em\] text-\[#261d16\]">/,
   );
   assert.match(
     markup,
@@ -151,4 +166,41 @@ test('renders desktop tabs in the main stage coordinate system so they overlap t
     markup,
     /data-career-detail-tab="industryKnowledge"[^>]*aria-pressed="false"/,
   );
+});
+
+test('keeps bookmark labels aligned to the shared 2-3 word theme-label rhythm across every category', () => {
+  const componentSource = readFileSync(new URL('./CareerDetailSection.tsx', import.meta.url), 'utf8');
+  const bookmarkLabels = Array.from(
+    componentSource.matchAll(/bookmarkLabel:\s*'([^']+)'/g),
+    (match) => match[1],
+  );
+
+  assert.deepEqual(bookmarkLabels, [
+    'First Public Notes',
+    'Pattern Library',
+    'Editorial Rhythm',
+    'Campaign Ops',
+    'Process Design',
+    'AI Delivery',
+    'Adoption Signals',
+    'Creator Commerce',
+  ]);
+
+  for (const label of bookmarkLabels) {
+    assert.equal(label.trim().length > 0, true);
+    assert.equal(label.trim().split(/\s+/).length <= 3, true);
+  }
+
+  assert.doesNotMatch(componentSource, /Campaign Ops Foundations/);
+  assert.doesNotMatch(componentSource, /AI Delivery Systems/);
+  assert.doesNotMatch(componentSource, /AI Adoption Signals/);
+});
+
+test('uses the fixed-gap bookmark rail only for non-sharing categories', () => {
+  const componentSource = readFileSync(new URL('./CareerDetailSection.tsx', import.meta.url), 'utf8');
+
+  assert.match(componentSource, /const isSharingCategory = selectedCategory\.key === 'sharingJourney';/);
+  assert.match(componentSource, /data-career-detail-record-rail-layout=\{isSharingCategory \? 'distributed' : 'fixed-gap'\}/);
+  assert.match(componentSource, /justify-between/);
+  assert.match(componentSource, /justify-start gap-\[1\.2rem\] pt-\[0\.6rem\]/);
 });

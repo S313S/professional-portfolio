@@ -9,6 +9,8 @@ import {
 
 import {
   getCareerDetailDragGestureState,
+  getCareerDetailInitialSelectedEntryIdByCategory,
+  getCareerDetailResolvedEntryState,
   getCareerDetailSnapState,
   getCareerDetailSnapTargetY,
   getCareerDetailWheelState,
@@ -51,6 +53,8 @@ interface CareerDetailTabConnector {
 }
 
 interface CareerDetailContentBlock {
+  metaLine: string;
+  dateTitle: string;
   eyebrow: string;
   headline: string;
   body: string;
@@ -59,166 +63,151 @@ interface CareerDetailContentBlock {
   annotation: string;
 }
 
-interface CareerDetailRecord {
+interface CareerDetailEntry extends CareerDetailContentBlock {
   id: string;
-  label: string;
-  locationLine: string;
-  dateTitle: string;
-  contentByTab: Record<CareerDetailTabKey, CareerDetailContentBlock>;
+  bookmarkLabel: string;
 }
 
-const CAREER_DETAIL_RECORDS: CareerDetailRecord[] = [
+interface CareerDetailCategory {
+  key: CareerDetailTabKey;
+  label: string;
+  imageSrc: string;
+  entries: CareerDetailEntry[];
+}
+
+const CAREER_DETAIL_CATEGORIES: CareerDetailCategory[] = [
   {
-    id: 'aurora-basin-expedition',
-    label: 'Aurora Basin Expedition',
-    locationLine: 'Location: Latitude 45.4215° N',
-    dateTitle: 'October 14th, 1894',
-    contentByTab: {
-      sharingJourney: {
-        eyebrow: 'Chronicle I:',
-        headline: 'Chief Surveyor & Field Archivist',
+    key: 'sharingJourney',
+    label: 'Sharing Journey',
+    imageSrc: CAREER_DETAIL_ASSETS.sharingJourney,
+    entries: [
+      {
+        id: 'sharing-essay-first-post',
+        bookmarkLabel: 'First Public Notes',
+        metaLine: 'Field Note: Public Writing Practice',
+        dateTitle: 'April 12th, 2021',
+        eyebrow: 'Dispatch Log I: Sharing Journey',
+        headline: 'Publishing Before It Felt Polished',
         body:
-          'Appointed by the Royal Geographical Society to chart the uncharted territories of the Inner Rim. Led the creation of more than forty-two high-fidelity topographical surveys using experimental lunar triangulation methods. Orchestrated the 1892 expedition through the Silent Valley, enduring three months of total isolation to capture the auroral shift.',
-        supportingTitle: 'Instrument Calibration Specialist',
+          'I started sharing small working notes before they felt complete, using public posts as a way to capture decisions, questions, and patterns while they were still fresh enough to be useful.',
+        supportingTitle: 'The First Audience Was Future Me',
         supportingBody:
-          "Pioneered the integration of brass analytical engines with traditional celestial sextants. Reduced celestial navigation error margins by 14.2% across the fleet. Served as the primary consultant for the HMS Discovery's deep-water Sima Trench sounding, ensuring accurate depth charting in the Marianas.",
-        annotation: '[Expanded archive: HMS Discovery sounding error-correction data]',
+          'Those early entries worked less like polished essays and more like breadcrumb trails. They helped me revisit what I had tried, what failed, and which ideas deserved another pass.',
+        annotation: 'Marked after the first month of consistent public notes.',
       },
-      workExperience: {
-        eyebrow: 'Chronicle II: Work Experience',
-        headline: 'Instrument Calibration Specialist',
+      {
+        id: 'sharing-essay-pattern-library',
+        bookmarkLabel: 'Pattern Library',
+        metaLine: 'Archive: Audience Pattern Tracking',
+        dateTitle: 'September 3rd, 2021',
+        eyebrow: 'Dispatch Log II: Sharing Journey',
+        headline: 'Turning Repeated Questions Into Reusable Notes',
         body:
-          'I moved from scattered support work into more deliberate systems thinking, building repeatable workflows, tightening delivery, and learning how to make ambiguity legible for teams under pressure.',
-        supportingTitle: 'Making Motion Traceable',
+          'As more people responded, I stopped treating every conversation as a one-off. Repeated questions became a pattern library that shaped what I wrote next and how I framed each lesson.',
+        supportingTitle: 'Useful Notes Need Retrieval Paths',
         supportingBody:
-          'From campaign ops to AI-enabled execution, the work shifted from “finishing tasks” to building a process that other people could trust, inspect, and extend.',
-        annotation: 'Field ledger updated with each operating model revision.',
+          'I learned to tag ideas by situation instead of mood so someone could quickly find the note that matched their own transition, not just admire the writing.',
+        annotation: 'Indexed after recurring reader questions began clustering around the same themes.',
       },
-      industryKnowledge: {
-        eyebrow: 'Chronicle III: Industry Knowledge',
-        headline: 'Surveying the New Frontier',
+      {
+        id: 'sharing-essay-editorial-rhythm',
+        bookmarkLabel: 'Editorial Rhythm',
+        metaLine: 'Routine: Weekly Editorial Cadence',
+        dateTitle: 'February 18th, 2022',
+        eyebrow: 'Dispatch Log III: Sharing Journey',
+        headline: 'Building A Rhythm That Could Survive Busy Weeks',
         body:
-          'As the market tilted toward AI, I stopped treating trends as headlines and began mapping them as infrastructure shifts: tooling, behavior change, distribution costs, and the hidden work needed for adoption.',
-        supportingTitle: 'Reading the Weather Correctly',
+          'Once the novelty wore off, the real work became consistency. I built a lighter editorial cadence that could survive deadlines and still produce something clear, timely, and worth keeping.',
+        supportingTitle: 'Small Systems Protected The Voice',
         supportingBody:
-          'That lens made it easier to separate durable capability from surface excitement, and to identify where product intuition still needed evidence from operators and users.',
-        annotation: 'Expanded from dispatches, market scans, and operator interviews.',
+          'Templates, capture habits, and shorter review loops made it possible to publish without waiting for perfect conditions, which kept the writing alive during heavier work cycles.',
+        annotation: 'Filed after the sharing habit became part of the week instead of a special event.',
       },
-    },
+    ],
   },
   {
-    id: 'signal-house-residency',
-    label: 'Signal House Residency',
-    locationLine: 'Location: Latitude 31.2304° N',
-    dateTitle: 'May 3rd, 1901',
-    contentByTab: {
-      sharingJourney: {
-        eyebrow: 'Chronicle I: Sharing Journey',
-        headline: 'Letters Sent Back To Shore',
+    key: 'workExperience',
+    label: 'Work Experience',
+    imageSrc: CAREER_DETAIL_ASSETS.workExperience,
+    entries: [
+      {
+        id: 'work-system-campaign-ops',
+        bookmarkLabel: 'Campaign Ops',
+        metaLine: 'Work Log: Campaign Operations',
+        dateTitle: 'June 7th, 2022',
+        eyebrow: 'Dispatch Log I: Work Experience',
+        headline: 'Learning To Make Fast Work Legible',
         body:
-          'By the second chapter, sharing was less about confession and more about pattern recognition. I began writing for people standing at the same crossroads, not just for the version of me that survived them.',
-        supportingTitle: 'From Memory To Navigation',
+          'The first stretch of execution work taught me that speed alone was not enough. Teams moved faster when process, ownership, and status were visible without requiring a meeting to reconstruct them.',
+        supportingTitle: 'Clarity Reduced Rework',
         supportingBody:
-          'The stories became more useful once they were organized around decisions, tradeoffs, and consequences instead of mood alone.',
-        annotation: 'Annotated for future wayfinders moving between craft and change.',
+          'The most valuable changes were simple: tighter briefs, sharper handoffs, and clearer definitions of done that made collaborative work easier to inspect and trust.',
+        annotation: 'Logged during repeated campaign delivery cycles.',
       },
-      workExperience: {
-        eyebrow: 'Chronicle II: Work Experience',
-        headline: 'Workroom Systems Cartographer',
+      {
+        id: 'work-system-process-design',
+        bookmarkLabel: 'Process Design',
+        metaLine: 'Work Log: Workflow Design',
+        dateTitle: 'November 14th, 2023',
+        eyebrow: 'Dispatch Log II: Work Experience',
+        headline: 'Designing Workflows That Other People Could Carry',
         body:
-          'This phase was defined by synthesis: aligning creators, operators, and AI workflows around the same execution rhythm so experiments could become a repeatable practice instead of isolated wins.',
-        supportingTitle: 'Where The Friction Hid',
+          'As projects became more cross-functional, I shifted from doing everything directly to shaping the workflow itself, so progress could continue even when the original operator stepped away.',
+        supportingTitle: 'Good Systems Explain Themselves',
         supportingBody:
-          'Most bottlenecks were not technical. They lived in handoffs, unclear expectations, and unspoken assumptions about quality, speed, and ownership.',
-        annotation: 'Compiled after multiple cycles of process redesign.',
+          'Documentation, checkpoints, and smaller decision gates made the work easier to inherit. That lowered friction for collaborators and exposed problems earlier.',
+        annotation: 'Compiled after several rounds of workflow redesign.',
       },
-      industryKnowledge: {
-        eyebrow: 'Chronicle III: Industry Knowledge',
-        headline: 'Signal Patterns Across The Trade Routes',
+      {
+        id: 'work-system-ai-delivery',
+        bookmarkLabel: 'AI Delivery',
+        metaLine: 'Work Log: AI-Enabled Execution',
+        dateTitle: 'August 5th, 2024',
+        eyebrow: 'Dispatch Log III: Work Experience',
+        headline: 'Using AI To Shorten The Path From Idea To Output',
         body:
-          'I catalogued patterns from docks, dispatches, and demand maps, then used them to understand how AI, content, and commerce were beginning to co-produce each other instead of moving as separate streams.',
-        supportingTitle: 'Demand Leaves Repeating Marks',
+          'The practical value of AI showed up when it reduced repetitive coordination work and made iteration cheaper. I focused on fitting it into delivery systems instead of treating it as a separate novelty.',
+        supportingTitle: 'The Workflow Was The Real Product',
         supportingBody:
-          'The more I tracked distribution behavior, the clearer it became that good strategy depended on seeing ecosystem feedback loops early, before they hardened into consensus.',
-        annotation: 'Margin note: watch the channels where product utility meets social proof.',
+          'Prompting mattered, but the lasting gains came from how tasks were staged, reviewed, and handed off between people and tools.',
+        annotation: 'Recorded after AI-assisted delivery became part of the baseline workflow.',
       },
-    },
+    ],
   },
   {
-    id: 'northwind-relay-office',
-    label: 'Northwind Relay Office',
-    locationLine: 'Location: Latitude 64.1466° N',
-    dateTitle: 'January 18th, 1908',
-    contentByTab: {
-      sharingJourney: {
-        eyebrow: 'Chronicle I: Sharing Journey',
-        headline: 'Dispatches Written Between Storm Fronts',
+    key: 'industryKnowledge',
+    label: 'Industry Knowledge',
+    imageSrc: CAREER_DETAIL_ASSETS.industryKnowledge,
+    entries: [
+      {
+        id: 'industry-signal-ai-adoption',
+        bookmarkLabel: 'Adoption Signals',
+        metaLine: 'Research Log: Adoption Patterns',
+        dateTitle: 'January 22nd, 2024',
+        eyebrow: 'Dispatch Log I: Industry Knowledge',
+        headline: 'Watching Where AI Moved From Demo To Habit',
         body:
-          'Sharing entered a steadier phase here. I stopped polishing every sentence for approval and started publishing notes that were timely, specific, and useful enough to travel on their own.',
-        supportingTitle: 'Trust Built Through Cadence',
+          'The clearest signals did not come from launch events. They came from teams quietly changing their weekly routines, replacing manual steps, and treating AI as workflow infrastructure instead of spectacle.',
+        supportingTitle: 'Repeated Usage Beat Novelty',
         supportingBody:
-          'Consistency changed the relationship with the audience. Repetition made the voice clearer, and clearer structure made the ideas easier to carry into someone else’s real work.',
-        annotation: 'Filed during a season of frequent public dispatches and editorial resets.',
+          'I learned to look for behavior that persisted after the announcement cycle ended. Stable habits revealed more about product value than momentary excitement.',
+        annotation: 'Cross-referenced against repeated workflow changes and operator notes.',
       },
-      workExperience: {
-        eyebrow: 'Chronicle II: Work Experience',
-        headline: 'Relay Operations Lead',
+      {
+        id: 'industry-signal-creator-commerce',
+        bookmarkLabel: 'Creator Commerce',
+        metaLine: 'Research Log: Distribution Economics',
+        dateTitle: 'May 30th, 2024',
+        eyebrow: 'Dispatch Log II: Industry Knowledge',
+        headline: 'Where Content, Distribution, And Revenue Began To Merge',
         body:
-          'Work became less about isolated execution and more about orchestration: sequencing people, tools, and handoffs so momentum survived context switches instead of dying inside them.',
-        supportingTitle: 'Handoffs Became The Real Product',
+          'I tracked how creators and small teams started designing content with downstream conversion in mind from the beginning, which made the boundary between media, product, and commerce noticeably thinner.',
+        supportingTitle: 'Distribution Changed The Brief',
         supportingBody:
-          'The strongest systems were not the flashiest ones. They were the ones where the next person always knew what had happened, what mattered, and what to do next.',
-        annotation: 'Operational notes preserved from multi-team delivery cycles.',
+          'Once distribution economics shaped what got made, product thinking had to account for channels, audience expectations, and monetization much earlier in the process.',
+        annotation: 'Filed after comparing creator workflows, launch patterns, and channel behavior.',
       },
-      industryKnowledge: {
-        eyebrow: 'Chronicle III: Industry Knowledge',
-        headline: 'Relay Signals Across Emerging Markets',
-        body:
-          'I began reading market shifts through velocity: which tools shortened cycle time, which channels amplified demand, and which signals looked loud only because measurement lagged behind behavior.',
-        supportingTitle: 'Speed Changed What Counted',
-        supportingBody:
-          'Once AI compressed production time, strategic advantage moved upstream toward taste, distribution, and judgment under uncertainty.',
-        annotation: 'Indexed from trend scans, launch monitoring, and operator debriefs.',
-      },
-    },
-  },
-  {
-    id: 'glass-harbor-ledger',
-    label: 'Glass Harbor Ledger',
-    locationLine: 'Location: Latitude 22.3193° N',
-    dateTitle: 'August 27th, 1912',
-    contentByTab: {
-      sharingJourney: {
-        eyebrow: 'Chronicle I: Sharing Journey',
-        headline: 'What Stayed After The Applause Faded',
-        body:
-          'By this chapter, sharing was no longer about output volume. It became an editorial filter: deciding what was durable enough to archive, what was situational, and what only mattered because I was standing too close to it.',
-        supportingTitle: 'Editing For Signal, Not Noise',
-        supportingBody:
-          'That discipline made each piece lighter, sharper, and more transferable. Fewer stories needed to say more.',
-        annotation: 'Archived after a long pass of pruning, sequencing, and reframing.',
-      },
-      workExperience: {
-        eyebrow: 'Chronicle II: Work Experience',
-        headline: 'Ledger Systems Steward',
-        body:
-          'I moved deeper into system stewardship: maintaining quality across repeated cycles, spotting where process debt accumulated, and refining the rules that kept execution fast without making it brittle.',
-        supportingTitle: 'Maintenance Was Strategic Work',
-        supportingBody:
-          'The hidden value came from upkeep. Small structural corrections prevented expensive downstream confusion.',
-        annotation: 'Compiled from retrospectives, maintenance logs, and QA reviews.',
-      },
-      industryKnowledge: {
-        eyebrow: 'Chronicle III: Industry Knowledge',
-        headline: 'Harbor Economics Of The AI Trade',
-        body:
-          'The pattern was clearer now: AI advantage rarely lived in the model alone. It emerged where workflow design, audience understanding, and operational discipline reinforced each other.',
-        supportingTitle: 'Infrastructure Wins Quietly',
-        supportingBody:
-          'Markets often celebrate interfaces first and infrastructure later, but lasting leverage usually arrives in the opposite order.',
-        annotation: 'Cross-referenced against product launches, monetization shifts, and channel behavior.',
-      },
-    },
+    ],
   },
 ];
 
@@ -226,23 +215,11 @@ const CAREER_DETAIL_TABS: Array<{
   key: CareerDetailTabKey;
   label: string;
   imageSrc: string;
-}> = [
-  {
-    key: 'sharingJourney',
-    label: 'Sharing Journey',
-    imageSrc: CAREER_DETAIL_ASSETS.sharingJourney,
-  },
-  {
-    key: 'workExperience',
-    label: 'Work Experience',
-    imageSrc: CAREER_DETAIL_ASSETS.workExperience,
-  },
-  {
-    key: 'industryKnowledge',
-    label: 'Industry Knowledge',
-    imageSrc: CAREER_DETAIL_ASSETS.industryKnowledge,
-  },
-];
+}> = CAREER_DETAIL_CATEGORIES.map(({ key, label, imageSrc }) => ({
+  key,
+  label,
+  imageSrc,
+}));
 
 const CAREER_DETAIL_BACKGROUND_SIZE: Size = {
   width: 5574,
@@ -366,7 +343,6 @@ export default function CareerDetailSection() {
   const sectionRef = useRef<HTMLElement>(null);
   const hasSnappedOnCurrentEntryRef = useRef(false);
   const lastScrollYRef = useRef(0);
-  const selectedRecordIdRef = useRef(CAREER_DETAIL_RECORDS[0]?.id ?? '');
   const selectorDragStateRef = useRef<{
     pointerId: number | null;
     dragStartY: number | null;
@@ -380,22 +356,61 @@ export default function CareerDetailSection() {
   const lastWheelDirectionRef = useRef(0);
   const lastWheelSwitchAtRef = useRef(0);
   const [sectionSize, setSectionSize] = useState<Size>(CAREER_DETAIL_DEFAULT_STAGE_SIZE);
-  const [selectedRecordId, setSelectedRecordId] = useState(CAREER_DETAIL_RECORDS[0]?.id ?? '');
-  const [selectedTab, setSelectedTab] = useState<CareerDetailTabKey>('sharingJourney');
+  const [selectedCategoryKey, setSelectedCategoryKey] = useState<CareerDetailTabKey>('sharingJourney');
+  const [selectedEntryIdByCategory, setSelectedEntryIdByCategory] = useState<
+    Record<CareerDetailTabKey, string>
+  >(
+    () =>
+      getCareerDetailInitialSelectedEntryIdByCategory(CAREER_DETAIL_CATEGORIES) as Record<
+        CareerDetailTabKey,
+        string
+      >,
+  );
   const [isSelectorDragging, setIsSelectorDragging] = useState(false);
 
-  const selectedRecord = useMemo(
+  const selectedCategory = useMemo(
     () =>
-      CAREER_DETAIL_RECORDS.find((record) => record.id === selectedRecordId) ??
-      CAREER_DETAIL_RECORDS[0],
-    [selectedRecordId],
+      CAREER_DETAIL_CATEGORIES.find((category) => category.key === selectedCategoryKey) ??
+      CAREER_DETAIL_CATEGORIES[0],
+    [selectedCategoryKey],
   );
-  const selectedRecordIndex = Math.max(
-    CAREER_DETAIL_RECORDS.findIndex((record) => record.id === selectedRecord.id),
-    0,
+  const selectedEntries = selectedCategory?.entries ?? [];
+  const selectedEntryState = useMemo(
+    () =>
+      getCareerDetailResolvedEntryState({
+        entries: selectedEntries,
+        selectedEntryId: selectedEntryIdByCategory[selectedCategory.key] ?? '',
+      }),
+    [selectedCategory, selectedEntries, selectedEntryIdByCategory],
   );
+  const selectedEntry = selectedEntryState.selectedEntry;
+  const selectedEntryIndex = selectedEntryState.selectedEntryIndex;
+  const isCurrentCategoryEmpty = selectedEntry === null;
+  const isSharingCategory = selectedCategory.key === 'sharingJourney';
+  const displayedEntry: CareerDetailContentBlock = selectedEntry ?? {
+    metaLine: `${selectedCategory.label} / Archive Pending`,
+    dateTitle: 'Archive pending',
+    eyebrow: 'No log entries yet',
+    headline: `${selectedCategory.label} is waiting for its first journal entry.`,
+    body: 'Add a dated note here when you are ready to capture the next milestone, decision, or observation for this category.',
+    supportingTitle: 'Ready For The First Entry',
+    supportingBody:
+      'The layout will keep working when this category is empty. Once you add the first log item, the bookmark rail and content panel will populate automatically.',
+    annotation: 'Placeholder visible because this category currently has no journal entries.',
+  };
 
-  const selectedContent = selectedRecord.contentByTab[selectedTab];
+  useEffect(() => {
+    const rememberedEntryId = selectedEntryIdByCategory[selectedCategory.key] ?? '';
+    if (rememberedEntryId === selectedEntryState.selectedEntryId) {
+      return;
+    }
+
+    setSelectedEntryIdByCategory((current) => ({
+      ...current,
+      [selectedCategory.key]: selectedEntryState.selectedEntryId,
+    }));
+  }, [selectedCategory.key, selectedEntryIdByCategory, selectedEntryState.selectedEntryId]);
+
   const desktopTabStyles = useMemo(
     () =>
       Object.fromEntries(
@@ -412,16 +427,20 @@ export default function CareerDetailSection() {
   );
   const selectorThumbStyle = useMemo(() => {
     const progress =
-      CAREER_DETAIL_RECORDS.length <= 1 ? 0.5 : selectedRecordIndex / (CAREER_DETAIL_RECORDS.length - 1);
+      selectedEntries.length <= 1 || selectedEntryIndex < 0
+        ? 0.5
+        : selectedEntryIndex / (selectedEntries.length - 1);
 
     return {
       top: `${8 + progress * 84}%`,
     } satisfies CSSProperties;
-  }, [selectedRecordIndex]);
+  }, [selectedEntries.length, selectedEntryIndex]);
 
-  const commitSelectedRecordId = (recordId: string) => {
-    selectedRecordIdRef.current = recordId;
-    setSelectedRecordId(recordId);
+  const commitSelectedEntryId = (entryId: string) => {
+    setSelectedEntryIdByCategory((current) => ({
+      ...current,
+      [selectedCategory.key]: entryId,
+    }));
   };
 
   const resetSelectorDrag = () => {
@@ -463,15 +482,12 @@ export default function CareerDetailSection() {
       return;
     }
 
-    const activeIndex = CAREER_DETAIL_RECORDS.findIndex(
-      (record) => record.id === selectedRecordIdRef.current,
-    );
     const gestureState = getCareerDetailDragGestureState({
       dragStartY: dragState.dragStartY,
       currentY: event.clientY,
       threshold: CAREER_DETAIL_DRAG_SWITCH_THRESHOLD,
-      activeIndex: activeIndex >= 0 ? activeIndex : 0,
-      recordCount: CAREER_DETAIL_RECORDS.length,
+      activeIndex: selectedEntryIndex >= 0 ? selectedEntryIndex : 0,
+      recordCount: selectedEntries.length,
       hasCommittedInGesture: dragState.hasCommittedInGesture,
     });
 
@@ -485,9 +501,9 @@ export default function CareerDetailSection() {
       hasCommittedInGesture: gestureState.hasCommittedInGesture,
     };
 
-    const nextRecord = CAREER_DETAIL_RECORDS[gestureState.nextIndex];
-    if (nextRecord) {
-      commitSelectedRecordId(nextRecord.id);
+    const nextEntry = selectedEntries[gestureState.nextIndex];
+    if (nextEntry) {
+      commitSelectedEntryId(nextEntry.id);
     }
   };
 
@@ -502,10 +518,6 @@ export default function CareerDetailSection() {
 
     resetSelectorDrag();
   };
-
-  useEffect(() => {
-    selectedRecordIdRef.current = selectedRecordId;
-  }, [selectedRecordId]);
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -551,13 +563,10 @@ export default function CareerDetailSection() {
       }
 
       const sectionTop = section.getBoundingClientRect().top + window.scrollY;
-      const activeIndex = CAREER_DETAIL_RECORDS.findIndex(
-        (record) => record.id === selectedRecordIdRef.current,
-      );
       const wheelState = getCareerDetailWheelState({
         deltaY: event.deltaY,
-        activeIndex: activeIndex >= 0 ? activeIndex : 0,
-        recordCount: CAREER_DETAIL_RECORDS.length,
+        activeIndex: selectedEntryIndex >= 0 ? selectedEntryIndex : 0,
+        recordCount: selectedEntries.length,
         isSectionPinned: isCareerDetailSectionPinned(window.scrollY, sectionTop),
       });
 
@@ -598,9 +607,9 @@ export default function CareerDetailSection() {
       wheelDeltaAccumulatorRef.current = 0;
       lastWheelSwitchAtRef.current = now;
 
-      const nextRecord = CAREER_DETAIL_RECORDS[wheelState.nextIndex];
-      if (nextRecord) {
-        commitSelectedRecordId(nextRecord.id);
+      const nextEntry = selectedEntries[wheelState.nextIndex];
+      if (nextEntry) {
+        commitSelectedEntryId(nextEntry.id);
       }
     };
 
@@ -611,7 +620,7 @@ export default function CareerDetailSection() {
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('wheel', handleWheel);
     };
-  }, []);
+  }, [selectedEntries, selectedEntryIndex]);
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -697,7 +706,7 @@ export default function CareerDetailSection() {
               </marker>
             </defs>
             {CAREER_DETAIL_TABS.map((tab) => {
-              const isActive = tab.key === selectedTab;
+              const isActive = tab.key === selectedCategoryKey;
 
               return (
                 <g
@@ -728,7 +737,7 @@ export default function CareerDetailSection() {
         </div>
 
         {CAREER_DETAIL_TABS.map((tab) => {
-          const isActive = tab.key === selectedTab;
+          const isActive = tab.key === selectedCategoryKey;
 
           return (
             <button
@@ -745,7 +754,7 @@ export default function CareerDetailSection() {
                   ? 'z-20 scale-[1.022] -translate-y-0.5'
                   : 'z-10 opacity-[0.94] hover:-translate-y-1 hover:scale-[1.01] hover:opacity-100',
               )}
-              onClick={() => setSelectedTab(tab.key)}
+              onClick={() => setSelectedCategoryKey(tab.key)}
             >
               <img
                 src={tab.imageSrc}
@@ -768,19 +777,19 @@ export default function CareerDetailSection() {
         <div className="flex min-h-[calc(100dvh-4rem)] flex-col gap-8 lg:hidden">
           <div className="rounded-[2rem] border border-[#8b735c]/15 bg-[#f7f1e7]/84 p-5 shadow-[0_24px_80px_rgba(83,60,37,0.14)] backdrop-blur-[2px]">
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#7d6957]">
-              {selectedRecord.locationLine}
+              {displayedEntry.metaLine}
             </p>
             <h2
               id="career-detail-date-title"
               data-career-detail-block="date-title"
               className="mt-3 font-serif text-[2.6rem] leading-none tracking-[-0.05em] text-[#2c2118]"
             >
-              {selectedRecord.dateTitle}
+              {displayedEntry.dateTitle}
             </h2>
 
             <div className="mt-5 flex gap-3 overflow-x-auto pb-1">
               {CAREER_DETAIL_TABS.map((tab) => {
-                const isActive = tab.key === selectedTab;
+                const isActive = tab.key === selectedCategoryKey;
 
                 return (
                   <button
@@ -796,7 +805,7 @@ export default function CareerDetailSection() {
                         ? 'scale-[1.02] border-[#8f775f]/22 bg-[rgba(255,249,241,0.38)] shadow-[0_12px_24px_rgba(83,60,37,0.12)]'
                         : 'border-transparent opacity-80 hover:opacity-100',
                     )}
-                    onClick={() => setSelectedTab(tab.key)}
+                    onClick={() => setSelectedCategoryKey(tab.key)}
                   >
                     <img
                       src={tab.imageSrc}
@@ -815,49 +824,57 @@ export default function CareerDetailSection() {
 
             <label className="mt-5 block">
               <span className="mb-2 block text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-[#7e6654]">
-                Record
+                Log Entry
               </span>
               <select
                 data-career-detail-select="record"
                 className="w-full rounded-[1rem] border border-[#8d7660]/25 bg-[#fbf7f1]/90 px-4 py-3 text-sm font-medium text-[#3a2d22] outline-none"
-                value={selectedRecord.id}
-                onChange={(event) => commitSelectedRecordId(event.target.value)}
+                value={selectedEntryState.selectedEntryId}
+                onChange={(event) => commitSelectedEntryId(event.target.value)}
+                disabled={isCurrentCategoryEmpty}
               >
-                {CAREER_DETAIL_RECORDS.map((record) => (
-                  <option key={record.id} value={record.id}>
-                    {record.label}
-                  </option>
-                ))}
+                {isCurrentCategoryEmpty ? (
+                  <option value="">No entries yet</option>
+                ) : (
+                  selectedEntries.map((entry) => (
+                    <option key={entry.id} value={entry.id}>
+                      {entry.bookmarkLabel}
+                    </option>
+                  ))
+                )}
               </select>
             </label>
           </div>
 
-          <article className="rounded-[2rem] border border-[#8b735c]/15 bg-[#f7f1e7]/84 p-5 shadow-[0_24px_80px_rgba(83,60,37,0.14)] backdrop-blur-[2px]">
+          <article
+            data-career-detail-empty-state={isCurrentCategoryEmpty ? 'true' : 'false'}
+            className="rounded-[2rem] border border-[#8b735c]/15 bg-[#f7f1e7]/84 p-5 shadow-[0_24px_80px_rgba(83,60,37,0.14)] backdrop-blur-[2px]"
+          >
             <p
               data-career-detail-block="eyebrow"
               className="text-xs font-semibold uppercase tracking-[0.26em] text-[#7e6654]"
             >
-              {selectedContent.eyebrow}
+              {displayedEntry.eyebrow}
             </p>
-            <h3 className="mt-3 max-w-[16ch] font-serif text-[2.2rem] leading-[0.94] tracking-[-0.04em] text-[#2d241c]">
-              {selectedContent.headline}
+            <h3 className="mt-3 max-w-[24ch] font-serif text-[2.2rem] leading-none tracking-[-0.04em] text-[#2d241c]">
+              {displayedEntry.headline}
             </h3>
             <p
               data-career-detail-block="body"
               className="mt-4 text-[1rem] leading-[1.65] text-[#332821]"
             >
-              {selectedContent.body}
+              {displayedEntry.body}
             </p>
             <div className="mt-6 rounded-[1.3rem] border border-[#8f775f]/18 bg-white/45 p-4">
               <p className="font-serif text-[1.4rem] leading-none tracking-[-0.03em] text-[#2f251d]">
-                {selectedContent.supportingTitle}
+                {displayedEntry.supportingTitle}
               </p>
               <p className="mt-3 text-[0.98rem] leading-[1.6] text-[#3c2f24]">
-                {selectedContent.supportingBody}
+                {displayedEntry.supportingBody}
               </p>
             </div>
             <p className="mt-4 text-sm italic leading-[1.5] text-[#5e4d40]">
-              {selectedContent.annotation}
+              {displayedEntry.annotation}
             </p>
           </article>
         </div>
@@ -865,14 +882,14 @@ export default function CareerDetailSection() {
         <div className="relative hidden min-h-[calc(100dvh-4rem)] lg:block">
           <div className="absolute left-[35%] top-[2.5%] w-[44%]">
             <p className="text-[0.82rem] font-semibold uppercase tracking-[0.28em] text-[#7f6854]">
-              {selectedRecord.locationLine}
+              {displayedEntry.metaLine}
             </p>
             <h2
               id="career-detail-date-title"
               data-career-detail-block="date-title"
               className="mt-3 font-serif text-[clamp(3.6rem,4.2vw,4.8rem)] leading-none tracking-[-0.06em] text-[#241b14]"
             >
-              {selectedRecord.dateTitle}
+              {displayedEntry.dateTitle}
             </h2>
           </div>
 
@@ -884,14 +901,19 @@ export default function CareerDetailSection() {
               data-career-detail-select="record"
               aria-label="Career detail record"
               className="sr-only"
-              value={selectedRecord.id}
-              onChange={(event) => commitSelectedRecordId(event.target.value)}
+              value={selectedEntryState.selectedEntryId}
+              onChange={(event) => commitSelectedEntryId(event.target.value)}
+              disabled={isCurrentCategoryEmpty}
             >
-              {CAREER_DETAIL_RECORDS.map((record) => (
-                <option key={record.id} value={record.id}>
-                  {record.label}
-                </option>
-              ))}
+              {isCurrentCategoryEmpty ? (
+                <option value="">No entries yet</option>
+              ) : (
+                selectedEntries.map((entry) => (
+                  <option key={entry.id} value={entry.id}>
+                    {entry.bookmarkLabel}
+                  </option>
+                ))
+              )}
             </select>
 
             <div
@@ -924,16 +946,23 @@ export default function CareerDetailSection() {
               </div>
             </div>
 
-            <div className="absolute inset-y-[8%] right-[10%] flex flex-col items-center justify-between">
-              {CAREER_DETAIL_RECORDS.map((record) => {
-                const isSelected = record.id === selectedRecord.id;
+            <div
+              data-career-detail-record-rail="desktop"
+              data-career-detail-record-rail-layout={isSharingCategory ? 'distributed' : 'fixed-gap'}
+              className={joinClasses(
+                'absolute inset-y-[8%] right-[10%] flex flex-col items-center',
+                isSharingCategory ? 'justify-between' : 'justify-start gap-[1.2rem] pt-[0.6rem]',
+              )}
+            >
+              {selectedEntries.map((entry) => {
+                const isSelected = entry.id === selectedEntryState.selectedEntryId;
 
                 return (
                   <button
-                    key={record.id}
+                    key={entry.id}
                     type="button"
-                    data-career-detail-record-button={record.id}
-                    aria-label={record.label}
+                    data-career-detail-record-button={entry.id}
+                    aria-label={entry.bookmarkLabel}
                     aria-pressed={isSelected}
                     className={joinClasses(
                       'rounded-full px-2 py-1 text-[0.72rem] font-medium tracking-[0.08em] text-[#5f4d3f] transition-all duration-300 [writing-mode:vertical-rl]',
@@ -941,43 +970,45 @@ export default function CareerDetailSection() {
                         ? 'bg-[rgba(247,241,231,0.88)] text-[#2e241b] shadow-[0_8px_18px_rgba(92,69,45,0.12)]'
                         : 'bg-[rgba(247,241,231,0.55)] hover:bg-[rgba(247,241,231,0.75)]',
                     )}
-                    onClick={() => commitSelectedRecordId(record.id)}
+                    onClick={() => commitSelectedEntryId(entry.id)}
                   >
-                    {record.label}
+                    {entry.bookmarkLabel}
                   </button>
                 );
               })}
             </div>
           </div>
 
-          <div
-            data-career-detail-card-stack="desktop"
-            className="absolute left-[37%] top-[22%] flex w-[29%] flex-col"
-          >
+          <div data-career-detail-card-stack="desktop-primary" className="absolute left-[37%] top-[22%] w-[29%]">
             <div>
               <p
                 data-career-detail-block="eyebrow"
                 className="text-[0.74rem] font-semibold uppercase tracking-[0.24em] text-[#7f6853]"
               >
-                {selectedContent.eyebrow}
+                {displayedEntry.eyebrow}
               </p>
-              <h3 className="mt-3 max-w-[16ch] font-serif text-[clamp(1.8rem,2vw,2.2rem)] leading-[0.92] tracking-[-0.04em] text-[#251c15]">
-                {selectedContent.headline}
+              <h3 className="mt-3 max-w-[24ch] font-serif text-[clamp(1.8rem,2vw,2.2rem)] leading-none tracking-[-0.04em] text-[#251c15]">
+                {displayedEntry.headline}
               </h3>
               <p
                 data-career-detail-block="body"
                 className="mt-4 text-[0.92rem] leading-[1.5] text-[#322720]"
               >
-                {selectedContent.body}
+                {displayedEntry.body}
               </p>
             </div>
+          </div>
 
-            <div className="mt-6">
-              <h4 className="font-serif text-[clamp(1.6rem,1.8vw,2rem)] leading-[0.95] tracking-[-0.04em] text-[#261d16]">
-                {selectedContent.supportingTitle}
+          <div
+            data-career-detail-card-stack="desktop-secondary"
+            className="absolute left-[37%] top-[63%] w-[29%]"
+          >
+            <div>
+              <h4 className="font-serif text-[clamp(1.6rem,1.8vw,2rem)] leading-none tracking-[-0.04em] text-[#261d16]">
+                {displayedEntry.supportingTitle}
               </h4>
               <p className="mt-3 text-[0.9rem] leading-[1.5] text-[#342821]">
-                {selectedContent.supportingBody}
+                {displayedEntry.supportingBody}
               </p>
             </div>
           </div>
@@ -999,7 +1030,7 @@ export default function CareerDetailSection() {
             <p className="mt-2 text-[0.7rem] text-[#7f6854]">X: 14.22 / 9-98.11</p>
             <p className="text-[0.7rem] italic text-[#7f6854]">&quot;Magnetic variance noted&quot;</p>
             <p className="mt-4 text-sm leading-[1.55] italic text-[#5f4d3f]">
-              {selectedContent.annotation}
+              {displayedEntry.annotation}
             </p>
           </aside>
         </div>

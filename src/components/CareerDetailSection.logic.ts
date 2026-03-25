@@ -39,10 +39,58 @@ export interface CareerDetailDragGestureState {
   hasCommittedInGesture: boolean;
 }
 
+export interface CareerDetailEntryLike {
+  id: string;
+}
+
+export interface CareerDetailCategoryLike<TEntry extends CareerDetailEntryLike = CareerDetailEntryLike> {
+  key: string;
+  entries: TEntry[];
+}
+
+export interface CareerDetailResolvedEntryState<TEntry extends CareerDetailEntryLike = CareerDetailEntryLike> {
+  selectedEntry: TEntry | null;
+  selectedEntryId: string;
+  selectedEntryIndex: number;
+}
+
 const SNAP_ENTRY_MAX_RATIO = 0.5;
 const SNAP_ENTRY_MIN_RATIO = -0.12;
 const SNAP_RESET_ABOVE_RATIO = 0.6;
 const CAREER_DETAIL_PIN_TOLERANCE = 2;
+export function getCareerDetailInitialSelectedEntryIdByCategory<
+  TCategory extends CareerDetailCategoryLike,
+>(categories: TCategory[]) {
+  return Object.fromEntries(
+    categories.map((category) => [category.key, category.entries[0]?.id ?? '']),
+  );
+}
+
+export function getCareerDetailResolvedEntryState<TEntry extends CareerDetailEntryLike>({
+  entries,
+  selectedEntryId,
+}: {
+  entries: TEntry[];
+  selectedEntryId: string;
+}): CareerDetailResolvedEntryState<TEntry> {
+  if (entries.length === 0) {
+    return {
+      selectedEntry: null,
+      selectedEntryId: '',
+      selectedEntryIndex: -1,
+    };
+  }
+
+  const selectedEntryIndex = entries.findIndex((entry) => entry.id === selectedEntryId);
+  const resolvedEntryIndex = selectedEntryIndex >= 0 ? selectedEntryIndex : 0;
+  const selectedEntry = entries[resolvedEntryIndex] ?? null;
+
+  return {
+    selectedEntry,
+    selectedEntryId: selectedEntry?.id ?? '',
+    selectedEntryIndex: resolvedEntryIndex,
+  };
+}
 
 export function getCareerDetailSnapTargetY(sectionTop: number) {
   return Math.max(Math.round(sectionTop), 0);
