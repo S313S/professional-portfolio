@@ -24,6 +24,7 @@
 |---|---------|------|------|
 | 1 | 🔴 严重 | 文本区域字号过大导致内容溢出 | [issues/01_text-area-font-overflow.md](./issues/01_text-area-font-overflow.md) |
 | 2 | 🟡 主要 | 日期标题布局优化 | [issues/02_date-title-layout.md](./issues/02_date-title-layout.md) |
+| 3 | 🟡 主要 | 移除 Shield/Anchor 图标和 "II" 分隔线 | [issues/03_remove-icons-and-divider.md](./issues/03_remove-icons-and-divider.md) |
 
 ---
 
@@ -36,7 +37,7 @@
 - 背景图片和 #ece2d0 色调
 - Playfair Display 衬线字体
 - 标签页位置和交互
-- Shield/Anchor 装饰图标
+- ~~Shield/Anchor 装饰图标~~ → 已列入 #3 移除
 - 分隔线 "II" 的样式
 - 右侧面板（地图、坐标、CLASSIFIED）
 - 滚动吸附和移动端布局
@@ -45,7 +46,8 @@
 
 ## 修复流程
 
-1. **先修 #1（字号/布局溢出）** — 这是当前最突出的视觉问题
-2. **再修 #2（日期标题）** — 独立问题，但建议在 #1 之后处理（整体比例会变）
+1. **先修 #3（移除图标和分隔线）** — 纯删除，能立即释放约 96px 垂直空间，可能使 #1 部分自愈
+2. **再修 #1（字号/布局溢出）** — 在 #3 之后评估是否仍需调整字号
+3. **最后修 #2（日期标题）** — 独立问题，在整体布局稳定后处理
 3. 每个问题修复后写 fix-log
 4. 全部完成后重新运行 `/design2code diff` 进行下一轮对比

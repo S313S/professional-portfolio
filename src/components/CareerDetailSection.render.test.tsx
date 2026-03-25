@@ -30,9 +30,9 @@ test('renders the career detail stage with desktop archive panel, custom selecto
   assert.doesNotMatch(markup, /ELEV: 1,344M/);
   assert.match(markup, /X: 14\.22 \/ 9-98\.11/);
   assert.match(markup, /Magnetic variance noted/);
-  assert.match(markup, /data-career-detail-divider="chapter-ii"/);
-  assert.match(markup, /data-career-detail-icon="shield"/);
-  assert.match(markup, /data-career-detail-icon="anchor"/);
+  assert.doesNotMatch(markup, /data-career-detail-divider="chapter-ii"/);
+  assert.doesNotMatch(markup, /data-career-detail-icon="shield"/);
+  assert.doesNotMatch(markup, /data-career-detail-icon="anchor"/);
   assert.match(markup, /October 14th, 1894/);
   assert.match(markup, /Chronicle I:/);
   assert.match(markup, /Chief Surveyor &amp; Field Archivist/);
@@ -57,7 +57,7 @@ test('renders the desktop text cards in a single flow stack instead of separate 
   const markup = renderToStaticMarkup(<CareerDetailSection />);
 
   assert.match(markup, /data-career-detail-card-stack="desktop"/);
-  assert.match(markup, /data-career-detail-divider="chapter-ii"/);
+  assert.match(markup, /data-career-detail-card-stack="desktop"[^>]*class="absolute left-\[37%\] top-\[22%\] flex w-\[29%\] flex-col"/);
   assert.doesNotMatch(
     markup,
     /rounded-\[0\.4rem\] border border-\[#8f775f\]\/30 bg-\[rgba\(249,244,236,0\.85\)\] p-5 shadow-\[0_18px_40px_rgba\(70,51,35,0\.08\)\]/,
@@ -68,6 +68,9 @@ test('renders the desktop text cards in a single flow stack instead of separate 
   );
   assert.doesNotMatch(markup, /top-\[59\.8%\]/);
   assert.doesNotMatch(markup, /top-\[63\.5%\]/);
+  assert.doesNotMatch(markup, /data-career-detail-divider="chapter-ii"/);
+  assert.doesNotMatch(markup, /data-career-detail-icon="shield"/);
+  assert.doesNotMatch(markup, /data-career-detail-icon="anchor"/);
 });
 
 test('renders the desktop text and date typography with the compact sizing from the latest QA spec', () => {
@@ -85,10 +88,7 @@ test('renders the desktop text and date typography with the compact sizing from 
     markup,
     /data-career-detail-block="body"[^>]*class="mt-4 text-\[0\.92rem\] leading-\[1\.5\] text-\[#322720\]"/,
   );
-  assert.match(
-    markup,
-    /data-career-detail-divider="chapter-ii"[^>]*class="flex items-center gap-3 py-2"/,
-  );
+  assert.match(markup, /<div class="mt-6"><h4 class="font-serif text-\[clamp\(1\.6rem,1\.8vw,2rem\)\] leading-\[0\.95\] tracking-\[-0\.04em\] text-\[#261d16\]">/);
   assert.match(
     markup,
     /<h4 class="font-serif text-\[clamp\(1\.6rem,1\.8vw,2rem\)\] leading-\[0\.95\] tracking-\[-0\.04em\] text-\[#261d16\]">/,

@@ -6,7 +6,6 @@ import {
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
 } from 'react';
-import { Anchor, Shield } from 'lucide-react';
 
 import {
   getCareerDetailDragGestureState,
@@ -809,12 +808,6 @@ export default function CareerDetailSection() {
             className="absolute left-[37%] top-[22%] flex w-[29%] flex-col"
           >
             <div>
-              <Shield
-                data-career-detail-icon="shield"
-                aria-hidden="true"
-                className="mb-2 h-6 w-6 text-[#7f6854]/40"
-                strokeWidth={1.6}
-              />
               <p
                 data-career-detail-block="eyebrow"
                 className="text-[0.74rem] font-semibold uppercase tracking-[0.24em] text-[#7f6853]"
@@ -832,22 +825,7 @@ export default function CareerDetailSection() {
               </p>
             </div>
 
-            <div
-              data-career-detail-divider="chapter-ii"
-              className="flex items-center gap-3 py-2"
-            >
-              <div className="h-px flex-1 bg-[#8f775f]/30" />
-              <span className="font-serif text-sm tracking-[0.28em] text-[#7f6854]/60">II</span>
-              <div className="h-px flex-1 bg-[#8f775f]/30" />
-            </div>
-
-            <div>
-              <Anchor
-                data-career-detail-icon="anchor"
-                aria-hidden="true"
-                className="mb-2 h-5 w-5 text-[#7f6854]/40"
-                strokeWidth={1.8}
-              />
+            <div className="mt-6">
               <h4 className="font-serif text-[clamp(1.6rem,1.8vw,2rem)] leading-[0.95] tracking-[-0.04em] text-[#261d16]">
                 {selectedContent.supportingTitle}
               </h4>
