@@ -61,6 +61,10 @@ test('renders the desktop text content in separate upper and lower pinned region
 
   assert.match(
     markup,
+    /<div class="absolute left-\[35%\] top-\[-1\.5%\] w-\[44%\]">/,
+  );
+  assert.match(
+    markup,
     /data-career-detail-card-stack="desktop-primary"[^>]*class="absolute left-\[37%\] top-\[22%\] w-\[29%\]"/,
   );
   assert.match(

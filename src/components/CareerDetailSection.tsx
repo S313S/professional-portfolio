@@ -112,7 +112,7 @@ const CAREER_DETAIL_CATEGORIES: CareerDetailCategory[] = [
       {
         id: 'sharing-essay-editorial-rhythm',
         bookmarkLabel: 'Editorial Rhythm',
-        metaLine: 'Routine: Weekly Editorial Cadence',
+        metaLine: 'Routine: adventure for sharing',
         dateTitle: 'February 18th, 2022',
         eyebrow: 'Dispatch Log III: Sharing Journey',
         headline: 'Building A Rhythm That Could Survive Busy Weeks',
@@ -880,7 +880,7 @@ export default function CareerDetailSection() {
         </div>
 
         <div className="relative hidden min-h-[calc(100dvh-4rem)] lg:block">
-          <div className="absolute left-[35%] top-[2.5%] w-[44%]">
+          <div className="absolute left-[35%] top-[-1.5%] w-[44%]">
             <p className="text-[0.82rem] font-semibold uppercase tracking-[0.28em] text-[#7f6854]">
               {displayedEntry.metaLine}
             </p>
