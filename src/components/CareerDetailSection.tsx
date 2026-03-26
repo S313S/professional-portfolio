@@ -23,7 +23,15 @@ const CAREER_DETAIL_ASSETS = {
   workExperience: '/images/careerDetail_career_icon.png',
   industryKnowledge: '/images/careerDetail_Industry knowledge_icon.png',
   scrollSelector: '/images/careerDetail_scroll_icon.png',
-  map: '/images/careerDetail_map.png',
+  // Deprecated: do not reintroduce careerDetail_map.png/svg in the aside.
+  archiveCard: '/images/careerDetail_litteleBg.png',
+} as const;
+
+const CAREER_DETAIL_DESKTOP_ASIDE_LAYOUT = {
+  left: 'left-[67.48%]',
+  top: 'top-[15.89%]',
+  width: 'w-[26.47%]',
+  height: 'h-[82.62%]',
 } as const;
 
 export type CareerDetailTabKey = 'sharingJourney' | 'workExperience' | 'industryKnowledge';
@@ -1013,25 +1021,21 @@ export default function CareerDetailSection() {
             </div>
           </div>
 
-          <aside className="absolute right-[7.5%] top-[19.5%] w-[25%] rounded-[0.55rem] border border-[#8f775f]/20 bg-[rgba(247,242,234,0.58)] p-5 shadow-[0_20px_46px_rgba(68,50,35,0.07)]">
-            <span
-              data-career-detail-block="classified"
-              className="absolute right-4 top-3 text-[0.65rem] uppercase tracking-[0.3em] text-[#7f6854]/50"
-            >
-              CLASSIFIED
-            </span>
-            <div className="mt-2 aspect-[0.83/1] w-full overflow-hidden rounded-[0.3rem] border border-[#8f775f]/18 bg-[rgba(255,255,255,0.28)]">
-              <img
-                src={CAREER_DETAIL_ASSETS.map}
-                alt="Topographic map"
-                className="h-full w-full object-cover"
-              />
-            </div>
-            <p className="mt-2 text-[0.7rem] text-[#7f6854]">X: 14.22 / 9-98.11</p>
-            <p className="text-[0.7rem] italic text-[#7f6854]">&quot;Magnetic variance noted&quot;</p>
-            <p className="mt-4 text-sm leading-[1.55] italic text-[#5f4d3f]">
-              {displayedEntry.annotation}
-            </p>
+          <aside
+            data-career-detail-aside="desktop"
+            className={joinClasses(
+              'absolute overflow-hidden rounded-[0.55rem] border border-[#8f775f]/20 bg-[#f7f2ea] shadow-[0_20px_46px_rgba(68,50,35,0.07)]',
+              CAREER_DETAIL_DESKTOP_ASIDE_LAYOUT.left,
+              CAREER_DETAIL_DESKTOP_ASIDE_LAYOUT.top,
+              CAREER_DETAIL_DESKTOP_ASIDE_LAYOUT.height,
+              CAREER_DETAIL_DESKTOP_ASIDE_LAYOUT.width,
+            )}
+          >
+            <img
+              src={CAREER_DETAIL_ASSETS.archiveCard}
+              alt="Archipelago survey reference card"
+              className="h-full w-full object-cover object-center"
+            />
           </aside>
         </div>
       </div>

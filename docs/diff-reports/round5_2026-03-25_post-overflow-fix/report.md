@@ -4,7 +4,7 @@
 - **轮次**: 5
 - **模块**: CareerDetailSection — 右侧 aside 面板（地图插图 + 覆盖对齐）
 - **匹配得分**: 6/10
-- **标注图**: [annotated-diff-updated.png](./annotated-diff-updated.png)
+- **标注图**: [annotated-diff-chrome.png](./annotated-diff-chrome.png)
 - **期望设计参考**: [../careerDeatil_Demonstration.jpeg](../careerDeatil_Demonstration.jpeg)
 - **背景笔记本框参考**: [bg-notebook-frame-visible-2026-03-25T13-00-06-803Z.png](./bg-notebook-frame-visible-2026-03-25T13-00-06-803Z.png)（隐藏 aside 后的背景截图，清晰显示目标覆盖区域）
 - **上轮报告**: [../round4_2026-03-25_text-overflow-layout/](../round4_2026-03-25_text-overflow-layout/)
@@ -25,20 +25,20 @@
 | # | 严重程度 | 问题 | 文件 |
 |---|---------|------|------|
 | 1 | 🟡 主要 | aside 面板地图插图与设计稿不匹配（简单弧线 vs 详细地形景观） | [issues/01_aside-map-illustration-mismatch.md](./issues/01_aside-map-illustration-mismatch.md) |
-| 2 | 🔴 严重 | aside 卡片未覆盖目标区域（顶部偏下152px、矮130px） | [issues/02_aside-card-layer-mismatch.md](./issues/02_aside-card-layer-mismatch.md) |
+| 2 | 🔴 严重 | aside 卡片未覆盖目标区域（偏下28px、矮118px @1470×835） | [issues/02_aside-card-layer-mismatch.md](./issues/02_aside-card-layer-mismatch.md) |
 
-### 关于目标覆盖区域的说明（用户通过拖拽选择器精确确认）
+### 关于目标覆盖区域的说明（用户通过 Chrome DevTools MCP 拖拽选择器精确确认）
 
-用户通过注入浏览器的交互式区域选择器，拖拽框选并确认了目标覆盖区域（1600×900 视口）：
+用户通过 Chrome DevTools MCP 注入浏览器的交互式区域选择器，拖拽框选并确认了目标覆盖区域（1470×835 视口）：
 
-`left=66.38%, top=4.78%, w=24.81%, h=76.44%` → 像素值 x=1062, y=43, w=397, h=688
+`left=66.53%, top=18.38%, w=25.03%, h=76.29%` → 像素值 x=978, y=154, w=368, h=637（相对 section）
 
 标注图中的标记含义：
-- **红色框 (#1)** = 用户确认的目标覆盖区域（x=1062, y=43, w=397, h=688 @1600×900）
-- **橙色框 (#2)** = 当前 aside 实际位置（x=1066, y=195, w=380, h=558）— 核心问题：**顶部偏下152px**，高度短130px
-- **橙色框 (#3)** = 地图插图内容不匹配区域
+- **红色框 (#1)** = 用户确认的目标覆盖区域（x=978, y=154, w=368, h=637 @1470×835）
+- **橙色框 (#2)** = 当前 aside 实际位置（x=978, y=182, w=348, h=519）— 核心问题：**偏下28px**，矮118px
+- **黄色框 (#3)** = 地图插图内容不匹配区域
 
-参考验证截图：`verified-selection-*.png`（蓝色覆盖层精确对齐用户选区）
+截图来源：Chrome DevTools MCP（真实 Chrome 渲染，非 Playwright Chromium）
 
 ## ✅ 正确部分（勿动）
 

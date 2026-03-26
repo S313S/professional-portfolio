@@ -7,39 +7,38 @@
 - **文件**: `src/components/CareerDetailSection.tsx`
 - **代码位置**: 第 1016 行（aside 元素）
 
-## 目标覆盖区域（用户通过拖拽选择器精确确认）
+## 目标覆盖区域（用户通过 Chrome DevTools MCP 拖拽选择器精确确认）
 
-通过注入浏览器的交互式区域选择器，用户拖拽框选并确认的目标区域（1600×900 视口）：
+通过 Chrome DevTools MCP 注入浏览器的交互式区域选择器，用户拖拽框选并确认的目标区域（1470×835 视口）：
 
-| 属性 | 像素值 | 百分比值 |
+| 属性 | 像素值（相对 section） | 百分比值 |
 |------|--------|---------|
-| left | 1062px | 66.38% |
-| top | 43px | 4.78% |
-| width | 397px | 24.81% |
-| height | 688px | 76.44% |
-| right edge | 1459px | — |
-| bottom edge | 731px | — |
+| left | 978px | 66.53% |
+| top | 154px | 18.38% |
+| width | 368px | 25.03% |
+| height | 637px | 76.29% |
+| right edge | 1346px | — |
+| bottom edge | 791px | — |
 
-参考标注图 `annotated-diff-updated.png`：
+参考标注图 `annotated-diff-chrome.png`：
 - **红色框 (#1)** = 用户确认的目标覆盖区域
 - **橙色框 (#2)** = 当前 aside 实际位置
+- **黄色框 (#3)** = 地图插图内容不匹配区域
 
-参考验证截图 `verified-selection-*.png`（蓝色覆盖层精确对齐用户选区）。
 参考期望设计图 [../careerDeatil_Demonstration.jpeg](../../careerDeatil_Demonstration.jpeg)。
 
 ## 根因分析
 
-aside 卡片的设计意图是覆盖背景图中笔记本页面的特定区域。当前 aside 主要问题是**顶部偏下太多**，高度也不足：
+aside 卡片的设计意图是覆盖背景图中笔记本页面的特定区域。当前 aside 主要问题是**顶部偏下**，高度不足：
 
 | 方向 | 当前值 | 目标值 | 差距 |
 |------|--------|--------|------|
-| left (x) | 1066px | 1062px | 仅偏右 4px（基本对齐） |
-| top (y) | 195px | 43px | **偏下 152px** |
-| width | 380px | 397px | 窄 17px |
-| height | 558px | 688px | **矮 130px** |
-| bottom | 753px | 731px | 当前底部反而更低 22px |
+| left (x) | 978px (66.55%) | 978px (66.53%) | 基本对齐 |
+| top (y) | 182px (21.84%) | 154px (18.38%) | **偏下 28px** |
+| width | 348px (23.64%) | 368px (25.03%) | 窄 20px |
+| height | 519px (62.16%) | 637px (76.29%) | **矮 118px** |
 
-**核心问题**：顶部偏下 152px，需要大幅上移；宽度基本接近，左边缘几乎对齐。
+**核心问题**：顶部偏下 28px，高度不足 118px；左边缘和宽度基本接近。
 
 ## 当前样式
 
@@ -57,26 +56,26 @@ aside 卡片的设计意图是覆盖背景图中笔记本页面的特定区域�
 <aside className="absolute right-[7.5%] top-[19.5%] w-[25%] rounded-[0.55rem] border border-[#8f775f]/20 bg-[rgba(247,242,234,0.58)] p-5 shadow-[0_20px_46px_rgba(68,50,35,0.07)]">
 
 // 修改后
-<aside className="absolute left-[66.38%] top-[4.78%] w-[24.81%] h-[76.44%] rounded-[0.55rem] border border-[#8f775f]/20 bg-[rgba(247,242,234,0.58)] p-5 shadow-[0_20px_46px_rgba(68,50,35,0.07)] overflow-hidden">
+<aside className="absolute left-[66.53%] top-[18.38%] w-[25.03%] h-[76.29%] rounded-[0.55rem] border border-[#8f775f]/20 bg-[rgba(247,242,234,0.58)] p-5 shadow-[0_20px_46px_rgba(68,50,35,0.07)] overflow-hidden">
 ```
 
 关键变更：
-- `right-[7.5%]` → `left-[66.38%]`（左边缘几乎不变，但用 left 更精确）
-- `top-[19.5%]` → `top-[4.78%]`（**大幅上移 152px**）
-- `w-[25%]` → `w-[24.81%]`（微调）
-- 新增 `h-[76.44%]`（显式高度，之前由内容撑开）
+- `right-[7.5%]` → `left-[66.53%]`（左边缘基本不变，用 left 更精确）
+- `top-[19.5%]` → `top-[18.38%]`（上移 28px）
+- `w-[25%]` → `w-[25.03%]`（微调）
+- 新增 `h-[76.29%]`（显式高度，之前由内容撑开）
 - 新增 `overflow-hidden`（防止内容溢出）
 
 ### 步骤 2：调试验证
 
 1. 暂时将 aside 的 `bg` 改为 `bg-red-500/20` 检查覆盖区域
-2. 与验证截图 `verified-selection-*.png` 对比
+2. 与标注图 `annotated-diff-chrome.png` 红色框区域对比
 3. 微调后恢复原背景色 `bg-[rgba(247,242,234,0.58)]`
 
 ### 步骤 3：内容布局适配
 
-aside 变高后（558→688px），内部内容需适配：
-- 顶部多出 ~152px 空间，"CLASSIFIED" 和 "REF EX.23" 等文本应保持在合理位置
+aside 变高后（519→637px），内部内容需适配：
+- 顶部多出 ~28px 空间
 - 考虑使用 `flex flex-col` 组织内部空间
 - 地图图片容器可适当调整
 - 底部注释文本自然落位

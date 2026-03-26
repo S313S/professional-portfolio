@@ -14,7 +14,8 @@ test('renders the career detail stage with category-scoped bookmarks and default
   assert.match(markup, /\/images\/careerDetail_career_icon\.png/);
   assert.match(markup, /\/images\/careerDetail_Industry knowledge_icon\.png/);
   assert.match(markup, /\/images\/careerDetail_scroll_icon\.png/);
-  assert.match(markup, /\/images\/careerDetail_map\.png/);
+  assert.match(markup, /\/images\/careerDetail_litteleBg\.png/);
+  assert.doesNotMatch(markup, /\/images\/careerDetail_map\.(png|svg)/);
   assert.match(markup, /data-career-detail-tab="sharingJourney"/);
   assert.match(markup, /data-career-detail-tab="workExperience"/);
   assert.match(markup, /data-career-detail-tab="industryKnowledge"/);
@@ -27,11 +28,9 @@ test('renders the career detail stage with category-scoped bookmarks and default
   assert.match(markup, /data-career-detail-record-button="sharing-essay-editorial-rhythm"/);
   assert.doesNotMatch(markup, /data-career-detail-record-button="work-system-campaign-ops"/);
   assert.doesNotMatch(markup, /data-career-detail-record-button="industry-signal-ai-adoption"/);
-  assert.match(markup, /CLASSIFIED/);
-  assert.doesNotMatch(markup, /REF: E8\.22 \/ SECTOR 4/);
-  assert.doesNotMatch(markup, /ELEV: 1,344M/);
-  assert.match(markup, /X: 14\.22 \/ 9-98\.11/);
-  assert.match(markup, /Magnetic variance noted/);
+  assert.doesNotMatch(markup, />CLASSIFIED</);
+  assert.doesNotMatch(markup, /Topographic map/);
+  assert.match(markup, /alt="Archipelago survey reference card"/);
   assert.doesNotMatch(markup, /data-career-detail-divider="chapter-ii"/);
   assert.doesNotMatch(markup, /data-career-detail-icon="shield"/);
   assert.doesNotMatch(markup, /data-career-detail-icon="anchor"/);
@@ -72,6 +71,30 @@ test('renders the desktop text content in separate upper and lower pinned region
     /data-career-detail-card-stack="desktop-secondary"[^>]*class="absolute left-\[37%\] top-\[63%\] w-\[29%\]"/,
   );
   assert.doesNotMatch(markup, /data-career-detail-card-stack="desktop"[^>]*flex w-\[29%\] flex-col/);
+});
+
+test('locks the desktop archive aside to the measured notebook region and renders the full archival card image', () => {
+  const markup = renderToStaticMarkup(<CareerDetailSection />);
+
+  assert.match(markup, /data-career-detail-aside="desktop"/);
+  assert.match(markup, /data-career-detail-aside="desktop"[^>]*class="[^"]*absolute[^"]*"/);
+  assert.match(markup, /data-career-detail-aside="desktop"[^>]*class="[^"]*left-\[67\.48%\][^"]*"/);
+  assert.match(markup, /data-career-detail-aside="desktop"[^>]*class="[^"]*top-\[15\.89%\][^"]*"/);
+  assert.match(markup, /data-career-detail-aside="desktop"[^>]*class="[^"]*h-\[82\.62%\][^"]*"/);
+  assert.match(markup, /data-career-detail-aside="desktop"[^>]*class="[^"]*w-\[26\.47%\][^"]*"/);
+  assert.match(markup, /data-career-detail-aside="desktop"[^>]*class="[^"]*overflow-hidden[^"]*"/);
+  assert.match(
+    markup,
+    /data-career-detail-aside="desktop"[\s\S]*src="\/images\/careerDetail_litteleBg\.png"/,
+  );
+  assert.match(
+    markup,
+    /data-career-detail-aside="desktop"[\s\S]*class="h-full w-full object-cover object-center"/,
+  );
+  assert.doesNotMatch(markup, /data-career-detail-aside="desktop"[^>]*right-\[7\.5%\] top-\[19\.5%\] w-\[25%\]/);
+  assert.doesNotMatch(markup, /data-career-detail-block="classified"/);
+  assert.doesNotMatch(markup, /Magnetic variance noted/);
+  assert.doesNotMatch(markup, /X: 14\.22 \/ 9-98\.11/);
 });
 
 test('keeps the default sharing bookmark rail on its original distributed spacing', () => {
