@@ -34,6 +34,18 @@ const CAREER_DETAIL_DESKTOP_ASIDE_LAYOUT = {
   height: 'h-[82.62%]',
 } as const;
 
+// 中文注释：用于做像素级微调。
+// x 为水平位移，负数向左、正数向右；y 为垂直位移，负数向上、正数向下。
+// 默认保持 0，不做任何偏移；后续只需要改这里的数字即可。
+const CAREER_DETAIL_ARCHIVE_CARD_NUDGE = {
+  x: -13,
+  y: -2,
+} as const;
+
+const CAREER_DETAIL_ARCHIVE_CARD_IMAGE_STYLE: CSSProperties = {
+  transform: `translate(${CAREER_DETAIL_ARCHIVE_CARD_NUDGE.x}px, ${CAREER_DETAIL_ARCHIVE_CARD_NUDGE.y}px)`,
+};
+
 export type CareerDetailTabKey = 'sharingJourney' | 'workExperience' | 'industryKnowledge';
 
 interface Size {
@@ -1024,7 +1036,7 @@ export default function CareerDetailSection() {
           <aside
             data-career-detail-aside="desktop"
             className={joinClasses(
-              'absolute overflow-hidden rounded-[0.55rem] border border-[#8f775f]/20 bg-[#f7f2ea] shadow-[0_20px_46px_rgba(68,50,35,0.07)]',
+              'absolute',
               CAREER_DETAIL_DESKTOP_ASIDE_LAYOUT.left,
               CAREER_DETAIL_DESKTOP_ASIDE_LAYOUT.top,
               CAREER_DETAIL_DESKTOP_ASIDE_LAYOUT.height,
@@ -1034,7 +1046,9 @@ export default function CareerDetailSection() {
             <img
               src={CAREER_DETAIL_ASSETS.archiveCard}
               alt="Archipelago survey reference card"
-              className="h-full w-full object-cover object-center"
+              draggable={false}
+              className="block h-auto w-full"
+              style={CAREER_DETAIL_ARCHIVE_CARD_IMAGE_STYLE}
             />
           </aside>
         </div>

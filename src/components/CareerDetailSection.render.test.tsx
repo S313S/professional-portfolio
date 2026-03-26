@@ -82,19 +82,26 @@ test('locks the desktop archive aside to the measured notebook region and render
   assert.match(markup, /data-career-detail-aside="desktop"[^>]*class="[^"]*top-\[15\.89%\][^"]*"/);
   assert.match(markup, /data-career-detail-aside="desktop"[^>]*class="[^"]*h-\[82\.62%\][^"]*"/);
   assert.match(markup, /data-career-detail-aside="desktop"[^>]*class="[^"]*w-\[26\.47%\][^"]*"/);
-  assert.match(markup, /data-career-detail-aside="desktop"[^>]*class="[^"]*overflow-hidden[^"]*"/);
   assert.match(
     markup,
     /data-career-detail-aside="desktop"[\s\S]*src="\/images\/careerDetail_litteleBg\.png"/,
   );
   assert.match(
     markup,
-    /data-career-detail-aside="desktop"[\s\S]*class="h-full w-full object-cover object-center"/,
+    /data-career-detail-aside="desktop"[\s\S]*class="block h-auto w-full"/,
+  );
+  assert.match(
+    markup,
+    /data-career-detail-aside="desktop"[\s\S]*style="transform:translate\(0px, 0px\)"/,
   );
   assert.doesNotMatch(markup, /data-career-detail-aside="desktop"[^>]*right-\[7\.5%\] top-\[19\.5%\] w-\[25%\]/);
   assert.doesNotMatch(markup, /data-career-detail-block="classified"/);
   assert.doesNotMatch(markup, /Magnetic variance noted/);
   assert.doesNotMatch(markup, /X: 14\.22 \/ 9-98\.11/);
+  assert.doesNotMatch(markup, /data-career-detail-aside="desktop"[^>]*rounded-\[0\.55rem\]/);
+  assert.doesNotMatch(markup, /data-career-detail-aside="desktop"[^>]*bg-\[#f7f2ea\]/);
+  assert.doesNotMatch(markup, /data-career-detail-aside="desktop"[\s\S]*object-cover/);
+  assert.doesNotMatch(markup, /data-career-detail-aside="desktop"[\s\S]*object-position:/);
 });
 
 test('keeps the default sharing bookmark rail on its original distributed spacing', () => {
