@@ -363,6 +363,8 @@ const joinClasses = (...classNames: Array<string | false | null | undefined>) =>
 
 export default function CareerDetailSection() {
   const sectionRef = useRef<HTMLElement>(null);
+  const selectorTrackRef = useRef<HTMLDivElement>(null);
+  const recordButtonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const hasSnappedOnCurrentEntryRef = useRef(false);
   const lastScrollYRef = useRef(0);
   const selectorDragStateRef = useRef<{
@@ -378,6 +380,7 @@ export default function CareerDetailSection() {
   const lastWheelDirectionRef = useRef(0);
   const lastWheelSwitchAtRef = useRef(0);
   const [sectionSize, setSectionSize] = useState<Size>(CAREER_DETAIL_DEFAULT_STAGE_SIZE);
+  const [selectorThumbOffsetPx, setSelectorThumbOffsetPx] = useState<number | null>(null);
   const [selectedCategoryKey, setSelectedCategoryKey] = useState<CareerDetailTabKey>('sharingJourney');
   const [selectedEntryIdByCategory, setSelectedEntryIdByCategory] = useState<
     Record<CareerDetailTabKey, string>
@@ -448,6 +451,12 @@ export default function CareerDetailSection() {
     [sectionSize],
   );
   const selectorThumbStyle = useMemo(() => {
+    if (selectorThumbOffsetPx !== null) {
+      return {
+        top: `${selectorThumbOffsetPx}px`,
+      } satisfies CSSProperties;
+    }
+
     const progress =
       selectedEntries.length <= 1 || selectedEntryIndex < 0
         ? 0.5
@@ -456,7 +465,7 @@ export default function CareerDetailSection() {
     return {
       top: `${8 + progress * 84}%`,
     } satisfies CSSProperties;
-  }, [selectedEntries.length, selectedEntryIndex]);
+  }, [selectedEntries.length, selectedEntryIndex, selectorThumbOffsetPx]);
 
   const commitSelectedEntryId = (entryId: string) => {
     setSelectedEntryIdByCategory((current) => ({
@@ -669,6 +678,41 @@ export default function CareerDetailSection() {
       resizeObserver.disconnect();
     };
   }, []);
+
+  useEffect(() => {
+    const track = selectorTrackRef.current;
+    const selectedButton = recordButtonRefs.current[selectedEntryState.selectedEntryId] ?? null;
+
+    if (!track || !selectedButton) {
+      setSelectorThumbOffsetPx(null);
+      return;
+    }
+
+    const updateSelectorThumbOffset = () => {
+      const trackRect = track.getBoundingClientRect();
+      const selectedButtonRect = selectedButton.getBoundingClientRect();
+      const nextOffset = selectedButtonRect.top + selectedButtonRect.height / 2 - trackRect.top;
+
+      setSelectorThumbOffsetPx(nextOffset);
+    };
+
+    updateSelectorThumbOffset();
+
+    if (typeof ResizeObserver === 'undefined') {
+      return;
+    }
+
+    const resizeObserver = new ResizeObserver(() => {
+      updateSelectorThumbOffset();
+    });
+
+    resizeObserver.observe(track);
+    resizeObserver.observe(selectedButton);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [selectedCategory.key, selectedEntryState.selectedEntryId, selectedEntries.length]);
 
   return (
     <section
@@ -940,6 +984,7 @@ export default function CareerDetailSection() {
 
             <div
               data-career-detail-drag-track="desktop"
+              ref={selectorTrackRef}
               className="absolute inset-y-[8%] left-1/2 z-10 w-[2.6rem] -translate-x-1/2 touch-none"
               onPointerDown={handleSelectorPointerDown}
               onPointerMove={handleSelectorPointerMove}
@@ -982,6 +1027,9 @@ export default function CareerDetailSection() {
                 return (
                   <button
                     key={entry.id}
+                    ref={(node) => {
+                      recordButtonRefs.current[entry.id] = node;
+                    }}
                     type="button"
                     data-career-detail-record-button={entry.id}
                     aria-label={entry.bookmarkLabel}
