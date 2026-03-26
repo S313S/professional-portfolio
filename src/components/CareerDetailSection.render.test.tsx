@@ -14,7 +14,8 @@ test('renders the career detail stage with category-scoped bookmarks and default
   assert.match(markup, /\/images\/careerDetail_career_icon\.png/);
   assert.match(markup, /\/images\/careerDetail_Industry knowledge_icon\.png/);
   assert.match(markup, /\/images\/careerDetail_scroll_icon\.png/);
-  assert.match(markup, /\/images\/careerDetail_litteleBg\.png/);
+  assert.match(markup, /\/images\/careerDetail_litteleBg_01\.png/);
+  assert.doesNotMatch(markup, /\/images\/careerDetail_litteleBg\.png/);
   assert.doesNotMatch(markup, /\/images\/careerDetail_map\.(png|svg)/);
   assert.match(markup, /data-career-detail-tab="sharingJourney"/);
   assert.match(markup, /data-career-detail-tab="workExperience"/);
@@ -84,7 +85,7 @@ test('locks the desktop archive aside to the measured notebook region and render
   assert.match(markup, /data-career-detail-aside="desktop"[^>]*class="[^"]*w-\[26\.47%\][^"]*"/);
   assert.match(
     markup,
-    /data-career-detail-aside="desktop"[\s\S]*src="\/images\/careerDetail_litteleBg\.png"/,
+    /data-career-detail-aside="desktop"[\s\S]*src="\/images\/careerDetail_litteleBg_01\.png"/,
   );
   assert.match(
     markup,
@@ -92,7 +93,7 @@ test('locks the desktop archive aside to the measured notebook region and render
   );
   assert.match(
     markup,
-    /data-career-detail-aside="desktop"[\s\S]*style="transform:translate\(0px, 0px\)"/,
+    /data-career-detail-aside="desktop"[\s\S]*style="transform:translate\(-13px, -2px\)"/,
   );
   assert.doesNotMatch(markup, /data-career-detail-aside="desktop"[^>]*right-\[7\.5%\] top-\[19\.5%\] w-\[25%\]/);
   assert.doesNotMatch(markup, /data-career-detail-block="classified"/);
@@ -102,6 +103,14 @@ test('locks the desktop archive aside to the measured notebook region and render
   assert.doesNotMatch(markup, /data-career-detail-aside="desktop"[^>]*bg-\[#f7f2ea\]/);
   assert.doesNotMatch(markup, /data-career-detail-aside="desktop"[\s\S]*object-cover/);
   assert.doesNotMatch(markup, /data-career-detail-aside="desktop"[\s\S]*object-position:/);
+});
+
+test('maps each category to its dedicated desktop archival card image', () => {
+  const componentSource = readFileSync(new URL('./CareerDetailSection.tsx', import.meta.url), 'utf8');
+
+  assert.match(componentSource, /asideImageSrc:\s*'\/images\/careerDetail_litteleBg_01\.png'/);
+  assert.match(componentSource, /asideImageSrc:\s*'\/images\/careerDetail_litteleBg_02\.png'/);
+  assert.match(componentSource, /asideImageSrc:\s*'\/images\/careerDetail_litteleBg_03\.png'/);
 });
 
 test('keeps the default sharing bookmark rail on its original distributed spacing', () => {

@@ -23,8 +23,6 @@ const CAREER_DETAIL_ASSETS = {
   workExperience: '/images/careerDetail_career_icon.png',
   industryKnowledge: '/images/careerDetail_Industry knowledge_icon.png',
   scrollSelector: '/images/careerDetail_scroll_icon.png',
-  // Deprecated: do not reintroduce careerDetail_map.png/svg in the aside.
-  archiveCard: '/images/careerDetail_litteleBg.png',
 } as const;
 
 const CAREER_DETAIL_DESKTOP_ASIDE_LAYOUT = {
@@ -92,6 +90,7 @@ interface CareerDetailCategory {
   key: CareerDetailTabKey;
   label: string;
   imageSrc: string;
+  asideImageSrc: string;
   entries: CareerDetailEntry[];
 }
 
@@ -100,6 +99,7 @@ const CAREER_DETAIL_CATEGORIES: CareerDetailCategory[] = [
     key: 'sharingJourney',
     label: 'Sharing Journey',
     imageSrc: CAREER_DETAIL_ASSETS.sharingJourney,
+    asideImageSrc: '/images/careerDetail_litteleBg_01.png',
     entries: [
       {
         id: 'sharing-essay-first-post',
@@ -149,6 +149,7 @@ const CAREER_DETAIL_CATEGORIES: CareerDetailCategory[] = [
     key: 'workExperience',
     label: 'Work Experience',
     imageSrc: CAREER_DETAIL_ASSETS.workExperience,
+    asideImageSrc: '/images/careerDetail_litteleBg_02.png',
     entries: [
       {
         id: 'work-system-campaign-ops',
@@ -198,6 +199,7 @@ const CAREER_DETAIL_CATEGORIES: CareerDetailCategory[] = [
     key: 'industryKnowledge',
     label: 'Industry Knowledge',
     imageSrc: CAREER_DETAIL_ASSETS.industryKnowledge,
+    asideImageSrc: '/images/careerDetail_litteleBg_03.png',
     entries: [
       {
         id: 'industry-signal-ai-adoption',
@@ -1044,7 +1046,7 @@ export default function CareerDetailSection() {
             )}
           >
             <img
-              src={CAREER_DETAIL_ASSETS.archiveCard}
+              src={selectedCategory.asideImageSrc}
               alt="Archipelago survey reference card"
               draggable={false}
               className="block h-auto w-full"
