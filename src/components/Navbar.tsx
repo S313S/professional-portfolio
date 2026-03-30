@@ -2,9 +2,12 @@ import { useState, useEffect } from 'react';
 import { motion, useScroll, useMotionValueEvent } from 'motion/react';
 import { Menu, X } from 'lucide-react';
 
+import { shouldHideNavbarForWorksLobby } from './Navbar.logic';
+
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [hidden, setHidden] = useState(false);
+  const [worksLobbyActive, setWorksLobbyActive] = useState(false);
   const { scrollY } = useScroll();
 
   useMotionValueEvent(scrollY, "change", (latest) => {
@@ -15,6 +18,28 @@ export default function Navbar() {
       setHidden(false);
     }
   });
+
+  useEffect(() => {
+    const syncWorksLobbyVisibility = () => {
+      const worksLobbySection = document.getElementById('works-lobby-section');
+      if (!worksLobbySection) {
+        setWorksLobbyActive(false);
+        return;
+      }
+
+      const rect = worksLobbySection.getBoundingClientRect();
+      setWorksLobbyActive(shouldHideNavbarForWorksLobby(rect.top, rect.bottom));
+    };
+
+    syncWorksLobbyVisibility();
+    window.addEventListener('scroll', syncWorksLobbyVisibility, { passive: true });
+    window.addEventListener('resize', syncWorksLobbyVisibility);
+
+    return () => {
+      window.removeEventListener('scroll', syncWorksLobbyVisibility);
+      window.removeEventListener('resize', syncWorksLobbyVisibility);
+    };
+  }, []);
 
   const navLinks = [
     { name: "About", href: "#home" },
@@ -30,7 +55,7 @@ export default function Navbar() {
         visible: { y: 0 },
         hidden: { y: "-100%" },
       }}
-      animate={hidden ? "hidden" : "visible"}
+      animate={hidden || worksLobbyActive ? "hidden" : "visible"}
       transition={{ duration: 0.35, ease: "easeInOut" }}
       className="fixed w-full top-0 z-50 bg-white/80 backdrop-blur-md border-b border-zinc-100"
     >

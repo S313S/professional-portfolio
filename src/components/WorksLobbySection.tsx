@@ -9,6 +9,7 @@ import {
   getWorksLobbyScrollTargetY,
   getWorksLobbyTouchState,
   getWorksLobbyVisualState,
+  getWorksLobbyWheelCaptureState,
   getWorksLobbyWheelState,
   type WorksLobbyScrollState,
 } from './WorksLobbySection.logic';
@@ -186,8 +187,33 @@ export default function WorksLobbySection() {
 
     const handleWheel = (event: WheelEvent) => {
       const sectionTop = section.getBoundingClientRect().top + window.scrollY;
+      const sectionHeight = section.offsetHeight;
       const isDesktopPinned =
         Math.abs(window.scrollY - getWorksLobbyScrollTargetY(sectionTop)) <= WORKS_LOBBY_PIN_TOLERANCE_PX;
+
+      if (!isDesktopPinned) {
+        const captureState = getWorksLobbyWheelCaptureState({
+          scrollY: window.scrollY,
+          sectionTop,
+          sectionHeight,
+          state: stateRef.current,
+          deltaY: event.deltaY,
+          step: DEFAULT_WORKS_LOBBY_WHEEL_STEP,
+          isMobile,
+        });
+
+        if (captureState.shouldPreventScroll && captureState.targetScrollY !== null) {
+          event.preventDefault();
+          window.scrollTo({
+            top: captureState.targetScrollY,
+            behavior: 'auto',
+          });
+          commitState(captureState.nextState);
+        }
+
+        return;
+      }
+
       const wheelState = getWorksLobbyWheelState({
         state: stateRef.current,
         deltaY: event.deltaY,
