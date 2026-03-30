@@ -8,12 +8,17 @@ test('renders the works lobby image, video, and gated entry button layers', () =
   const markup = renderToStaticMarkup(<WorksLobbySection />);
 
   assert.match(markup, /id="works-lobby-section"/);
+  assert.match(markup, /What I’ve Earned Along the Way/);
+  assert.match(markup, /A Room Built by Learning/);
+  assert.match(markup, /Built Through Days and Nights/);
   assert.match(markup, /\/images\/WorksCollectionRoom_Bg\.jpg/);
   assert.match(markup, /\/videos\/Lofi-girl\.mp4/);
   assert.match(markup, /data-works-lobby-phase="revealing"/);
   assert.match(markup, /data-works-lobby-layer="video"/);
   assert.match(markup, /data-works-lobby-layer="image"/);
   assert.match(markup, /data-works-lobby-layer="button"/);
+  assert.match(markup, /data-works-lobby-copy="image"/);
+  assert.match(markup, /data-works-lobby-copy="video"/);
   assert.match(markup, /data-works-lobby-cta="enter"/);
   assert.doesNotMatch(markup, /disabled/);
   assert.match(markup, /data-works-lobby-target="works-detail-section"/);

@@ -321,6 +321,27 @@ test('maps visual state from gated lobby state to image fade, video reveal, and 
       videoOpacity: 0.16,
       showButton: false,
       isLocked: true,
+      imageTitleOpacity: 1,
+      videoTitleOpacity: 0,
+      showImageEyebrow: true,
+      videoTitleText: 'Built Through Days and Nights',
+    },
+  );
+
+  assert.deepEqual(
+    getWorksLobbyVisualState({
+      phase: 'revealing',
+      progress: 0.52,
+    }),
+    {
+      imageOpacity: 0.376,
+      videoOpacity: 0.5968,
+      showButton: false,
+      isLocked: true,
+      imageTitleOpacity: 0.48,
+      videoTitleOpacity: 0.52,
+      showImageEyebrow: true,
+      videoTitleText: 'Built Through Days and Nights',
     },
   );
 
@@ -334,6 +355,10 @@ test('maps visual state from gated lobby state to image fade, video reveal, and 
       videoOpacity: 1,
       showButton: true,
       isLocked: true,
+      imageTitleOpacity: 0,
+      videoTitleOpacity: 1,
+      showImageEyebrow: false,
+      videoTitleText: 'Built Through Days and Nights',
     },
   );
 });

@@ -371,16 +371,36 @@ export default function WorksLobbySection() {
       </div>
 
       <div className="relative z-10 flex min-h-[100dvh] flex-col items-center justify-end px-6 pb-12 md:pb-16">
-        <div className="mb-auto pt-10 md:pt-14">
-          <p className="text-center text-[0.78rem] uppercase tracking-[0.28em] text-[#d6c4b4]/78">
-            Works Lobby
-          </p>
-          <h2
-            id="works-lobby-title"
-            className="mt-4 text-center font-serif text-[2.6rem] font-semibold tracking-[-0.04em] text-[#fff6ea] md:text-[4rem]"
-          >
-            The Collection Room
-          </h2>
+        <div className="mb-auto pt-4 md:pt-6">
+          <div className="grid">
+            <div
+              data-works-lobby-copy="image"
+              className="[grid-area:1/1] transition-opacity duration-300 ease-out"
+              style={{ opacity: visualState.imageTitleOpacity }}
+            >
+              {visualState.showImageEyebrow ? (
+                <p className="text-center text-[0.78rem] uppercase tracking-[0.28em] text-[#d6c4b4]/78">
+                  What I’ve Earned Along the Way
+                </p>
+              ) : null}
+              <h2
+                id="works-lobby-title"
+                className="mt-4 text-center font-serif text-[2.6rem] font-semibold tracking-[-0.04em] text-[#fff6ea] md:text-[4rem]"
+              >
+                A Room Built by Learning
+              </h2>
+            </div>
+
+            <div
+              data-works-lobby-copy="video"
+              className="[grid-area:1/1] pt-[1.7rem] transition-opacity duration-300 ease-out md:pt-[1.75rem]"
+              style={{ opacity: visualState.videoTitleOpacity }}
+            >
+              <h2 className="text-center font-serif text-[2.6rem] font-semibold tracking-[-0.04em] text-[#fff6ea] md:text-[4rem]">
+                {visualState.videoTitleText}
+              </h2>
+            </div>
+          </div>
         </div>
 
         <div

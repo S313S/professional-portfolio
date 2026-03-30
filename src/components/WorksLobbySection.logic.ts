@@ -65,6 +65,10 @@ export interface WorksLobbyVisualState {
   videoOpacity: number;
   showButton: boolean;
   isLocked: boolean;
+  imageTitleOpacity: number;
+  videoTitleOpacity: number;
+  showImageEyebrow: boolean;
+  videoTitleText: string;
 }
 
 export const DEFAULT_WORKS_LOBBY_SCROLL_STATE: WorksLobbyScrollState = {
@@ -263,11 +267,17 @@ export function getWorksLobbyVisualState(state: WorksLobbyScrollState): WorksLob
   const safeProgress = clamp(state.progress, 0, 1);
   const imageOpacity = clamp(1 - safeProgress * 1.2, 0, 1);
   const videoOpacity = clamp(0.16 + safeProgress * 0.84, 0.16, 1);
+  const imageTitleOpacity = clamp(1 - safeProgress, 0, 1);
+  const videoTitleOpacity = clamp(safeProgress, 0, 1);
 
   return {
     imageOpacity,
     videoOpacity,
     showButton: state.phase !== 'revealing',
     isLocked: state.phase !== 'navigating',
+    imageTitleOpacity,
+    videoTitleOpacity,
+    showImageEyebrow: state.phase === 'revealing',
+    videoTitleText: 'Built Through Days and Nights',
   };
 }
