@@ -28,7 +28,9 @@ export default function Navbar() {
       }
 
       const rect = worksLobbySection.getBoundingClientRect();
-      setWorksLobbyActive(shouldHideNavbarForWorksLobby(rect.top, rect.bottom));
+      setWorksLobbyActive(
+        shouldHideNavbarForWorksLobby(rect.top, rect.bottom, window.innerHeight),
+      );
     };
 
     syncWorksLobbyVisibility();

@@ -1,3 +1,7 @@
-export function shouldHideNavbarForWorksLobby(sectionTop: number, sectionBottom: number) {
-  return sectionTop < window.innerHeight && sectionBottom > 0;
+export function shouldHideNavbarForWorksLobby(
+  sectionTop: number,
+  sectionBottom: number,
+  viewportHeight: number,
+) {
+  return sectionTop < viewportHeight && sectionBottom > 0;
 }
