@@ -383,12 +383,9 @@ export default function WorksLobbySection() {
                   What I’ve Earned Along the Way
                 </p>
               ) : null}
-              <h2
-                id="works-lobby-title"
-                className="mt-4 text-center font-serif text-[2.6rem] font-semibold tracking-[-0.04em] text-[#fff6ea] md:text-[4rem]"
-              >
-                A Room Built by Learning
-              </h2>
+              <span id="works-lobby-title" className="sr-only">
+                What I’ve Earned Along the Way
+              </span>
             </div>
 
             <div

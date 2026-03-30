@@ -9,7 +9,7 @@ test('renders the works lobby image, video, and gated entry button layers', () =
 
   assert.match(markup, /id="works-lobby-section"/);
   assert.match(markup, /What I’ve Earned Along the Way/);
-  assert.match(markup, /A Room Built by Learning/);
+  assert.doesNotMatch(markup, /A Room Built by Learning/);
   assert.match(markup, /Built Through Days and Nights/);
   assert.match(markup, /\/images\/WorksCollectionRoom_Bg\.jpg/);
   assert.match(markup, /\/videos\/Lofi-girl\.mp4/);
