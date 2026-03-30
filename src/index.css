@@ -190,16 +190,44 @@
 }
 
 .works-lobby-cta-button {
-  border: 1px solid rgba(255, 244, 230, 0.34);
-  background: linear-gradient(180deg, rgba(29, 19, 13, 0.78), rgba(16, 11, 8, 0.9));
-  box-shadow: 0 18px 40px rgba(8, 5, 4, 0.28);
-  color: rgba(255, 245, 233, 0.96);
-  border-radius: 999px;
-  padding: 0.95rem 1.5rem;
+  position: relative;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  color: rgba(236, 223, 199, 0.92);
+  opacity: 0.96;
+  border-radius: 0;
+  padding: 0.2rem 0;
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
   font-size: 0.8rem;
-  letter-spacing: 0.28em;
+  font-weight: 600;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
   cursor: pointer;
+  transition:
+    transform 220ms ease,
+    color 220ms ease,
+    opacity 220ms ease,
+    text-shadow 220ms ease;
+}
+
+.works-lobby-cta-button::before,
+.works-lobby-cta-button::after {
+  content: none;
+}
+
+.works-lobby-cta-button:hover,
+.works-lobby-cta-button:focus-visible {
+  box-shadow:
+    none;
+  color: rgba(252, 242, 219, 0.98);
+  opacity: 1;
+  text-shadow: 0 0 16px rgba(236, 196, 120, 0.22);
+  transform: translate3d(0, -1px, 0);
+}
+
+.works-lobby-cta-button:focus-visible {
+  outline: none;
 }
 
 .works-lobby-cta-button:disabled {
@@ -229,5 +257,11 @@
   .video-cta-prompt-text,
   .works-lobby-cta-shell {
     animation: none;
+  }
+
+  .works-lobby-cta-button,
+  .works-lobby-cta-button::before,
+  .works-lobby-cta-button::after {
+    transition: none;
   }
 }

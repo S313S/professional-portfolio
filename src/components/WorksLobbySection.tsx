@@ -406,7 +406,7 @@ export default function WorksLobbySection() {
 
         <div
           data-works-lobby-layer="button"
-          className={`works-lobby-cta-shell ${visualState.showButton ? 'works-lobby-cta-shell--visible' : ''}`}
+          className={`works-lobby-cta-shell flex flex-col items-center gap-2 ${visualState.showButton ? 'works-lobby-cta-shell--visible' : ''}`}
         >
           <button
             type="button"
@@ -418,6 +418,9 @@ export default function WorksLobbySection() {
           >
             Explore My Work
           </button>
+          <p className="text-center text-[0.72rem] tracking-[0.08em] text-[#e4d7bf]/72">
+            (Click on the text above)
+          </p>
         </div>
       </div>
     </section>
