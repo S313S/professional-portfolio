@@ -175,6 +175,38 @@
   will-change: transform, opacity;
 }
 
+.works-lobby-cta-shell {
+  opacity: 0;
+  transform: translate3d(0, 18px, 0);
+  transition: opacity 480ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 480ms cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+
+.works-lobby-cta-shell--visible {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+  pointer-events: auto;
+}
+
+.works-lobby-cta-button {
+  border: 1px solid rgba(255, 244, 230, 0.34);
+  background: linear-gradient(180deg, rgba(29, 19, 13, 0.78), rgba(16, 11, 8, 0.9));
+  box-shadow: 0 18px 40px rgba(8, 5, 4, 0.28);
+  color: rgba(255, 245, 233, 0.96);
+  border-radius: 999px;
+  padding: 0.95rem 1.5rem;
+  font-size: 0.8rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.works-lobby-cta-button:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .career-journey-role-drift,
   .career-journey-float-slow,
@@ -183,7 +215,8 @@
   .career-journey-float-gold,
   .video-cta-prompt-button,
   .video-cta-prompt-icon,
-  .video-cta-prompt-text {
+  .video-cta-prompt-text,
+  .works-lobby-cta-shell {
     animation: none;
   }
 }

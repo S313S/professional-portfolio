@@ -1,0 +1,378 @@
+import { useEffect, useMemo, useRef, useState } from 'react';
+
+import {
+  DEFAULT_WORKS_LOBBY_SCROLL_STATE,
+  DEFAULT_WORKS_LOBBY_WHEEL_STEP,
+  getWorksLobbyNavigationTargetY,
+  getWorksLobbyPhaseForProgress,
+  getWorksLobbyScrollMountState,
+  getWorksLobbyScrollTargetY,
+  getWorksLobbyTouchState,
+  getWorksLobbyVisualState,
+  getWorksLobbyWheelState,
+  type WorksLobbyScrollState,
+} from './WorksLobbySection.logic';
+
+const MOBILE_MEDIA_QUERY = '(max-width: 767px), (pointer: coarse)';
+const WORKS_LOBBY_PIN_TOLERANCE_PX = 2;
+
+const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+
+const getMobileRevealProgress = (section: HTMLElement) => {
+  const rect = section.getBoundingClientRect();
+  const viewportHeight = window.innerHeight || 1;
+  return clamp((viewportHeight - rect.top) / viewportHeight, 0, 1);
+};
+
+export default function WorksLobbySection() {
+  const sectionRef = useRef<HTMLElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const stateRef = useRef<WorksLobbyScrollState>(DEFAULT_WORKS_LOBBY_SCROLL_STATE);
+  const hasSnappedOnCurrentEntryRef = useRef(false);
+  const lastScrollYRef = useRef(0);
+  const touchStartYRef = useRef<number | null>(null);
+
+  const [scrollState, setScrollState] = useState(DEFAULT_WORKS_LOBBY_SCROLL_STATE);
+  const [isMobile, setIsMobile] = useState(false);
+  const visualState = useMemo(() => getWorksLobbyVisualState(scrollState), [scrollState]);
+
+  const commitState = (nextState: WorksLobbyScrollState) => {
+    stateRef.current = nextState;
+    setScrollState(nextState);
+  };
+
+  const resetLobbyState = () => {
+    commitState(DEFAULT_WORKS_LOBBY_SCROLL_STATE);
+  };
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia(MOBILE_MEDIA_QUERY);
+
+    const syncMobileMode = () => {
+      const nextIsMobile = mediaQuery.matches;
+      setIsMobile(nextIsMobile);
+
+      if (nextIsMobile) {
+        hasSnappedOnCurrentEntryRef.current = false;
+        resetLobbyState();
+      }
+    };
+
+    syncMobileMode();
+    mediaQuery.addEventListener('change', syncMobileMode);
+
+    return () => mediaQuery.removeEventListener('change', syncMobileMode);
+  }, []);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) {
+      return;
+    }
+
+    video.play().catch(() => {
+      // Keep the poster/first frame if autoplay is blocked.
+    });
+  }, []);
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section) {
+      return;
+    }
+
+    lastScrollYRef.current = window.scrollY;
+
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+      const sectionTop = section.getBoundingClientRect().top + scrollY;
+      const sectionHeight = section.offsetHeight;
+      const sectionBottom = sectionTop + sectionHeight;
+      const isOutsideResetBand =
+        scrollY <= sectionTop - window.innerHeight * 0.6 || scrollY >= sectionBottom;
+
+      if (isMobile) {
+        if (isOutsideResetBand && stateRef.current.phase === 'navigating') {
+          resetLobbyState();
+          lastScrollYRef.current = scrollY;
+          return;
+        }
+
+        const nextProgress = getMobileRevealProgress(section);
+
+        if (stateRef.current.phase === 'holding') {
+          if (scrollY > lastScrollYRef.current) {
+            window.scrollTo({
+              top: getWorksLobbyScrollTargetY(sectionTop),
+              behavior: 'auto',
+            });
+            lastScrollYRef.current = getWorksLobbyScrollTargetY(sectionTop);
+            return;
+          }
+
+          if (scrollY < lastScrollYRef.current) {
+            commitState({
+              phase: 'revealing',
+              progress: Math.min(nextProgress, 0.92),
+            });
+          }
+
+          lastScrollYRef.current = scrollY;
+          return;
+        }
+
+        const nextPhase = getWorksLobbyPhaseForProgress(nextProgress);
+        commitState({
+          phase: nextPhase,
+          progress: nextPhase === 'holding' ? 1 : nextProgress,
+        });
+
+        if (nextPhase === 'holding') {
+          window.scrollTo({
+            top: getWorksLobbyScrollTargetY(sectionTop),
+            behavior: 'auto',
+          });
+        }
+
+        lastScrollYRef.current = scrollY;
+        return;
+      }
+
+      const mountState = getWorksLobbyScrollMountState({
+        scrollY,
+        lastScrollY: lastScrollYRef.current,
+        sectionTop,
+        sectionHeight,
+        viewportHeight: window.innerHeight,
+        hasSnappedOnCurrentEntry: hasSnappedOnCurrentEntryRef.current,
+        isMobile,
+      });
+
+      if (mountState.shouldResetLatch) {
+        hasSnappedOnCurrentEntryRef.current = false;
+        if (stateRef.current.phase === 'navigating' || scrollY >= sectionBottom) {
+          resetLobbyState();
+        }
+      }
+
+      if (mountState.shouldSnap) {
+        hasSnappedOnCurrentEntryRef.current = true;
+        window.scrollTo({
+          top: getWorksLobbyScrollTargetY(sectionTop),
+          behavior: 'smooth',
+        });
+      }
+
+      lastScrollYRef.current = scrollY;
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [isMobile]);
+
+  useEffect(() => {
+    if (isMobile) {
+      return;
+    }
+
+    const section = sectionRef.current;
+    if (!section) {
+      return;
+    }
+
+    const handleWheel = (event: WheelEvent) => {
+      const sectionTop = section.getBoundingClientRect().top + window.scrollY;
+      const isDesktopPinned =
+        Math.abs(window.scrollY - getWorksLobbyScrollTargetY(sectionTop)) <= WORKS_LOBBY_PIN_TOLERANCE_PX;
+      const wheelState = getWorksLobbyWheelState({
+        state: stateRef.current,
+        deltaY: event.deltaY,
+        step: DEFAULT_WORKS_LOBBY_WHEEL_STEP,
+        isDesktopPinned,
+        isMobile,
+      });
+
+      if (!wheelState.shouldPreventScroll) {
+        return;
+      }
+
+      event.preventDefault();
+      window.scrollTo({
+        top: getWorksLobbyScrollTargetY(sectionTop),
+        behavior: 'auto',
+      });
+
+      commitState(wheelState.nextState);
+    };
+
+    window.addEventListener('wheel', handleWheel, { passive: false });
+
+    return () => {
+      window.removeEventListener('wheel', handleWheel);
+    };
+  }, [isMobile]);
+
+  useEffect(() => {
+    if (!isMobile) {
+      return;
+    }
+
+    const section = sectionRef.current;
+    if (!section) {
+      return;
+    }
+
+    const handleTouchStart = (event: TouchEvent) => {
+      touchStartYRef.current = event.touches[0]?.clientY ?? null;
+    };
+
+    const handleTouchMove = (event: TouchEvent) => {
+      const startY = touchStartYRef.current;
+      const currentY = event.touches[0]?.clientY;
+      if (startY === null || currentY === undefined) {
+        return;
+      }
+
+      const touchState = getWorksLobbyTouchState({
+        state: stateRef.current,
+        deltaY: currentY - startY,
+        step: DEFAULT_WORKS_LOBBY_WHEEL_STEP,
+      });
+
+      if (touchState.shouldPreventScroll) {
+        const sectionTop = section.getBoundingClientRect().top + window.scrollY;
+        event.preventDefault();
+        window.scrollTo({
+          top: getWorksLobbyScrollTargetY(sectionTop),
+          behavior: 'auto',
+        });
+      }
+
+      if (
+        touchState.nextState.phase !== stateRef.current.phase ||
+        touchState.nextState.progress !== stateRef.current.progress
+      ) {
+        commitState(touchState.nextState);
+      }
+    };
+
+    const resetTouch = () => {
+      touchStartYRef.current = null;
+    };
+
+    window.addEventListener('touchstart', handleTouchStart, { passive: true });
+    window.addEventListener('touchmove', handleTouchMove, { passive: false });
+    window.addEventListener('touchend', resetTouch, { passive: true });
+    window.addEventListener('touchcancel', resetTouch, { passive: true });
+
+    return () => {
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', resetTouch);
+      window.removeEventListener('touchcancel', resetTouch);
+    };
+  }, [isMobile]);
+
+  const handleEnterWorks = () => {
+    if (stateRef.current.phase !== 'holding') {
+      return;
+    }
+
+    const targetSection = document.getElementById('works-detail-section');
+    if (!targetSection) {
+      return;
+    }
+
+    const targetY = getWorksLobbyNavigationTargetY(
+      targetSection.getBoundingClientRect().top + window.scrollY,
+    );
+
+    commitState({
+      phase: 'navigating',
+      progress: 1,
+    });
+
+    window.scrollTo({
+      top: targetY,
+      behavior: 'smooth',
+    });
+  };
+
+  return (
+    <section
+      ref={sectionRef}
+      id="works-lobby-section"
+      aria-labelledby="works-lobby-title"
+      className="relative isolate min-h-[100dvh] overflow-hidden bg-[#140f0b] text-[#f4ebdf]"
+      data-works-lobby-progress={scrollState.progress.toFixed(2)}
+      data-works-lobby-phase={scrollState.phase}
+    >
+      <div
+        data-works-lobby-layer="video"
+        className="absolute inset-0"
+        style={{ opacity: visualState.videoOpacity }}
+      >
+        <video
+          ref={videoRef}
+          src="/videos/Lofi-girl.mp4"
+          poster="/images/WorksCollectionRoom_Bg.jpg"
+          className="h-full w-full object-cover object-center"
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="metadata"
+        />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(28,19,13,0.08),rgba(16,12,10,0.5)_100%)]" />
+      </div>
+
+      <div
+        data-works-lobby-layer="image"
+        className="absolute inset-0"
+        style={{ opacity: visualState.imageOpacity }}
+      >
+        <img
+          src="/images/WorksCollectionRoom_Bg.jpg"
+          alt=""
+          aria-hidden="true"
+          className="h-full w-full object-cover object-center"
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(23,17,13,0.02)_0%,rgba(12,8,6,0.24)_100%)]" />
+      </div>
+
+      <div className="relative z-10 flex min-h-[100dvh] flex-col items-center justify-end px-6 pb-12 md:pb-16">
+        <div className="mb-auto pt-10 md:pt-14">
+          <p className="text-center text-[0.78rem] uppercase tracking-[0.28em] text-[#d6c4b4]/78">
+            Works Lobby
+          </p>
+          <h2
+            id="works-lobby-title"
+            className="mt-4 text-center font-serif text-[2.6rem] font-semibold tracking-[-0.04em] text-[#fff6ea] md:text-[4rem]"
+          >
+            The Collection Room
+          </h2>
+        </div>
+
+        <div
+          data-works-lobby-layer="button"
+          className={`works-lobby-cta-shell ${visualState.showButton ? 'works-lobby-cta-shell--visible' : ''}`}
+        >
+          <button
+            type="button"
+            data-works-lobby-cta="enter"
+            data-works-lobby-target="works-detail-section"
+            className="works-lobby-cta-button"
+            tabIndex={visualState.showButton ? 0 : -1}
+            onClick={handleEnterWorks}
+          >
+            Enter The Works
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}

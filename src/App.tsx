@@ -6,6 +6,8 @@ import GrowPathScrollSection from './components/GrowPathScrollSection';
 import VideoScrollTransition from './components/VideoScrollTransition';
 import CareerJourneySection from './components/CareerJourneySection';
 import CareerDetailSection from './components/CareerDetailSection';
+import WorksDetailSection from './components/WorksDetailSection';
+import WorksLobbySection from './components/WorksLobbySection';
 
 export default function App() {
   return (
@@ -19,6 +21,8 @@ export default function App() {
         <GrowPathScrollSection />
         <CareerJourneySection />
         <CareerDetailSection />
+        <WorksLobbySection />
+        <WorksDetailSection />
       </main>
 
       <footer className="py-8 text-center text-zinc-400 text-sm font-mono relative z-50">
