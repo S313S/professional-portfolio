@@ -207,6 +207,16 @@
   opacity: 1;
 }
 
+.works-lobby-video-title {
+  background: linear-gradient(180deg, #e6d5b3 0%, #cbb385 52%, #9a8156 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  text-shadow: 1px 2px 3px rgba(90, 60, 30, 0.3);
+  letter-spacing: 0.02em;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .career-journey-role-drift,
   .career-journey-float-slow,

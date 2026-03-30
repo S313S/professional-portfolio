@@ -397,7 +397,7 @@ export default function WorksLobbySection() {
               className="[grid-area:1/1] -translate-y-[15px] transition-[opacity,transform] duration-300 ease-out"
               style={{ opacity: visualState.videoTitleOpacity }}
             >
-              <h2 className="text-center font-serif text-[2.6rem] font-semibold tracking-[-0.04em] text-[#fff6ea] md:text-[4rem]">
+              <h2 className="works-lobby-video-title text-center font-serif text-[2.6rem] font-semibold md:text-[4rem]">
                 {visualState.videoTitleText}
               </h2>
             </div>
@@ -416,7 +416,7 @@ export default function WorksLobbySection() {
             tabIndex={visualState.showButton ? 0 : -1}
             onClick={handleEnterWorks}
           >
-            Enter The Works
+            Explore My Work
           </button>
         </div>
       </div>
