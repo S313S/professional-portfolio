@@ -21,8 +21,8 @@ test('renders the works lobby image, video, and gated entry button layers', () =
   assert.match(markup, /data-works-lobby-copy="video"/);
   assert.match(markup, /data-works-lobby-cta="enter"/);
   assert.match(markup, /Explore My Work/);
-  assert.match(markup, /data-works-lobby-cta-note="click-here"/);
-  assert.match(markup, /click here/);
+  assert.doesNotMatch(markup, /data-works-lobby-cta-note="click-here"/);
+  assert.doesNotMatch(markup, /click here/);
   assert.doesNotMatch(markup, /disabled/);
   assert.match(markup, /data-works-lobby-target="works-detail-section"/);
 });

@@ -13,6 +13,11 @@ import {
   getWorksLobbyWheelState,
   type WorksLobbyScrollState,
 } from './WorksLobbySection.logic';
+import {
+  WORKS_LOBBY_CTA_HINT_DELAY_MS,
+  shouldHideWorksLobbyHint,
+  shouldScheduleWorksLobbyHint,
+} from './WorksLobbySection.hint';
 
 const MOBILE_MEDIA_QUERY = '(max-width: 767px), (pointer: coarse)';
 const WORKS_LOBBY_PIN_TOLERANCE_PX = 2;
@@ -32,9 +37,12 @@ export default function WorksLobbySection() {
   const hasSnappedOnCurrentEntryRef = useRef(false);
   const lastScrollYRef = useRef(0);
   const touchStartYRef = useRef<number | null>(null);
+  const hintTimeoutRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
 
   const [scrollState, setScrollState] = useState(DEFAULT_WORKS_LOBBY_SCROLL_STATE);
   const [isMobile, setIsMobile] = useState(false);
+  const [shouldShowHint, setShouldShowHint] = useState(false);
+  const [hasDismissedHint, setHasDismissedHint] = useState(false);
   const visualState = useMemo(() => getWorksLobbyVisualState(scrollState), [scrollState]);
 
   const commitState = (nextState: WorksLobbyScrollState) => {
@@ -44,6 +52,13 @@ export default function WorksLobbySection() {
 
   const resetLobbyState = () => {
     commitState(DEFAULT_WORKS_LOBBY_SCROLL_STATE);
+  };
+
+  const clearHintTimer = () => {
+    if (hintTimeoutRef.current !== null) {
+      window.clearTimeout(hintTimeoutRef.current);
+      hintTimeoutRef.current = null;
+    }
   };
 
   useEffect(() => {
@@ -75,6 +90,37 @@ export default function WorksLobbySection() {
       // Keep the poster/first frame if autoplay is blocked.
     });
   }, []);
+
+  useEffect(() => {
+    if (shouldHideWorksLobbyHint(scrollState.phase)) {
+      clearHintTimer();
+      setShouldShowHint(false);
+      setHasDismissedHint(false);
+      return;
+    }
+
+    if (!shouldScheduleWorksLobbyHint(scrollState.phase, visualState.showButton, hasDismissedHint)) {
+      clearHintTimer();
+      return;
+    }
+
+    setShouldShowHint(false);
+    clearHintTimer();
+    hintTimeoutRef.current = window.setTimeout(() => {
+      setShouldShowHint(true);
+      hintTimeoutRef.current = null;
+    }, WORKS_LOBBY_CTA_HINT_DELAY_MS);
+
+    return () => {
+      clearHintTimer();
+    };
+  }, [hasDismissedHint, scrollState.phase, visualState.showButton]);
+
+  const dismissHint = () => {
+    clearHintTimer();
+    setShouldShowHint(false);
+    setHasDismissedHint(true);
+  };
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -317,6 +363,7 @@ export default function WorksLobbySection() {
       targetSection.getBoundingClientRect().top + window.scrollY,
     );
 
+    dismissHint();
     commitState({
       phase: 'navigating',
       progress: 1,
@@ -414,18 +461,22 @@ export default function WorksLobbySection() {
             data-works-lobby-target="works-detail-section"
             className="works-lobby-cta-button"
             tabIndex={visualState.showButton ? 0 : -1}
+            onMouseEnter={dismissHint}
+            onFocus={dismissHint}
             onClick={handleEnterWorks}
           >
             Explore My Work
           </button>
-          <div
-            aria-hidden="true"
-            data-works-lobby-cta-note="click-here"
-            className="works-lobby-cta-doodle"
-          >
-            <span className="works-lobby-cta-doodle-text">click here</span>
-            <span className="works-lobby-cta-doodle-line" />
-          </div>
+          {shouldShowHint ? (
+            <div
+              aria-hidden="true"
+              data-works-lobby-cta-note="click-here"
+              className="works-lobby-cta-doodle"
+            >
+              <span className="works-lobby-cta-doodle-text">click here</span>
+              <span className="works-lobby-cta-doodle-line" />
+            </div>
+          ) : null}
         </div>
       </div>
     </section>
