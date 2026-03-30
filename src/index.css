@@ -32,6 +32,7 @@
 }
 
 @keyframes video-cta-prompt-icon {
+
   0%,
   100% {
     transform: translate3d(0, 0, 0) scale(1);
@@ -51,6 +52,7 @@
 }
 
 @keyframes video-cta-prompt-text {
+
   0%,
   100% {
     transform: translate3d(-50%, -50%, 0) translate3d(0, 0, 0);
@@ -82,6 +84,7 @@
 }
 
 @keyframes career-journey-role-drift {
+
   0%,
   100% {
     transform: translate3d(0, 0, 0);
@@ -93,6 +96,7 @@
 }
 
 @keyframes career-journey-float-slow {
+
   0%,
   100% {
     transform: translate3d(0, 0, 0) rotate(-2deg);
@@ -104,6 +108,7 @@
 }
 
 @keyframes career-journey-float-fast {
+
   0%,
   100% {
     transform: translate3d(0, 0, 0) rotate(1deg);
@@ -115,6 +120,7 @@
 }
 
 @keyframes career-journey-float-gold {
+
   0%,
   100% {
     transform: translate3d(0, 0, 0);
@@ -126,6 +132,7 @@
 }
 
 @keyframes career-journey-float-champion {
+
   0%,
   100% {
     transform: translate3d(0, 0, 0) rotate(-1.4deg);
@@ -235,6 +242,49 @@
   opacity: 1;
 }
 
+.works-lobby-cta-doodle {
+  position: absolute;
+  right: -6.4rem;
+  top: -3.02rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.24rem;
+  pointer-events: none;
+  opacity: 0.82;
+}
+
+.works-lobby-cta-doodle-line {
+  position: relative;
+  width: 2.6rem;
+  border-top: 1.5px dashed rgba(233, 220, 192, 0.7);
+  margin-left: 1.2rem;
+  transform: rotate(144deg);
+  transform-origin: left center;
+}
+
+.works-lobby-cta-doodle-line::after {
+  content: "";
+  position: absolute;
+  right: -0.18rem;
+  top: -0.34rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-top: 1.5px solid rgba(233, 220, 192, 0.7);
+  border-right: 1.5px solid rgba(233, 220, 192, 0.7);
+  transform: rotate(45deg);
+}
+
+.works-lobby-cta-doodle-text {
+  font-family: "Caveat", "Dancing Script", cursive;
+  font-size: 1.4rem;
+  line-height: 1;
+  color: rgba(241, 228, 198, 0.82);
+  text-shadow: 0 1px 8px rgba(33, 22, 15, 0.24);
+  white-space: nowrap;
+  margin-left: 0.15rem;
+}
+
 .works-lobby-video-title {
   background: linear-gradient(180deg, #cfbc97 0%, #ad946b 52%, #7b6441 100%);
   -webkit-background-clip: text;
@@ -247,6 +297,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   .career-journey-role-drift,
   .career-journey-float-slow,
   .career-journey-float-fast,
@@ -263,5 +314,24 @@
   .works-lobby-cta-button::before,
   .works-lobby-cta-button::after {
     transition: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .works-lobby-cta-doodle {
+    position: static;
+    margin-top: 0.2rem;
+    gap: 0.16rem;
+  }
+
+  .works-lobby-cta-doodle-line {
+    width: 2.55rem;
+    margin-left: 1rem;
+    transform: rotate(126deg);
+  }
+
+  .works-lobby-cta-doodle-text {
+    font-size: 1.15rem;
+    margin-left: 0;
   }
 }
