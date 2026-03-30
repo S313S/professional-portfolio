@@ -393,7 +393,11 @@ export default function WorksLobbySection() {
 
             <div
               data-works-lobby-copy="video"
-              className="[grid-area:1/1] pt-[1.7rem] transition-opacity duration-300 ease-out md:pt-[1.75rem]"
+              // 这行 className 控制视频阶段标题层的整体位置与布局：
+              // 1. `-translate-y-[4px]` 是“整体上移 4px”的直接控制点，后续想继续上移就把 4px 改大
+              // 2. `[grid-area:1/1]` 让视频标题和图片阶段标题叠在同一块版心里
+              // 3. 如果你想改文字大小，不要动这里，要改下面 h2 的 `text-[2.6rem]` / `md:text-[4rem]`
+              className="[grid-area:1/1] -translate-y-[15px] transition-[opacity,transform] duration-300 ease-out"
               style={{ opacity: visualState.videoTitleOpacity }}
             >
               <h2 className="text-center font-serif text-[2.6rem] font-semibold tracking-[-0.04em] text-[#fff6ea] md:text-[4rem]">
