@@ -24,6 +24,19 @@ export interface CareerDetailWheelState {
   nextIndex: number;
 }
 
+export interface CareerDetailWheelCaptureInput {
+  scrollY: number;
+  sectionTop: number;
+  sectionHeight: number;
+  deltaY: number;
+  activeIndex: number;
+  recordCount: number;
+}
+
+export interface CareerDetailWheelCaptureState extends CareerDetailWheelState {
+  targetScrollY: number | null;
+}
+
 export interface CareerDetailDragGestureInput {
   dragStartY: number | null;
   currentY: number;
@@ -104,6 +117,15 @@ export function isCareerDetailSectionPinned(
   return Math.abs(scrollY - sectionTop) <= tolerance;
 }
 
+export function isCareerDetailSectionActive(
+  scrollY: number,
+  sectionTop: number,
+  sectionHeight: number,
+  tolerance = CAREER_DETAIL_PIN_TOLERANCE,
+) {
+  return scrollY >= sectionTop - tolerance && scrollY < sectionTop + sectionHeight - tolerance;
+}
+
 export function getCareerDetailWheelState({
   deltaY,
   activeIndex,
@@ -131,6 +153,35 @@ export function getCareerDetailWheelState({
   return {
     shouldPreventScroll: nextIndex !== clampedIndex,
     nextIndex,
+  };
+}
+
+export function getCareerDetailWheelCaptureState({
+  scrollY,
+  sectionTop,
+  sectionHeight,
+  deltaY,
+  activeIndex,
+  recordCount,
+}: CareerDetailWheelCaptureInput): CareerDetailWheelCaptureState {
+  if (!isCareerDetailSectionActive(scrollY, sectionTop, sectionHeight)) {
+    return {
+      shouldPreventScroll: false,
+      nextIndex: Math.min(Math.max(activeIndex, 0), Math.max(recordCount - 1, 0)),
+      targetScrollY: null,
+    };
+  }
+
+  const wheelState = getCareerDetailWheelState({
+    deltaY,
+    activeIndex,
+    recordCount,
+    isSectionPinned: true,
+  });
+
+  return {
+    ...wheelState,
+    targetScrollY: wheelState.shouldPreventScroll ? getCareerDetailSnapTargetY(sectionTop) : null,
   };
 }
 

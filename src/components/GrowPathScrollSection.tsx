@@ -13,6 +13,7 @@ import {
   getGrowPathFocusVisuals,
   getGrowPathFocusWheelState,
   getGrowPathRepinMode,
+  isGrowPathSectionActive,
   getGrowPathSoftRepinScrollTop,
   getGrowPathSoftRepinWheelState,
   getGrowPathWheelCaptureState,
@@ -25,6 +26,7 @@ const MOBILE_MEDIA_QUERY = '(max-width: 767px), (pointer: coarse)';
 const CAREER_JOURNEY_SECTION_ID = 'career-journey-section';
 const GROW_PATH_FOCUS_TRANSITION = '560ms cubic-bezier(0.22, 1, 0.36, 1)';
 const GROW_PATH_FOCUS_SHADOW = '0 38px 100px rgba(74, 52, 36, 0.24)';
+const GROW_PATH_STORAGE_KEY = 'grow-path-state:v1';
 
 const CARD_IMAGE_BY_ID: Record<GrowPathCardId, string> = {
   growPath_01: '/images/growPath_01.png',
@@ -80,6 +82,11 @@ interface GrowPathDesktopStageProps {
   onCloseFocus?: () => void;
 }
 
+interface PersistedGrowPathState {
+  progress: number;
+  selectedCardId: GrowPathCardId | null;
+}
+
 const getCardLabel = (cardId: GrowPathCardId) => `growth path step ${cardId.slice(-2)}`;
 
 const toCardRect = (element: HTMLButtonElement): GrowPathCardRect => {
@@ -133,6 +140,7 @@ export function GrowPathDesktopStage({
             <button
               key={cardId}
               type="button"
+              data-grow-path-card={cardId}
               aria-label={`${isSelected ? 'Close' : 'Open'} ${getCardLabel(cardId)}`}
               aria-pressed={isSelected}
               disabled={!canFocusCards}
@@ -220,6 +228,7 @@ export default function GrowPathScrollSection() {
   const [selectedCardId, setSelectedCardId] = useState<GrowPathCardId | null>(null);
   const [selectedCardRect, setSelectedCardRect] = useState<GrowPathCardRect | null>(null);
   const [focusAnimationReady, setFocusAnimationReady] = useState(false);
+  const [isPersistenceReady, setIsPersistenceReady] = useState(false);
 
   const cardVisuals = getGrowPathCardVisuals(scrollState.progress);
   const canFocusCards = canFocusGrowPathCard(scrollState.progress);
@@ -234,6 +243,33 @@ export default function GrowPathScrollSection() {
   const resetState = () => {
     stateRef.current = DEFAULT_GROW_PATH_SCROLL_STATE;
     setScrollState(DEFAULT_GROW_PATH_SCROLL_STATE);
+  };
+
+  const readPersistedGrowPathState = (): PersistedGrowPathState | null => {
+    try {
+      const rawValue = window.sessionStorage.getItem(GROW_PATH_STORAGE_KEY);
+      if (!rawValue) {
+        return null;
+      }
+
+      const parsedValue = JSON.parse(rawValue) as {
+        progress?: number;
+        selectedCardId?: string | null;
+      };
+
+      const normalizedProgress = Math.min(Math.max(parsedValue.progress ?? 0, 0), 1);
+      const normalizedSelectedCardId =
+        parsedValue.selectedCardId && GROW_PATH_CARD_IDS.includes(parsedValue.selectedCardId as GrowPathCardId)
+          ? (parsedValue.selectedCardId as GrowPathCardId)
+          : null;
+
+      return {
+        progress: normalizedProgress,
+        selectedCardId: normalizedSelectedCardId,
+      };
+    } catch {
+      return null;
+    }
   };
 
   const clearFocusTimers = () => {
@@ -394,6 +430,66 @@ export default function GrowPathScrollSection() {
 
     return () => mediaQuery.removeEventListener('change', updateMode);
   }, []);
+
+  useEffect(() => {
+    const metrics = getSectionMetrics();
+    if (!metrics) {
+      setIsPersistenceReady(true);
+      return;
+    }
+
+    if (isGrowPathSectionActive(window.scrollY, metrics.sectionTop, metrics.sectionHeight)) {
+      const persistedState = readPersistedGrowPathState();
+      if (persistedState) {
+        const restoredSelectedCardId =
+          persistedState.progress >= 1 ? persistedState.selectedCardId : null;
+        commitState({
+          progress: persistedState.progress,
+        });
+        selectedCardIdRef.current = restoredSelectedCardId;
+        setSelectedCardId(restoredSelectedCardId);
+      }
+    }
+
+    setIsPersistenceReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isPersistenceReady) {
+      return;
+    }
+
+    const persistedState: PersistedGrowPathState = {
+      progress: scrollState.progress,
+      selectedCardId,
+    };
+
+    window.sessionStorage.setItem(GROW_PATH_STORAGE_KEY, JSON.stringify(persistedState));
+  }, [isPersistenceReady, scrollState.progress, selectedCardId]);
+
+  useEffect(() => {
+    if (!selectedCardId || !canFocusCards || selectedCardRect) {
+      return;
+    }
+
+    const frame = requestAnimationFrame(() => {
+      const cardButton = sectionRef.current?.querySelector<HTMLButtonElement>(
+        `[data-grow-path-card="${selectedCardId}"]`,
+      );
+
+      if (!cardButton) {
+        return;
+      }
+
+      selectedCardIdRef.current = selectedCardId;
+      setSelectedCardRect(toCardRect(cardButton));
+      setFocusAnimationReady(true);
+    });
+
+    return () => {
+      cancelAnimationFrame(frame);
+    };
+  }, [canFocusCards, selectedCardId, selectedCardRect]);
 
   useEffect(() => {
     if (isMobile) {

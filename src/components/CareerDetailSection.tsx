@@ -13,6 +13,7 @@ import {
   getCareerDetailResolvedEntryState,
   getCareerDetailSnapState,
   getCareerDetailSnapTargetY,
+  getCareerDetailWheelCaptureState,
   getCareerDetailWheelState,
   isCareerDetailSectionPinned,
 } from './CareerDetailSection.logic';
@@ -44,7 +45,49 @@ const CAREER_DETAIL_ARCHIVE_CARD_IMAGE_STYLE: CSSProperties = {
   transform: `translate(${CAREER_DETAIL_ARCHIVE_CARD_NUDGE.x}px, ${CAREER_DETAIL_ARCHIVE_CARD_NUDGE.y}px)`,
 };
 
+const CAREER_DETAIL_SELECTION_STORAGE_KEY = 'career-detail-selection:v1';
+
 export type CareerDetailTabKey = 'sharingJourney' | 'workExperience' | 'industryKnowledge';
+
+interface PersistedCareerDetailSelection {
+  selectedCategoryKey: CareerDetailTabKey;
+  selectedEntryIdByCategory: Partial<Record<CareerDetailTabKey, string>>;
+}
+
+const isCareerDetailTabKey = (value: string): value is CareerDetailTabKey =>
+  value === 'sharingJourney' || value === 'workExperience' || value === 'industryKnowledge';
+
+const readPersistedCareerDetailSelection = (): PersistedCareerDetailSelection | null => {
+  try {
+    const rawValue = window.sessionStorage.getItem(CAREER_DETAIL_SELECTION_STORAGE_KEY);
+    if (!rawValue) {
+      return null;
+    }
+
+    const parsedValue = JSON.parse(rawValue) as {
+      selectedCategoryKey?: string;
+      selectedEntryIdByCategory?: Record<string, unknown>;
+    };
+
+    if (!parsedValue.selectedCategoryKey || !isCareerDetailTabKey(parsedValue.selectedCategoryKey)) {
+      return null;
+    }
+
+    const selectedEntryIdByCategory = Object.fromEntries(
+      Object.entries(parsedValue.selectedEntryIdByCategory ?? {}).filter(
+        (entry): entry is [CareerDetailTabKey, string] =>
+          isCareerDetailTabKey(entry[0]) && typeof entry[1] === 'string',
+      ),
+    ) as Partial<Record<CareerDetailTabKey, string>>;
+
+    return {
+      selectedCategoryKey: parsedValue.selectedCategoryKey,
+      selectedEntryIdByCategory,
+    };
+  } catch {
+    return null;
+  }
+};
 
 interface Size {
   width: number;
@@ -392,6 +435,7 @@ export default function CareerDetailSection() {
       >,
   );
   const [isSelectorDragging, setIsSelectorDragging] = useState(false);
+  const [isSelectionPersistenceReady, setIsSelectionPersistenceReady] = useState(false);
 
   const selectedCategory = useMemo(
     () =>
@@ -435,6 +479,47 @@ export default function CareerDetailSection() {
       [selectedCategory.key]: selectedEntryState.selectedEntryId,
     }));
   }, [selectedCategory.key, selectedEntryIdByCategory, selectedEntryState.selectedEntryId]);
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section) {
+      setIsSelectionPersistenceReady(true);
+      return;
+    }
+
+    const sectionTop = section.getBoundingClientRect().top + window.scrollY;
+    const sectionBottom = sectionTop + section.offsetHeight;
+    const isInsideSection = window.scrollY >= sectionTop && window.scrollY < sectionBottom;
+
+    if (isInsideSection) {
+      const persistedSelection = readPersistedCareerDetailSelection();
+      if (persistedSelection) {
+        setSelectedCategoryKey(persistedSelection.selectedCategoryKey);
+        setSelectedEntryIdByCategory((current) => ({
+          ...current,
+          ...persistedSelection.selectedEntryIdByCategory,
+        }));
+      }
+    }
+
+    setIsSelectionPersistenceReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isSelectionPersistenceReady) {
+      return;
+    }
+
+    const persistedSelection: PersistedCareerDetailSelection = {
+      selectedCategoryKey,
+      selectedEntryIdByCategory,
+    };
+
+    window.sessionStorage.setItem(
+      CAREER_DETAIL_SELECTION_STORAGE_KEY,
+      JSON.stringify(persistedSelection),
+    );
+  }, [isSelectionPersistenceReady, selectedCategoryKey, selectedEntryIdByCategory]);
 
   const desktopTabStyles = useMemo(
     () =>
@@ -594,11 +679,48 @@ export default function CareerDetailSection() {
       }
 
       const sectionTop = section.getBoundingClientRect().top + window.scrollY;
+      const sectionHeight = section.offsetHeight;
+      const isSectionPinned = isCareerDetailSectionPinned(window.scrollY, sectionTop);
+
+      if (!isSectionPinned) {
+        const captureState = getCareerDetailWheelCaptureState({
+          scrollY: window.scrollY,
+          sectionTop,
+          sectionHeight,
+          deltaY: event.deltaY,
+          activeIndex: selectedEntryIndex >= 0 ? selectedEntryIndex : 0,
+          recordCount: selectedEntries.length,
+        });
+
+        if (!captureState.shouldPreventScroll) {
+          wheelDeltaAccumulatorRef.current = 0;
+          lastWheelDirectionRef.current = 0;
+          return;
+        }
+
+        event.preventDefault();
+        if (captureState.targetScrollY !== null) {
+          window.scrollTo({
+            top: captureState.targetScrollY,
+            behavior: 'auto',
+          });
+        }
+
+        const nextEntry = selectedEntries[captureState.nextIndex];
+        if (nextEntry) {
+          commitSelectedEntryId(nextEntry.id);
+        }
+
+        wheelDeltaAccumulatorRef.current = 0;
+        lastWheelDirectionRef.current = 0;
+        return;
+      }
+
       const wheelState = getCareerDetailWheelState({
         deltaY: event.deltaY,
         activeIndex: selectedEntryIndex >= 0 ? selectedEntryIndex : 0,
         recordCount: selectedEntries.length,
-        isSectionPinned: isCareerDetailSectionPinned(window.scrollY, sectionTop),
+        isSectionPinned,
       });
 
       if (!wheelState.shouldPreventScroll) {

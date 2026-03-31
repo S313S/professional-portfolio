@@ -7,6 +7,7 @@ import {
   getCareerDetailResolvedEntryState,
   getCareerDetailSnapState,
   getCareerDetailSnapTargetY,
+  getCareerDetailWheelCaptureState,
   getCareerDetailWheelState,
   isCareerDetailSectionPinned,
 } from './CareerDetailSection.logic.ts';
@@ -105,6 +106,55 @@ test('desktop wheel moves back to the previous record on upward input while pinn
 
   assert.equal(wheelState.shouldPreventScroll, true);
   assert.equal(wheelState.nextIndex, 0);
+});
+
+test('wheel capture re-pins and switches records when refresh restores scroll inside career detail', () => {
+  const captureState = getCareerDetailWheelCaptureState({
+    scrollY: 3040,
+    sectionTop: 2800,
+    sectionHeight: 960,
+    deltaY: 120,
+    activeIndex: 0,
+    recordCount: 3,
+  });
+
+  assert.equal(captureState.shouldPreventScroll, true);
+  assert.equal(captureState.nextIndex, 1);
+  assert.equal(captureState.targetScrollY, 2800);
+});
+
+test('wheel capture releases native scroll outside career detail and after the last record', () => {
+  assert.deepEqual(
+    getCareerDetailWheelCaptureState({
+      scrollY: 3810,
+      sectionTop: 2800,
+      sectionHeight: 960,
+      deltaY: 120,
+      activeIndex: 1,
+      recordCount: 3,
+    }),
+    {
+      shouldPreventScroll: false,
+      nextIndex: 1,
+      targetScrollY: null,
+    },
+  );
+
+  assert.deepEqual(
+    getCareerDetailWheelCaptureState({
+      scrollY: 3040,
+      sectionTop: 2800,
+      sectionHeight: 960,
+      deltaY: 120,
+      activeIndex: 2,
+      recordCount: 3,
+    }),
+    {
+      shouldPreventScroll: false,
+      nextIndex: 2,
+      targetScrollY: null,
+    },
+  );
 });
 
 test('pinned check tolerates tiny scroll drift around the section top', () => {
