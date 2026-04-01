@@ -18,6 +18,10 @@ import {
   shouldHideWorksLobbyHint,
   shouldScheduleWorksLobbyHint,
 } from './WorksLobbySection.hint';
+import {
+  WORKS_DETAIL_RETURN_TO_LOBBY_EVENT,
+  WORKS_DETAIL_TRANSITION_START_EVENT,
+} from './WorksDetailSection.logic';
 
 const MOBILE_MEDIA_QUERY = '(max-width: 767px), (pointer: coarse)';
 const WORKS_LOBBY_PIN_TOLERANCE_PX = 2;
@@ -121,6 +125,38 @@ export default function WorksLobbySection() {
     setShouldShowHint(false);
     setHasDismissedHint(true);
   };
+
+  useEffect(() => {
+    const handleRestoreFromWorksDetail = () => {
+      const section = sectionRef.current;
+      if (!section) {
+        return;
+      }
+
+      const sectionTop = section.getBoundingClientRect().top + window.scrollY;
+      const targetY = getWorksLobbyScrollTargetY(sectionTop);
+
+      hasSnappedOnCurrentEntryRef.current = true;
+      clearHintTimer();
+      setShouldShowHint(false);
+      commitState({
+        phase: 'holding',
+        progress: 1,
+      });
+      lastScrollYRef.current = targetY;
+
+      window.scrollTo({
+        top: targetY,
+        behavior: 'auto',
+      });
+    };
+
+    window.addEventListener(WORKS_DETAIL_RETURN_TO_LOBBY_EVENT, handleRestoreFromWorksDetail);
+
+    return () => {
+      window.removeEventListener(WORKS_DETAIL_RETURN_TO_LOBBY_EVENT, handleRestoreFromWorksDetail);
+    };
+  }, []);
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -368,6 +404,8 @@ export default function WorksLobbySection() {
       phase: 'navigating',
       progress: 1,
     });
+
+    window.dispatchEvent(new Event(WORKS_DETAIL_TRANSITION_START_EVENT));
 
     window.scrollTo({
       top: targetY,

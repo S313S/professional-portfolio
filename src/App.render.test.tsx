@@ -16,4 +16,8 @@ test('renders works lobby and works detail after career detail in the main page 
   assert.notEqual(worksDetailIndex, -1);
   assert.ok(worksLobbyIndex > careerDetailIndex);
   assert.ok(worksDetailIndex > worksLobbyIndex);
+  assert.match(markup, /\/detailWork-loading\.html\?embed=portfolio/);
+  assert.match(markup, /\/images\/workDetail_bg\.jpeg/);
+  assert.doesNotMatch(markup, /Signal in Motion/);
+  assert.doesNotMatch(markup, /Designed & Built by \d{4} Xiao Ci - AI Builder/);
 });

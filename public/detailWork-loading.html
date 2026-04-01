@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CODM Loading Animation</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <style>
+    *,
+    *::before,
+    *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #000;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      font-family: 'Arial Black', 'Impact', 'Helvetica Neue', sans-serif;
+    }
+
+    .scene {
+      position: fixed;
+      inset: 0;
+      background: #000;
+    }
+
+    /* ── STAGE 1: Subtitle ── */
+    .subtitle-wrap {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 20;
+      white-space: nowrap;
+    }
+
+    .bracket {
+      color: #FFF;
+      font-size: 18px;
+      font-weight: 100;
+      font-family: 'Arial', sans-serif;
+      opacity: 0;
+      line-height: 1;
+    }
+
+    .subtitle-text {
+      color: #FFF;
+      font-family: 'Arial', 'Helvetica Neue', sans-serif;
+      font-size: 12px;
+      font-weight: 400;
+      letter-spacing: 5px;
+      text-transform: uppercase;
+      overflow: hidden;
+      white-space: nowrap;
+      width: 0;
+      text-align: center;
+      opacity: 0;
+    }
+
+    .h-line-center {
+      position: absolute;
+      top: calc(50% + 18px);
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 1px;
+      background: #FFF;
+      z-index: 15;
+    }
+
+    /* ── STAGE 2: Crosshair ── */
+    .cross-h {
+      position: absolute;
+      top: calc(50% + 18px);
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: #FFF;
+      transform: scaleX(0);
+      opacity: 0;
+      z-index: 10;
+    }
+
+    .cross-v-center {
+      position: absolute;
+      left: 50%;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: #FFF;
+      transform: scaleY(0);
+      opacity: 0;
+      z-index: 10;
+    }
+
+    .cross-v-left {
+      position: absolute;
+      left: 33%;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: #FFF;
+      transform: scaleY(0);
+      opacity: 0;
+      z-index: 10;
+    }
+
+    .cross-v-right {
+      position: absolute;
+      left: 67%;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: #FFF;
+      transform: scaleY(0);
+      opacity: 0;
+      z-index: 10;
+    }
+
+    .deco-line {
+      position: absolute;
+      background: #FFF;
+      opacity: 0;
+      z-index: 10;
+    }
+
+    .deco-tl-h {
+      top: 28%;
+      left: 5%;
+      width: 50px;
+      height: 1px;
+    }
+
+    .deco-tr-h {
+      top: 22%;
+      right: 5%;
+      width: 70px;
+      height: 1px;
+    }
+
+    .deco-tl-v {
+      top: 15%;
+      left: 38%;
+      width: 1px;
+      height: 40px;
+    }
+
+    .deco-tr-v {
+      top: 12%;
+      right: 33%;
+      width: 1px;
+      height: 50px;
+    }
+
+    .deco-br-h {
+      bottom: 28%;
+      right: 5%;
+      width: 50px;
+      height: 1px;
+    }
+
+    /* ── STAGE 3: Red bars ── */
+    .red-bar {
+      position: absolute;
+      background: #D00000;
+      opacity: 0;
+      z-index: 12;
+      box-shadow: 0 0 15px #D00000, 0 0 30px rgba(208, 0, 0, 0.5);
+      border-radius: 1px;
+    }
+
+    .rb-left {
+      top: 50%;
+      left: 0;
+      width: 70px;
+      height: 7px;
+      transform: translateY(-50%);
+    }
+
+    .rb-right {
+      top: 50%;
+      right: 0;
+      width: 70px;
+      height: 7px;
+      transform: translateY(-50%);
+    }
+
+    .rb-top1 {
+      top: 0;
+      left: 40%;
+      width: 7px;
+      height: 50px;
+    }
+
+    .rb-top2 {
+      top: 0;
+      left: 55%;
+      width: 7px;
+      height: 50px;
+    }
+
+    .rb-bot1 {
+      bottom: 0;
+      left: 42%;
+      width: 7px;
+      height: 50px;
+    }
+
+    .rb-bot2 {
+      bottom: 0;
+      right: 38%;
+      width: 7px;
+      height: 50px;
+    }
+
+    .rb-tl {
+      top: 20%;
+      left: 18%;
+      width: 35px;
+      height: 6px;
+    }
+
+    .rb-tr {
+      top: 22%;
+      right: 15%;
+      width: 35px;
+      height: 6px;
+    }
+
+    .rb-bl {
+      bottom: 22%;
+      left: 20%;
+      width: 35px;
+      height: 6px;
+    }
+
+    .rb-br {
+      bottom: 18%;
+      right: 18%;
+      width: 35px;
+      height: 6px;
+    }
+
+    .wt {
+      position: absolute;
+      background: #FFF;
+      opacity: 0;
+      z-index: 13;
+    }
+
+    .wt-l {
+      top: 50%;
+      left: 0;
+      width: 16px;
+      height: 7px;
+      transform: translateY(-50%);
+    }
+
+    .wt-r {
+      top: 50%;
+      right: 0;
+      width: 16px;
+      height: 7px;
+      transform: translateY(-50%);
+    }
+
+    .wt-t1 {
+      top: 0;
+      left: 40%;
+      width: 7px;
+      height: 12px;
+    }
+
+    .wt-t2 {
+      top: 0;
+      left: 55%;
+      width: 7px;
+      height: 12px;
+    }
+
+    .wt-b1 {
+      bottom: 0;
+      left: 42%;
+      width: 7px;
+      height: 12px;
+    }
+
+    .wt-b2 {
+      bottom: 0;
+      right: 38%;
+      width: 7px;
+      height: 12px;
+    }
+
+    /* ── MAIN GROUP: hex beside right-column (CODM + subtitle + tagline) ── */
+    .main-group {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      z-index: 25;
+      opacity: 0;
+    }
+
+    .hex-wrap {
+      flex-shrink: 0;
+      opacity: 0;
+      transform: scale(0);
+    }
+
+    .hex-wrap svg {
+      width: 130px;
+      height: 146px;
+      overflow: visible;
+    }
+
+    .hex-outline {
+      fill: none;
+      stroke: #888;
+      stroke-width: 2.5;
+      opacity: 0;
+      stroke-dasharray: 700;
+      stroke-dashoffset: 700;
+    }
+
+    .hex-fill-bg {
+      fill: rgba(20, 20, 20, 0.75);
+      opacity: 0;
+    }
+
+    .hex-inner-shape {
+      fill: #FFF;
+      opacity: 0;
+    }
+
+    .hex-bar-left,
+    .hex-bar-right {
+      fill: #FFF;
+      opacity: 0;
+    }
+
+    .hex-diamond {
+      fill: #FFF;
+      opacity: 0;
+    }
+
+    /* Right column: CODM letters on top, subtitle + tagline below */
+    .right-col {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .codm-container {
+      opacity: 0;
+    }
+
+    .codm-container svg {
+      width: 420px;
+      height: 85px;
+      overflow: visible;
+      display: block;
+    }
+
+    .codm-subtitle {
+      color: #FFF;
+      font-family: 'Arial', 'Helvetica Neue', sans-serif;
+      font-size: 10px;
+      font-weight: 400;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      opacity: 0;
+      padding-left: 2px;
+    }
+
+    .tagline {
+      opacity: 0;
+      overflow: hidden;
+      margin-top: 2px;
+    }
+
+    .tagline-bg {
+      background: #D00000;
+      padding: 5px 20px;
+      display: inline-block;
+      transform-origin: left center;
+    }
+
+    .tagline-bg span {
+      color: #FFF;
+      font-family: 'Arial Black', 'Impact', sans-serif;
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    /* ── Red panels ── */
+    .panel-tr {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 55%;
+      height: 75%;
+      background: #D00000;
+      clip-path: polygon(100% 0, 100% 100%, 35% 0);
+      opacity: 0;
+      z-index: 2;
+      transform: translateX(100%);
+    }
+
+    .panel-tl {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 45%;
+      height: 55%;
+      background: #D00000;
+      clip-path: polygon(0 0, 100% 0, 55% 100%, 0 70%);
+      opacity: 0;
+      z-index: 3;
+      transform: translateY(-100%);
+    }
+
+    .accent-dark {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 40%;
+      height: 50%;
+      background: rgba(120, 0, 0, 0.6);
+      clip-path: polygon(60% 0, 100% 0, 100% 70%);
+      opacity: 0;
+      z-index: 4;
+    }
+
+    .slash-dark {
+      position: absolute;
+      top: 0;
+      left: 20%;
+      width: 50%;
+      height: 60%;
+      background: #000;
+      clip-path: polygon(25% 0, 40% 0, 60% 100%, 45% 100%);
+      opacity: 0;
+      z-index: 5;
+    }
+
+    .accent-br {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 30%;
+      height: 30%;
+      background: #D00000;
+      clip-path: polygon(100% 100%, 100% 30%, 40% 100%);
+      opacity: 0;
+      z-index: 2;
+    }
+
+    /* ── Triangle grid ── */
+    .tri-grid {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 260px;
+      height: 200px;
+      z-index: 6;
+      opacity: 0;
+    }
+
+    .tri-grid svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .tri-cell {
+      opacity: 0;
+    }
+
+    /* ── Chinese text ── */
+    .cn-text {
+      position: absolute;
+      bottom: 12%;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #FFF;
+      font-family: 'PingFang SC', 'Microsoft YaHei', 'SimHei', sans-serif;
+      font-size: 14px;
+      letter-spacing: 8px;
+      opacity: 0;
+      z-index: 30;
+    }
+
+    /* ── Sci-fi digital earth (bottom-left) ── */
+    .globe-wrap {
+      position: absolute;
+      bottom: 2%;
+      left: 1%;
+      width: 300px;
+      height: 300px;
+      z-index: 20;
+      opacity: 0;
+    }
+
+    .globe-wrap canvas {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* ── Overlays ── */
+    .flash {
+      position: fixed;
+      inset: 0;
+      background: #FFF;
+      opacity: 0;
+      z-index: 50;
+      pointer-events: none;
+    }
+
+    .scanlines {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 100;
+      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 0, 0, 0.03) 2px, rgba(0, 0, 0, 0.03) 4px);
+      opacity: 0.3;
+    }
+
+    .replay-btn {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 200;
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: #FFF;
+      font: 11px 'Arial', sans-serif;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 7px 18px;
+      cursor: pointer;
+      opacity: 0;
+      transition: all .25s;
+    }
+
+    .replay-btn:hover {
+      background: #D00000;
+      border-color: #D00000;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="scene">
+    <!-- Stage 1 -->
+    <div class="subtitle-wrap"><span class="bracket bracket-l">|</span>
+      <div class="subtitle-text">CALL OF DUTY</div><span class="bracket bracket-r">|</span>
+    </div>
+    <div class="h-line-center"></div>
+    <!-- Stage 2 -->
+    <div class="cross-h"></div>
+    <div class="cross-v-center"></div>
+    <div class="cross-v-left"></div>
+    <div class="cross-v-right"></div>
+    <div class="deco-line deco-tl-h"></div>
+    <div class="deco-line deco-tr-h"></div>
+    <div class="deco-line deco-tl-v"></div>
+    <div class="deco-line deco-tr-v"></div>
+    <div class="deco-line deco-br-h"></div>
+    <!-- Stage 3 -->
+    <div class="red-bar rb-left"></div>
+    <div class="red-bar rb-right"></div>
+    <div class="red-bar rb-top1"></div>
+    <div class="red-bar rb-top2"></div>
+    <div class="red-bar rb-bot1"></div>
+    <div class="red-bar rb-bot2"></div>
+    <div class="red-bar rb-tl"></div>
+    <div class="red-bar rb-tr"></div>
+    <div class="red-bar rb-bl"></div>
+    <div class="red-bar rb-br"></div>
+    <div class="wt wt-l"></div>
+    <div class="wt wt-r"></div>
+    <div class="wt wt-t1"></div>
+    <div class="wt wt-t2"></div>
+    <div class="wt wt-b1"></div>
+    <div class="wt wt-b2"></div>
+    <!-- Red panels -->
+    <div class="panel-tr"></div>
+    <div class="panel-tl"></div>
+    <div class="accent-dark"></div>
+    <div class="slash-dark"></div>
+    <div class="accent-br"></div>
+
+    <!-- MAIN GROUP: hex icon | right column (CODM, subtitle, tagline) -->
+    <div class="main-group">
+      <div class="hex-wrap">
+        <svg viewBox="0 0 160 180" xmlns="http://www.w3.org/2000/svg">
+          <polygon class="hex-fill-bg" points="80,5 155,47 155,133 80,175 5,133 5,47" />
+          <polygon class="hex-outline" points="80,5 155,47 155,133 80,175 5,133 5,47" />
+          <rect class="hex-bar-left" x="42" y="55" width="18" height="75" rx="1" />
+          <rect class="hex-bar-right" x="100" y="55" width="18" height="75" rx="1" />
+          <polygon class="hex-diamond" points="80,52 98,82 80,112 62,82" />
+          <g class="hex-inner-shape">
+            <rect x="42" y="52" width="16" height="80" />
+            <rect x="102" y="52" width="16" height="80" />
+            <polygon points="66,52 80,78 94,52 102,52 80,92 58,52" />
+            <rect x="73" y="82" width="14" height="50" />
+          </g>
+        </svg>
+      </div>
+      <div class="right-col">
+        <div class="codm-container">
+          <svg viewBox="0 0 420 80" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <mask id="mo">
+                <rect x="0" y="0" width="420" height="80" fill="white" />
+                <rect x="107" y="13" width="53" height="54" fill="black" />
+              </mask>
+            </defs>
+            <!-- W -->
+            <path class="codm-letter-stroke ls-c" fill="none" stroke="#FFF" stroke-width="2"
+              d="M5,2 L20,2 L20,55 L38,30 L52,30 L70,55 L70,2 L85,2 L85,78 L65,78 L45,45 L25,78 L5,78 Z"
+              stroke-dasharray="600" stroke-dashoffset="600" stroke-linecap="square" />
+            <path class="codm-letter-fill lf-c" fill="#FFF" opacity="0"
+              d="M5,2 L20,2 L20,55 L38,30 L52,30 L70,55 L70,2 L85,2 L85,78 L65,78 L45,45 L25,78 L5,78 Z" />
+            <!-- O -->
+            <rect class="codm-letter-stroke ls-o" x="95" y="2" width="78" height="76" fill="none" stroke="#FFF"
+              stroke-width="2" stroke-dasharray="500" stroke-dashoffset="500" stroke-linecap="square" />
+            <rect class="codm-letter-fill lf-o" x="95" y="2" width="78" height="76" fill="#FFF" opacity="0"
+              mask="url(#mo)" />
+            <!-- R -->
+            <path class="codm-letter-stroke ls-d" fill="none" stroke="#FFF" stroke-width="2"
+              d="M185,2 L250,2 L258,10 L258,35 L250,43 L258,43 L258,78 L243,78 L243,48 L200,48 L200,78 L185,78 Z M200,15 L200,35 L243,35 L243,15 Z"
+              stroke-dasharray="700" stroke-dashoffset="700" stroke-linecap="square" />
+            <path class="codm-letter-fill lf-d" fill="#FFF" opacity="0"
+              d="M185,2 L250,2 L258,10 L258,35 L250,43 L258,43 L258,78 L243,78 L243,48 L200,48 L200,78 L185,78 Z M200,15 L200,35 L243,35 L243,15 Z"
+              fill-rule="evenodd" />
+            <!-- K -->
+            <path class="codm-letter-stroke ls-m" fill="none" stroke="#FFF" stroke-width="2"
+              d="M270,2 L285,2 L285,32 L310,2 L330,2 L300,38 L332,78 L312,78 L285,45 L285,78 L270,78 Z"
+              stroke-dasharray="600" stroke-dashoffset="600" stroke-linecap="square" />
+            <path class="codm-letter-fill lf-m" fill="#FFF" opacity="0"
+              d="M270,2 L285,2 L285,32 L310,2 L330,2 L300,38 L332,78 L312,78 L285,45 L285,78 L270,78 Z" />
+            <!-- S -->
+            <path class="codm-letter-stroke ls-s" fill="none" stroke="#FFF" stroke-width="2"
+              d="M345,2 L418,2 L418,15 L360,15 L360,33 L418,33 L418,78 L345,78 L345,65 L403,65 L403,46 L345,46 Z"
+              stroke-dasharray="700" stroke-dashoffset="700" stroke-linecap="square" />
+            <path class="codm-letter-fill lf-s" fill="#FFF" opacity="0"
+              d="M345,2 L418,2 L418,15 L360,15 L360,33 L418,33 L418,78 L345,78 L345,65 L403,65 L403,46 L345,46 Z" />
+          </svg>
+        </div>
+        <div class="codm-subtitle">DRIVEN BY INTEREST, NEVER STOPPING MYSELF</div>
+        <div class="tagline">
+          <div class="tagline-bg"><span>ENDLESS PROGRESS + PROMOTION</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Triangle grid -->
+    <div class="tri-grid">
+      <svg viewBox="0 0 260 200" xmlns="http://www.w3.org/2000/svg">
+        <polygon class="tri-cell tc-1" points="65,0 130,60 0,60" fill="#555" opacity="0.4" />
+        <polygon class="tri-cell tc-2" points="130,0 195,60 65,60" fill="#444" opacity="0.35" />
+        <polygon class="tri-cell tc-3" points="195,0 260,60 130,60" fill="#666" opacity="0.45" />
+        <polygon class="tri-cell tc-4" points="65,60 130,0 195,60" fill="#333" opacity="0.3" />
+        <polygon class="tri-cell tc-5" points="130,60 195,0 260,60" fill="#555" opacity="0.4" />
+        <polygon class="tri-cell tc-6" points="65,60 130,120 0,120" fill="#444" opacity="0.35" />
+        <polygon class="tri-cell tc-7" points="130,60 195,120 65,120" fill="#666" opacity="0.5" />
+        <polygon class="tri-cell tc-8" points="195,60 260,120 130,120" fill="#333" opacity="0.3" />
+        <polygon class="tri-cell tc-9" points="65,120 130,60 195,120" fill="#555" opacity="0.4" />
+        <polygon class="tri-cell tc-10" points="130,120 195,60 260,120" fill="#444" opacity="0.35" />
+        <polygon class="tri-cell tc-11" points="65,120 130,180 0,180" fill="#333" opacity="0.3" />
+        <polygon class="tri-cell tc-12" points="130,120 195,180 65,180" fill="#555" opacity="0.45" />
+        <polygon class="tri-cell tc-13" points="195,120 260,180 130,180" fill="#444" opacity="0.35" />
+        <polygon class="tri-cell tc-14" points="65,180 130,120 195,180" fill="#666" opacity="0.5" />
+        <polygon class="tri-cell tc-15" points="130,180 195,120 260,180" fill="#333" opacity="0.3" />
+      </svg>
+    </div>
+    <div class="cn-text">我 的 作 品 展 示</div>
+
+    <!-- Sci-fi digital earth (canvas) -->
+    <div class="globe-wrap">
+      <canvas id="globe-canvas" width="600" height="600"></canvas>
+    </div>
+
+    <div class="flash"></div>
+  </div>
+  <div class="scanlines"></div>
+  <button class="replay-btn" onclick="replay()">↻ REPLAY</button>
+
+  <script>
+    const searchParams = new URLSearchParams(window.location.search);
+    const isPortfolioEmbed = searchParams.get('embed') === 'portfolio';
+
+    function notifyParent(type) {
+      if (!isPortfolioEmbed || window.parent === window) {
+        return;
+      }
+
+      window.parent.postMessage(`detail-work-loading:${type}`, window.location.origin);
+    }
+
+    function runAnimation() {
+      gsap.killTweensOf("*");
+      gsap.set([
+        ".subtitle-wrap", ".bracket", ".subtitle-text", ".h-line-center",
+        ".cross-h", ".cross-v-center", ".cross-v-left", ".cross-v-right",
+        ".deco-line", ".red-bar", ".wt",
+        ".main-group", ".codm-container", ".codm-letter-stroke", ".codm-letter-fill",
+        ".codm-subtitle", ".tagline", ".tagline-bg",
+        ".hex-wrap", ".hex-outline", ".hex-fill-bg",
+        ".hex-bar-left", ".hex-bar-right", ".hex-diamond", ".hex-inner-shape",
+        ".panel-tr", ".panel-tl", ".accent-dark", ".slash-dark", ".accent-br",
+        ".tri-grid", ".tri-cell", ".cn-text", ".globe-wrap", ".flash", ".replay-btn"
+      ], { clearProps: "all" });
+
+      const tl = gsap.timeline();
+
+      /* ── STAGE 1: Subtitle reveal ── */
+      tl.to(".bracket", { opacity: 0.9, duration: 0.2, stagger: 0.05 }, 0.3)
+        .to(".subtitle-text", { opacity: 1, width: "auto", duration: 1.2, ease: "steps(18)" }, 0.4)
+        .to(".h-line-center", { width: "70vw", duration: 0.6, ease: "expo.out" }, 1.2)
+
+        /* ── STAGE 2: Crosshair ── */
+        .to(".cross-h", { opacity: 0.7, scaleX: 1, duration: 0.35, ease: "expo.out" }, 2.0)
+        .to(".cross-v-center", { opacity: 0.6, scaleY: 1, duration: 0.4, ease: "expo.out" }, 2.1)
+        .to([".cross-v-left", ".cross-v-right"], { opacity: 0.4, scaleY: 1, duration: 0.35, stagger: 0.08, ease: "expo.out" }, 2.2)
+        .to(".deco-line", { opacity: 0.5, duration: 0.2, stagger: 0.04 }, 2.3)
+
+        /* ── STAGE 3: Red bars ── */
+        .to(".red-bar", { opacity: 1, duration: 0.15, stagger: { each: 0.03, from: "random" } }, 2.8)
+        .to(".wt", { opacity: 1, duration: 0.1, stagger: 0.03 }, 2.85)
+        .to(".red-bar", { boxShadow: "0 0 25px #D00000, 0 0 50px rgba(208,0,0,0.7)", duration: 0.15 }, 3.0)
+        .to([".cross-h", ".cross-v-center", ".cross-v-left", ".cross-v-right"], { opacity: 1, duration: 0.2, ease: "power2.in" }, 3.0)
+        .to(".rb-left", { left: "25%", duration: 0.35, ease: "expo.in" }, 3.2)
+        .to(".rb-right", { right: "25%", duration: 0.35, ease: "expo.in" }, 3.2)
+        .to(".rb-top1", { top: "20%", duration: 0.3, ease: "expo.in" }, 3.25)
+        .to(".rb-top2", { top: "22%", duration: 0.3, ease: "expo.in" }, 3.25)
+        .to(".rb-bot1", { bottom: "20%", duration: 0.3, ease: "expo.in" }, 3.25)
+        .to(".rb-bot2", { bottom: "22%", duration: 0.3, ease: "expo.in" }, 3.25)
+        .to(".wt-l", { left: "25%", duration: 0.35, ease: "expo.in" }, 3.2)
+        .to(".wt-r", { right: "25%", duration: 0.35, ease: "expo.in" }, 3.2)
+
+        /* ── FLASH ── */
+        .to(".flash", { opacity: 0.85, duration: 0.06 }, 3.55)
+        .to(".flash", { opacity: 0, duration: 0.2, ease: "power2.out" }, 3.62)
+        .to([".cross-h", ".cross-v-center", ".cross-v-left", ".cross-v-right", ".deco-line", ".red-bar", ".wt", ".h-line-center", ".bracket"], { opacity: 0, duration: 0.1 }, 3.6)
+        .to(".subtitle-wrap", { opacity: 0, duration: 0.1 }, 3.6)
+
+        /* ── STAGE 4: CODM text ── */
+        .to(".main-group", { opacity: 1, duration: 0.01 }, 3.6)
+        .to(".codm-container", { opacity: 1, duration: 0.01 }, 3.6)
+        .to(".codm-letter-stroke", { strokeDashoffset: 0, duration: 0.7, stagger: 0.06, ease: "expo.out" }, 3.65)
+        .to(".codm-letter-fill", { opacity: 1, duration: 0.25, stagger: 0.04, ease: "power1.in" }, 4.1)
+        .to(".codm-letter-stroke", { opacity: 0, duration: 0.15 }, 4.3)
+        .to(".codm-subtitle", { opacity: 1, duration: 0.3, ease: "power1.out" }, 4.2)
+
+        /* ── STAGE 5: Tagline + panels ── */
+        .to(".tagline", { opacity: 1, duration: 0.01 }, 4.4)
+        .from(".tagline-bg", { scaleX: 0, transformOrigin: "left center", duration: 0.35, ease: "expo.out" }, 4.4)
+        .to(".panel-tr", { opacity: 1, transform: "translateX(0)", duration: 0.7, ease: "expo.out" }, 4.6)
+        .to(".panel-tl", { opacity: 1, transform: "translateY(0)", duration: 0.6, ease: "expo.out" }, 4.7)
+        .to(".accent-dark", { opacity: 1, duration: 0.4 }, 4.9)
+        .to(".slash-dark", { opacity: 1, duration: 0.35 }, 4.95)
+        .to(".accent-br", { opacity: 1, duration: 0.4 }, 5.0)
+
+        /* ── STAGE 6: Hex icon ── */
+        .to(".hex-wrap", { opacity: 1, scale: 1, duration: 0.5, ease: "back.out(1.7)" }, 5.8)
+        .to([".hex-bar-left", ".hex-bar-right"], { opacity: 1, duration: 0.3, stagger: 0.1, ease: "power2.out" }, 5.8)
+        .from([".hex-bar-left", ".hex-bar-right"], { scaleY: 0, transformOrigin: "center top", duration: 0.4, stagger: 0.1, ease: "back.out(1.5)" }, 5.8)
+        .to(".hex-diamond", { opacity: 1, duration: 0.25, ease: "power2.out" }, 6.2)
+        .from(".hex-diamond", { scale: 0, transformOrigin: "center center", duration: 0.3, ease: "back.out(2)" }, 6.2)
+        .to(".hex-inner-shape", { opacity: 1, duration: 0.3 }, 6.5)
+        .to([".hex-bar-left", ".hex-bar-right", ".hex-diamond"], { opacity: 0, duration: 0.2 }, 6.5)
+        .to(".hex-outline", { opacity: 1, strokeDashoffset: 0, duration: 0.6, ease: "expo.out" }, 6.4)
+        .to(".hex-fill-bg", { opacity: 1, duration: 0.3 }, 6.7)
+
+        /* ── STAGE 7: Triangle grid ── */
+        .to(".tri-grid", { opacity: 1, duration: 0.01 }, 7.0)
+        .to(".tri-cell", { opacity: 1, duration: 0.3, stagger: { each: 0.12, from: "start" }, ease: "power1.out" }, 7.0)
+        .from(".tri-cell", { scale: 0.5, transformOrigin: "center center", duration: 0.35, stagger: { each: 0.12, from: "start" }, ease: "back.out(1.2)" }, 7.0)
+
+        /* ── STAGE 7.5: Sci-fi globe (bottom-left) ── */
+        .to(".globe-wrap", { opacity: 1, duration: 0.6, ease: "power2.out" }, 8.0)
+        .from(".globe-wrap", { scale: 0.3, duration: 0.8, ease: "back.out(1.4)" }, 8.0)
+
+        /* ── STAGE 8: Chinese text ── */
+        .to(".cn-text", { opacity: 0.7, duration: 0.5, ease: "power1.out" }, 9.0)
+        .from(".cn-text", { y: 12, duration: 0.4, ease: "power2.out" }, 9.0)
+
+        .to(".replay-btn", { opacity: isPortfolioEmbed ? 0 : 1, duration: 0.3 }, 10.0);
+
+      tl.eventCallback("onComplete", () => {
+        notifyParent("completed");
+      });
+
+      gsap.to(".hex-wrap svg", { filter: "drop-shadow(0 0 10px rgba(255,255,255,0.15))", duration: 1.5, repeat: -1, yoyo: true, ease: "sine.inOut", delay: 7.5 });
+    }
+    function replay() { runAnimation(); }
+    window.addEventListener("load", () => {
+      if (isPortfolioEmbed) {
+        const replayButton = document.querySelector('.replay-btn');
+        if (replayButton instanceof HTMLElement) {
+          replayButton.style.display = 'none';
+        }
+      }
+
+      notifyParent("ready");
+      runAnimation();
+    });
+
+    /* ============================================================
+       DIGITAL EARTH — Canvas wireframe globe with lat/lon grid,
+       dot matrix land masses, orbit rings, glow effects
+    ============================================================ */
+    (function () {
+      const canvas = document.getElementById('globe-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const W = canvas.width, H = canvas.height;
+      const cx = W / 2, cy = H / 2, R = 220;
+      let rotation = 0;
+      const tilt = 0.4; // axis tilt in radians
+
+      // Simplified continent data: arrays of [lon, lat] points for dot placement
+      // These approximate major land masses
+      const continents = [];
+      // Generate continent-like dot clusters
+      function initContinents() {
+        // North America
+        for (let i = 0; i < 120; i++) {
+          continents.push([
+            -100 + Math.random() * 60,
+            25 + Math.random() * 40
+          ]);
+        }
+        // South America
+        for (let i = 0; i < 80; i++) {
+          continents.push([
+            -70 + Math.random() * 30,
+            -35 + Math.random() * 45
+          ]);
+        }
+        // Europe
+        for (let i = 0; i < 70; i++) {
+          continents.push([
+            -10 + Math.random() * 40,
+            40 + Math.random() * 25
+          ]);
+        }
+        // Africa
+        for (let i = 0; i < 100; i++) {
+          continents.push([
+            -15 + Math.random() * 55,
+            -30 + Math.random() * 60
+          ]);
+        }
+        // Asia
+        for (let i = 0; i < 150; i++) {
+          continents.push([
+            60 + Math.random() * 80,
+            10 + Math.random() * 55
+          ]);
+        }
+        // Australia
+        for (let i = 0; i < 40; i++) {
+          continents.push([
+            115 + Math.random() * 30,
+            -35 + Math.random() * 20
+          ]);
+        }
+      }
+      initContinents();
+
+      // Project a 3D point on sphere to 2D
+      function project(lon, lat) {
+        const phi = (90 - lat) * Math.PI / 180;
+        const theta = (lon + rotation) * Math.PI / 180;
+        // 3D coordinates
+        let x = R * Math.sin(phi) * Math.cos(theta);
+        let y = R * Math.cos(phi);
+        let z = R * Math.sin(phi) * Math.sin(theta);
+        // Apply tilt
+        const y2 = y * Math.cos(tilt) - z * Math.sin(tilt);
+        const z2 = y * Math.sin(tilt) + z * Math.cos(tilt);
+        return { x: cx + x, y: cy - y2, z: z2 };
+      }
+
+      function drawFrame() {
+        ctx.clearRect(0, 0, W, H);
+
+        // Outer glow
+        const glow = ctx.createRadialGradient(cx, cy, R * 0.9, cx, cy, R * 1.3);
+        glow.addColorStop(0, 'rgba(208,0,0,0.03)');
+        glow.addColorStop(0.5, 'rgba(208,0,0,0.015)');
+        glow.addColorStop(1, 'transparent');
+        ctx.fillStyle = glow;
+        ctx.fillRect(0, 0, W, H);
+
+        // Globe edge glow
+        ctx.beginPath();
+        ctx.arc(cx, cy, R, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Atmosphere ring
+        ctx.beginPath();
+        ctx.arc(cx, cy, R + 4, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(208,0,0,0.12)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // Latitude lines
+        for (let lat = -75; lat <= 75; lat += 15) {
+          ctx.beginPath();
+          let started = false;
+          for (let lon = 0; lon <= 360; lon += 3) {
+            const p = project(lon, lat);
+            if (p.z > 0) { // front-face only
+              if (!started) { ctx.moveTo(p.x, p.y); started = true; }
+              else ctx.lineTo(p.x, p.y);
+            } else {
+              started = false;
+            }
+          }
+          ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+        }
+
+        // Longitude lines
+        for (let lon = 0; lon < 360; lon += 20) {
+          ctx.beginPath();
+          let started = false;
+          for (let lat = -90; lat <= 90; lat += 3) {
+            const p = project(lon, lat);
+            if (p.z > 0) {
+              if (!started) { ctx.moveTo(p.x, p.y); started = true; }
+              else ctx.lineTo(p.x, p.y);
+            } else {
+              started = false;
+            }
+          }
+          ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+        }
+
+        // Continent dots (land masses)
+        for (const [lon, lat] of continents) {
+          const p = project(lon, lat);
+          if (p.z > 0) {
+            const brightness = 0.3 + 0.7 * (p.z / R);
+            const size = 1.2 + 1.0 * (p.z / R);
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(208,80,80,${brightness * 0.6})`;
+            ctx.fill();
+            // Bright center dot
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, size * 0.5, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(255,150,150,${brightness * 0.4})`;
+            ctx.fill();
+          }
+        }
+
+        // Equator highlight
+        ctx.beginPath();
+        let eqStarted = false;
+        for (let lon = 0; lon <= 360; lon += 2) {
+          const p = project(lon, 0);
+          if (p.z > 0) {
+            if (!eqStarted) { ctx.moveTo(p.x, p.y); eqStarted = true; }
+            else ctx.lineTo(p.x, p.y);
+          } else {
+            eqStarted = false;
+          }
+        }
+        ctx.strokeStyle = 'rgba(208,0,0,0.25)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // Orbit ring (tilted ellipse)
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(-0.3);
+        ctx.beginPath();
+        ctx.ellipse(0, 0, R + 30, R * 0.35 + 30, 0, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        // Orbiting dot
+        const orbitAngle = Date.now() * 0.001;
+        const ox = (R + 30) * Math.cos(orbitAngle);
+        const oy = (R * 0.35 + 30) * Math.sin(orbitAngle);
+        ctx.beginPath();
+        ctx.arc(ox, oy, 3, 0, Math.PI * 2);
+        ctx.fillStyle = '#D00000';
+        ctx.shadowColor = '#D00000';
+        ctx.shadowBlur = 10;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.restore();
+
+        // Second orbit ring
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(0.8);
+        ctx.beginPath();
+        ctx.ellipse(0, 0, R + 18, R * 0.25 + 18, 0, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+        const ox2 = (R + 18) * Math.cos(orbitAngle * 0.7 + 2);
+        const oy2 = (R * 0.25 + 18) * Math.sin(orbitAngle * 0.7 + 2);
+        ctx.beginPath();
+        ctx.arc(ox2, oy2, 2, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.fill();
+        ctx.restore();
+
+        // Scanning line (horizontal sweep)
+        const scanY = cy + R * Math.sin(Date.now() * 0.002);
+        if (Math.abs(scanY - cy) < R) {
+          const halfW = Math.sqrt(R * R - (scanY - cy) * (scanY - cy));
+          const grad = ctx.createLinearGradient(cx - halfW, scanY, cx + halfW, scanY);
+          grad.addColorStop(0, 'transparent');
+          grad.addColorStop(0.3, 'rgba(208,0,0,0.15)');
+          grad.addColorStop(0.5, 'rgba(208,0,0,0.25)');
+          grad.addColorStop(0.7, 'rgba(208,0,0,0.15)');
+          grad.addColorStop(1, 'transparent');
+          ctx.beginPath();
+          ctx.moveTo(cx - halfW, scanY);
+          ctx.lineTo(cx + halfW, scanY);
+          ctx.strokeStyle = grad;
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+
+        rotation += 0.15;
+        requestAnimationFrame(drawFrame);
+      }
+
+      drawFrame();
+    })();
+  </script>
+</body>
+
+</html>
