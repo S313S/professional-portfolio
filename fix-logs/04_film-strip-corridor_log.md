@@ -1,0 +1,7 @@
+1. **理解**：参考图里卡片并不是直接漂在背景上，而是被一条从左下到右上的“胶片条走廊”包裹。当前实现缺少这层结构，所以整体视觉失去胶片带和 sprocket-like dashed 边界。
+2. **分析**：我检查了 [src/components/WorksDetailSection.tsx](/Users/xiaoci/Downloads/Workspace/VibeCoding/personal_brand/professional-portfolio/src/components/WorksDetailSection.tsx) 的 `works-detail-track` 渲染和 [src/index.css](/Users/xiaoci/Downloads/Workspace/VibeCoding/personal_brand/professional-portfolio/src/index.css) 的 track 样式，确认现状只有卡片本身，完全没有走廊 band 或边界线元素。
+3. **方案**：采用报告的 DOM 方案 B，而不是伪元素。原因是这次需要同时引入走廊实体带、上边界、下边界三层结构，DOM 元素在测试里更容易稳定断言，也方便后续继续细调位置和宽度。
+4. **改动**：在 [src/components/WorksDetailSection.tsx](/Users/xiaoci/Downloads/Workspace/VibeCoding/personal_brand/professional-portfolio/src/components/WorksDetailSection.tsx) 的 `works-detail-track` 内新增了 `works-detail-track__corridor--band`、`--top`、`--bottom` 三个元素；在 [src/index.css](/Users/xiaoci/Downloads/Workspace/VibeCoding/personal_brand/professional-portfolio/src/index.css) 中新增走廊宽度、倾斜角度、暗色条带和 `1.5px dashed rgba(200, 210, 220, 0.25)` 的上下边界，并让卡片层级压在走廊上方。
+5. **验证**：render test 会检查 detail markup 里必须存在三段走廊结构，同时检查 CSS 中上下边界采用虚线边框；在通过测试后又跑了整体类型检查和生产构建，确认没有破坏现有 detail 视图。
+6. **遗留**：走廊是按当前卡片中轴线做的近似匹配，尚未引入更细的胶片齿孔或 SVG pattern。如果下一轮 diff 还希望更接近底片纹理，可以继续细化 dash 密度和 band 纹理。
+7. **可调参数**：关键参数都集中在 [src/index.css](/Users/xiaoci/Downloads/Workspace/VibeCoding/personal_brand/professional-portfolio/src/index.css) 的 `.works-detail-track__corridor*` 规则里，包括走廊宽度 `min(88rem, 170vw)`、band 高度 `15.5rem`、边界偏移 `7.75rem`、倾斜角 `-28deg` 和边框颜色透明度 `0.25`。

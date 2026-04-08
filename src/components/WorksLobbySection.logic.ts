@@ -79,8 +79,6 @@ export const DEFAULT_WORKS_LOBBY_SCROLL_STATE: WorksLobbyScrollState = {
 export const DEFAULT_WORKS_LOBBY_WHEEL_STEP = 0.14;
 
 const WORKS_LOBBY_HOLDING_THRESHOLD = 0.98;
-const WORKS_LOBBY_SNAP_ENTRY_MAX_RATIO = 0.32;
-const WORKS_LOBBY_SNAP_ENTRY_MIN_RATIO = -0.08;
 const WORKS_LOBBY_SNAP_RESET_ABOVE_RATIO = 0.6;
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
@@ -126,13 +124,8 @@ export function getWorksLobbyScrollMountState({
     };
   }
 
-  const topOffset = sectionTop - scrollY;
-  const shouldSnap =
-    topOffset <= viewportHeight * WORKS_LOBBY_SNAP_ENTRY_MAX_RATIO &&
-    topOffset >= viewportHeight * WORKS_LOBBY_SNAP_ENTRY_MIN_RATIO;
-
   return {
-    shouldSnap,
+    shouldSnap: false,
     shouldResetLatch,
   };
 }

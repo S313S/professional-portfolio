@@ -1,0 +1,7 @@
+1. **理解**：底栏社交文案和参考图不一致，当前多了一个 `l`，分隔符也不对，而且 CSS 会把小写强制转成大写。
+2. **分析**：我检查了 [src/components/WorksDetailSection.tsx](/Users/xiaoci/Downloads/Workspace/VibeCoding/personal_brand/professional-portfolio/src/components/WorksDetailSection.tsx) 里的 `WORKS_DETAIL_STAGE_SOCIALS` 常量与渲染逻辑，以及 [src/index.css](/Users/xiaoci/Downloads/Workspace/VibeCoding/personal_brand/professional-portfolio/src/index.css) 里 `.works-detail-stage__socials, .works-detail-stage__credits` 的共享样式，确认问题来自数据和文本样式两个层面。
+3. **方案**：按报告要求同时修三处：删掉 `l`，把输出改成 `join(' | ')`，再给 `.works-detail-stage__socials` 单独加 `text-transform: none`，避免影响 `CREDITS` 仍然保持大写。
+4. **改动**：修改了 [src/components/WorksDetailSection.tsx](/Users/xiaoci/Downloads/Workspace/VibeCoding/personal_brand/professional-portfolio/src/components/WorksDetailSection.tsx) 的 socials 数组和输出文本；修改了 [src/index.css](/Users/xiaoci/Downloads/Workspace/VibeCoding/personal_brand/professional-portfolio/src/index.css) 的 socials 单独覆盖规则。
+5. **验证**：render test 现在会同时断言组件源码里数组是 `['f', 't', '▶']`、静态 markup 里是 `f | t | ▶`，并断言 CSS 中 `.works-detail-stage__socials` 覆盖了 `text-transform: none`。
+6. **遗留**：这次没有改 `letter-spacing`，因为报告只要求图标项、分隔符和大小写格式一致。若视觉上仍显得过松，可以在下一轮继续微调字距。
+7. **可调参数**：可调点集中在 [src/components/WorksDetailSection.tsx](/Users/xiaoci/Downloads/Workspace/VibeCoding/personal_brand/professional-portfolio/src/components/WorksDetailSection.tsx) 的 `WORKS_DETAIL_STAGE_SOCIALS` 常量与 `join(' | ')`，以及 [src/index.css](/Users/xiaoci/Downloads/Workspace/VibeCoding/personal_brand/professional-portfolio/src/index.css) 的 `.works-detail-stage__socials` 样式块。

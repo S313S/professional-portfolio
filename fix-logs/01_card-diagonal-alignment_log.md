@@ -1,0 +1,7 @@
+1. **理解**：问题不是卡片本身的 `rotate(45deg)`，而是 5 张卡片沿轨道的 `translate3d(...)` 步进仍然是约 28°，导致菱形边缘方向与排列路径不一致；同时 corridor 仍跟着旧的 28° 倾角。
+2. **分析**：我先读取了 QA 报告和 `issues/01_card-diagonal-alignment.md`，再检查了 `src/index.css` 中 `.works-detail-track__corridor--band`、`.works-detail-track__corridor--top/.bottom` 与 `data-slot="0"..."4"` 的 transform。当前值与报告一致：corridor 为 `rotate(-28deg)`，slot 步进约为 `dx≈14rem, dy≈-7.7rem`。随后在 `src/components/WorksDetailSection.render.test.tsx` 新增断言，要求 corridor 统一到 `-45deg`，并要求 5 个 slot 使用以 slot 2 为锚点的新 45° 排列值；新增测试在修复前确实失败。
+3. **方案**：采用报告建议的最小修复方案，不动卡片尺寸、缩放、滤镜、阴影和 slot 2 锚点，只更新 corridor 角度与 slot 0/1/3/4 的平移值，让每步接近 `dx=dy=11rem`，将结构问题收敛到 CSS 层。
+4. **改动**：修改了 `src/index.css` 的 corridor 角度与 5 个 slot 的 `transform`；修改了 `src/components/WorksDetailSection.render.test.tsx`，增加 45° 对齐的 CSS 回归断言，覆盖 corridor 与每个 slot 的关键值。
+5. **验证**：先运行 `node --import tsx --test src/components/WorksDetailSection.render.test.tsx`，新增测试在修复前失败；更新 CSS 后再次运行同一命令，9/9 通过。随后运行 `npm run build`，Vite 构建成功，产物输出正常。之后又通过 Playwright 走完整真实链路（Career Detail → Works Lobby → Works Detail），在 live DOM 中测得卡片中心步进分别为：`45.0° / 42.3° / 45.0° / 45.0°`，满足报告要求的 `45° ±3°`。同时输出了验证截图：`/tmp/works-detail-round2-after-fix.png`。
+6. **遗留**：目前还没有重新生成新的 diff report，也没有用像素 diff 工具对设计稿做定量比较；如果后续还要进一步追精度，优先检查 slot 1→2 这一段，因为它是唯一偏离 45° 的步进。
+7. **可调参数**：当前关键参数仍集中在 `src/index.css` 的 5 个 `translate3d` 值与 corridor 的旋转角度。slot 2 保持锚定，后续只需要小幅调整 slot 0/1/3/4 的 x/y 步进即可继续微调。

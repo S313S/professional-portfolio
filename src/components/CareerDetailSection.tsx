@@ -14,6 +14,7 @@ import {
   getCareerDetailSnapState,
   getCareerDetailSnapTargetY,
   getCareerDetailWheelCaptureState,
+  getCareerDetailWheelLockState,
   getCareerDetailWheelState,
   isCareerDetailSectionPinned,
 } from './CareerDetailSection.logic';
@@ -24,7 +25,10 @@ const CAREER_DETAIL_ASSETS = {
   workExperience: '/images/careerDetail_career_icon.png',
   industryKnowledge: '/images/careerDetail_Industry knowledge_icon.png',
   scrollSelector: '/images/careerDetail_scroll_icon.png',
+  pageSwitch: '/images/careerDetail_pageSwitch.png',
 } as const;
+
+const WORKS_LOBBY_SECTION_ID = 'works-lobby-section';
 
 const CAREER_DETAIL_DESKTOP_ASIDE_LAYOUT = {
   left: 'left-[67.48%]',
@@ -409,6 +413,7 @@ export default function CareerDetailSection() {
   const selectorTrackRef = useRef<HTMLDivElement>(null);
   const recordButtonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const hasSnappedOnCurrentEntryRef = useRef(false);
+  const hasActivatedPageSwitchRef = useRef(false);
   const lastScrollYRef = useRef(0);
   const selectorDragStateRef = useRef<{
     pointerId: number | null;
@@ -658,6 +663,9 @@ export default function CareerDetailSection() {
 
       if (snapState.shouldResetLatch) {
         hasSnappedOnCurrentEntryRef.current = false;
+        hasActivatedPageSwitchRef.current = false;
+        wheelDeltaAccumulatorRef.current = 0;
+        lastWheelDirectionRef.current = 0;
       }
 
       if (snapState.shouldSnap) {
@@ -680,6 +688,28 @@ export default function CareerDetailSection() {
 
       const sectionTop = section.getBoundingClientRect().top + window.scrollY;
       const sectionHeight = section.offsetHeight;
+      const wheelLockState = getCareerDetailWheelLockState({
+        deltaY: event.deltaY,
+        scrollY: window.scrollY,
+        sectionTop,
+        sectionHeight,
+        hasActivatedPageSwitch: hasActivatedPageSwitchRef.current,
+      });
+
+      if (wheelLockState.shouldPreventScroll) {
+        event.preventDefault();
+        if (wheelLockState.targetScrollY !== null) {
+          window.scrollTo({
+            top: wheelLockState.targetScrollY,
+            behavior: 'auto',
+          });
+        }
+
+        wheelDeltaAccumulatorRef.current = 0;
+        lastWheelDirectionRef.current = 0;
+        return;
+      }
+
       const isSectionPinned = isCareerDetailSectionPinned(window.scrollY, sectionTop);
 
       if (!isSectionPinned) {
@@ -835,6 +865,23 @@ export default function CareerDetailSection() {
       resizeObserver.disconnect();
     };
   }, [selectedCategory.key, selectedEntryState.selectedEntryId, selectedEntries.length]);
+
+  const handlePageSwitchClick = () => {
+    const targetSection = document.getElementById(WORKS_LOBBY_SECTION_ID);
+    if (!targetSection) {
+      return;
+    }
+
+    hasActivatedPageSwitchRef.current = true;
+    wheelDeltaAccumulatorRef.current = 0;
+    lastWheelDirectionRef.current = 0;
+
+    const targetY = targetSection.getBoundingClientRect().top + window.scrollY;
+    window.scrollTo({
+      top: Math.max(Math.round(targetY), 0),
+      behavior: 'auto',
+    });
+  };
 
   return (
     <section
@@ -1224,6 +1271,23 @@ export default function CareerDetailSection() {
             />
           </aside>
         </div>
+      </div>
+
+      <div className="absolute bottom-[4.2%] right-[1.15%] z-40 hidden lg:block xl:bottom-[4.1%] xl:right-[1%]">
+        <button
+          type="button"
+          data-career-detail-cta="page-switch"
+          aria-label="Open works lobby section"
+          className="group flex h-[4.45rem] w-[4.45rem] items-center justify-center rounded-full outline-none transition-transform duration-200 ease-out hover:scale-[1.03] focus-visible:scale-[1.03] focus-visible:ring-2 focus-visible:ring-[#6d4b35]/38 focus-visible:ring-offset-4 focus-visible:ring-offset-[#ece2d0] xl:h-[4.95rem] xl:w-[4.95rem]"
+          onClick={handlePageSwitchClick}
+        >
+          <img
+            src={CAREER_DETAIL_ASSETS.pageSwitch}
+            alt=""
+            aria-hidden="true"
+            className="h-full w-full object-contain opacity-92 transition-opacity duration-200 ease-out group-hover:opacity-100 group-focus-visible:opacity-100"
+          />
+        </button>
       </div>
     </section>
   );

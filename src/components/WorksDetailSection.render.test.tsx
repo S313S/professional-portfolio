@@ -118,3 +118,69 @@ test('exposes dedicated tuning hooks for each icon button size and vertical posi
   assert.match(componentSource, /buttonSpacingClassName/);
   assert.match(componentSource, /buttonOffsetClassName/);
 });
+
+test('matches the approved works gallery footer spacing, socials format, and film corridor structure', () => {
+  const markup = renderToStaticMarkup(
+    <WorksDetailSection initialPhase="settled" initialView="detail" initialTransitionProgress={1} />,
+  );
+  const componentSource = readFileSync(new URL('./WorksDetailSection.tsx', import.meta.url), 'utf8');
+
+  assert.match(
+    markup,
+    /class="works-detail-stage relative flex h-full w-full flex-col overflow-hidden px-5 pt-6 pb-10 text-\[#f8ebdb\] sm:px-8 sm:pt-8 sm:pb-12"/,
+  );
+  assert.match(markup, /works-detail-track__corridor works-detail-track__corridor--band/);
+  assert.match(markup, /works-detail-track__corridor works-detail-track__corridor--top/);
+  assert.match(markup, /works-detail-track__corridor works-detail-track__corridor--bottom/);
+  assert.match(markup, />f \| t \| ▶</);
+  assert.match(componentSource, /const WORKS_DETAIL_STAGE_SOCIALS = \['f', 't', '▶'\] as const;/);
+});
+
+test('keeps the works gallery grid lines and socials styling aligned with the approved css treatment', () => {
+  const cssSource = readFileSync(new URL('../index.css', import.meta.url), 'utf8');
+
+  assert.match(cssSource, /\.works-detail-stage__grid\s*\{[\s\S]*rgba\(163, 174, 190, 0\.18\)/);
+  assert.match(cssSource, /\.works-detail-stage__grid\s*\{[\s\S]*opacity:\s*0\.6;/);
+  assert.match(
+    cssSource,
+    /\.works-detail-track__corridor--top,\s*\.works-detail-track__corridor--bottom\s*\{[\s\S]*border-top:\s*1\.5px dashed rgba\(200, 210, 220, 0\.25\);/,
+  );
+  assert.match(cssSource, /\.works-detail-stage__socials\s*\{[\s\S]*text-transform:\s*none;/);
+});
+
+test('locks the gallery cards, corridor, and background grid to the same 45 degree diagonal system', () => {
+  const cssSource = readFileSync(new URL('../index.css', import.meta.url), 'utf8');
+
+  assert.match(
+    cssSource,
+    /\.works-detail-stage__grid\s*\{[\s\S]*repeating-linear-gradient\(135deg,[\s\S]*repeating-linear-gradient\(45deg,/,
+  );
+  assert.match(
+    cssSource,
+    /\.works-detail-track__corridor--band\s*\{[\s\S]*rotate\(-45deg\)/,
+  );
+  assert.match(
+    cssSource,
+    /\.works-detail-track__corridor--top,\s*\.works-detail-track__corridor--bottom\s*\{[\s\S]*rotate\(-45deg\)/,
+  );
+  assert.match(
+    cssSource,
+    /\.works-detail-track__item\[data-slot="0"\]\s*\{[\s\S]*translate3d\(-26\.2rem,\s*21\.5rem,\s*0\)\s*rotate\(45deg\)\s*scale\(0\.9\)/,
+  );
+  assert.match(
+    cssSource,
+    /\.works-detail-track__item\[data-slot="1"\]\s*\{[\s\S]*translate3d\(-15\.2rem,\s*10\.5rem,\s*0\)\s*rotate\(45deg\)\s*scale\(0\.94\)/,
+  );
+  assert.match(
+    cssSource,
+    /\.works-detail-track__item\[data-slot="2"\]\s*\{[\s\S]*translate3d\(-4\.2rem,\s*0\.5rem,\s*0\)\s*rotate\(45deg\)\s*scale\(0\.98\)/,
+  );
+  assert.match(
+    cssSource,
+    /\.works-detail-track__item\[data-slot="3"\]\s*\{[\s\S]*translate3d\(6\.8rem,\s*-10\.5rem,\s*0\)\s*rotate\(45deg\)\s*scale\(1\.04\)/,
+  );
+  assert.match(
+    cssSource,
+    /\.works-detail-track__item\[data-slot="4"\]\s*\{[\s\S]*translate3d\(17\.8rem,\s*-21\.5rem,\s*0\)\s*rotate\(45deg\)\s*scale\(0\.94\)/,
+  );
+});

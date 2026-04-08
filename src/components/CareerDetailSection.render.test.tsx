@@ -14,6 +14,7 @@ test('renders the career detail stage with category-scoped bookmarks and default
   assert.match(markup, /\/images\/careerDetail_career_icon\.png/);
   assert.match(markup, /\/images\/careerDetail_Industry knowledge_icon\.png/);
   assert.match(markup, /\/images\/careerDetail_scroll_icon\.png/);
+  assert.match(markup, /\/images\/careerDetail_pageSwitch\.png/);
   assert.match(markup, /\/images\/careerDetail_litteleBg_01\.png/);
   assert.doesNotMatch(markup, /\/images\/careerDetail_litteleBg\.png/);
   assert.doesNotMatch(markup, /\/images\/careerDetail_map\.(png|svg)/);
@@ -24,6 +25,8 @@ test('renders the career detail stage with category-scoped bookmarks and default
   assert.match(markup, /data-career-detail-drag-track="desktop"/);
   assert.match(markup, /data-career-detail-drag-thumb="desktop"/);
   assert.match(markup, /data-career-detail-drag-thumb-icon="desktop"/);
+  assert.match(markup, /data-career-detail-cta="page-switch"/);
+  assert.match(markup, /aria-label="Open works lobby section"/);
   assert.match(markup, /data-career-detail-record-button="sharing-essay-first-post"/);
   assert.match(markup, /data-career-detail-record-button="sharing-essay-pattern-library"/);
   assert.match(markup, /data-career-detail-record-button="sharing-essay-editorial-rhythm"/);

@@ -57,7 +57,7 @@ const WORKS_DETAIL_STAGE_PROJECTS = [
     state: 'muted',
   },
 ] as const;
-const WORKS_DETAIL_STAGE_SOCIALS = ['f', 'l', 't', '▶'] as const;
+const WORKS_DETAIL_STAGE_SOCIALS = ['f', 't', '▶'] as const;
 
 // 图标按钮手调区：
 // 1. `iconSizeClassName` 控制图标本体大小。
@@ -468,7 +468,7 @@ export default function WorksDetailSection({
           {view === 'detail' ? (
             <div
               data-works-detail-view="detail"
-              className="works-detail-stage relative flex h-full w-full flex-col overflow-hidden px-5 py-6 text-[#f8ebdb] sm:px-8 sm:py-8"
+              className="works-detail-stage relative flex h-full w-full flex-col overflow-hidden px-5 pt-6 pb-10 text-[#f8ebdb] sm:px-8 sm:pt-8 sm:pb-12"
             >
               <div
                 aria-hidden="true"
@@ -493,6 +493,9 @@ export default function WorksDetailSection({
               </div>
 
               <div className="works-detail-track" aria-hidden="true">
+                <div className="works-detail-track__corridor works-detail-track__corridor--band" />
+                <div className="works-detail-track__corridor works-detail-track__corridor--top" />
+                <div className="works-detail-track__corridor works-detail-track__corridor--bottom" />
                 {WORKS_DETAIL_STAGE_ITEMS.map((item, index) => {
                   return (
                     <div
@@ -541,7 +544,7 @@ export default function WorksDetailSection({
                   </div>
                   <div className="works-detail-stage__footer-right">
                     <span className="works-detail-stage__socials">
-                      {WORKS_DETAIL_STAGE_SOCIALS.join(' ')}
+                      {WORKS_DETAIL_STAGE_SOCIALS.join(' | ')}
                     </span>
                     <span className="works-detail-stage__credits">CREDITS</span>
                   </div>

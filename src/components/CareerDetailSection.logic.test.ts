@@ -8,6 +8,7 @@ import {
   getCareerDetailSnapState,
   getCareerDetailSnapTargetY,
   getCareerDetailWheelCaptureState,
+  getCareerDetailWheelLockState,
   getCareerDetailWheelState,
   isCareerDetailSectionPinned,
 } from './CareerDetailSection.logic.ts';
@@ -152,6 +153,66 @@ test('wheel capture releases native scroll outside career detail and after the l
     {
       shouldPreventScroll: false,
       nextIndex: 2,
+      targetScrollY: null,
+    },
+  );
+});
+
+test('wheel lock keeps downward scroll pinned until the page-switch button is clicked', () => {
+  assert.deepEqual(
+    getCareerDetailWheelLockState({
+      deltaY: 120,
+      scrollY: 3040,
+      sectionTop: 2800,
+      sectionHeight: 960,
+      hasActivatedPageSwitch: false,
+    }),
+    {
+      shouldPreventScroll: true,
+      targetScrollY: 2800,
+    },
+  );
+});
+
+test('wheel lock releases for upward input, after activation, or outside the section', () => {
+  assert.deepEqual(
+    getCareerDetailWheelLockState({
+      deltaY: -120,
+      scrollY: 3040,
+      sectionTop: 2800,
+      sectionHeight: 960,
+      hasActivatedPageSwitch: false,
+    }),
+    {
+      shouldPreventScroll: false,
+      targetScrollY: null,
+    },
+  );
+
+  assert.deepEqual(
+    getCareerDetailWheelLockState({
+      deltaY: 120,
+      scrollY: 3040,
+      sectionTop: 2800,
+      sectionHeight: 960,
+      hasActivatedPageSwitch: true,
+    }),
+    {
+      shouldPreventScroll: false,
+      targetScrollY: null,
+    },
+  );
+
+  assert.deepEqual(
+    getCareerDetailWheelLockState({
+      deltaY: 120,
+      scrollY: 2000,
+      sectionTop: 2800,
+      sectionHeight: 960,
+      hasActivatedPageSwitch: false,
+    }),
+    {
+      shouldPreventScroll: false,
       targetScrollY: null,
     },
   );

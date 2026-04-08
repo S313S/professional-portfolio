@@ -37,6 +37,19 @@ export interface CareerDetailWheelCaptureState extends CareerDetailWheelState {
   targetScrollY: number | null;
 }
 
+export interface CareerDetailWheelLockInput {
+  deltaY: number;
+  scrollY: number;
+  sectionTop: number;
+  sectionHeight: number;
+  hasActivatedPageSwitch: boolean;
+}
+
+export interface CareerDetailWheelLockState {
+  shouldPreventScroll: boolean;
+  targetScrollY: number | null;
+}
+
 export interface CareerDetailDragGestureInput {
   dragStartY: number | null;
   currentY: number;
@@ -182,6 +195,30 @@ export function getCareerDetailWheelCaptureState({
   return {
     ...wheelState,
     targetScrollY: wheelState.shouldPreventScroll ? getCareerDetailSnapTargetY(sectionTop) : null,
+  };
+}
+
+export function getCareerDetailWheelLockState({
+  deltaY,
+  scrollY,
+  sectionTop,
+  sectionHeight,
+  hasActivatedPageSwitch,
+}: CareerDetailWheelLockInput): CareerDetailWheelLockState {
+  if (
+    deltaY <= 0 ||
+    hasActivatedPageSwitch ||
+    !isCareerDetailSectionActive(scrollY, sectionTop, sectionHeight)
+  ) {
+    return {
+      shouldPreventScroll: false,
+      targetScrollY: null,
+    };
+  }
+
+  return {
+    shouldPreventScroll: true,
+    targetScrollY: getCareerDetailSnapTargetY(sectionTop),
   };
 }
 

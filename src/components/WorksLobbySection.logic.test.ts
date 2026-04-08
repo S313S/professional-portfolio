@@ -14,7 +14,7 @@ import {
   getWorksLobbyWheelState,
 } from './WorksLobbySection.logic.ts';
 
-test('requests a downward snap when the works lobby enters the desktop entry band', () => {
+test('does not auto-enter the works lobby when it enters the desktop entry band', () => {
   const mountState = getWorksLobbyScrollMountState({
     scrollY: 3180,
     lastScrollY: 3100,
@@ -25,7 +25,7 @@ test('requests a downward snap when the works lobby enters the desktop entry ban
     isMobile: false,
   });
 
-  assert.equal(mountState.shouldSnap, true);
+  assert.equal(mountState.shouldSnap, false);
   assert.equal(mountState.shouldResetLatch, false);
 });
 

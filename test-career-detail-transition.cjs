@@ -7,7 +7,9 @@ const baseUrl = process.env.BASE_URL || 'http://127.0.0.1:3000';
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
 
-  await page.goto(baseUrl, { waitUntil: 'networkidle' });
+  await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('#career-journey-section');
+  await page.waitForSelector('#career-detail-section');
   await page.evaluate(() => {
     document.documentElement.style.scrollBehavior = 'auto';
   });
@@ -25,7 +27,17 @@ const baseUrl = process.env.BASE_URL || 'http://127.0.0.1:3000';
   await page.evaluate((y) => window.scrollTo(0, y - 520), sectionTop);
   await page.waitForTimeout(200);
   await page.mouse.wheel(0, 120);
-  await page.waitForTimeout(500);
+  await page.waitForFunction(
+    () => {
+      const section = document.getElementById('career-detail-section');
+      if (!section) {
+        return false;
+      }
+
+      return Math.abs(section.getBoundingClientRect().top) <= 2;
+    },
+    { timeout: 2500 },
+  );
 
   const snapped = await page.evaluate(() => {
     const section = document.getElementById('career-detail-section');
@@ -47,28 +59,46 @@ const baseUrl = process.env.BASE_URL || 'http://127.0.0.1:3000';
     `Expected CareerDetailSection to snap flush to the viewport top. Got rectTop=${snapped.rectTop}, scrollY=${snapped.scrollY}, sectionTop=${snapped.sectionTop}`,
   );
 
-  const initialContent = await page.evaluate(() => ({
-    heading: document.querySelector('[data-career-detail-block="date-title"]')?.textContent ?? '',
-    eyebrow: document.querySelector('[data-career-detail-block="eyebrow"]')?.textContent ?? '',
-    headline: document.querySelector('h3')?.textContent ?? '',
-  }));
+  const readPrimaryContent = () =>
+    page.evaluate(() => {
+      const section = document.getElementById('career-detail-section');
+      const dateTitles = section?.querySelectorAll('[data-career-detail-block="date-title"]') ?? [];
+      const headings = section?.querySelectorAll('h3') ?? [];
+      const eyebrows = section?.querySelectorAll('[data-career-detail-block="eyebrow"]') ?? [];
+      const bodies = section?.querySelectorAll('[data-career-detail-block="body"]') ?? [];
 
-  assert.match(initialContent.heading, /October 14th, 1894/);
-  assert.match(initialContent.eyebrow, /Chronicle I:/);
-  assert.match(initialContent.headline, /Chief Surveyor & Field Archivist/);
+      return {
+        heading: dateTitles[0]?.textContent?.trim() ?? '',
+        eyebrow: eyebrows[0]?.textContent?.trim() ?? '',
+        headline: headings[0]?.textContent?.trim() ?? '',
+        body: bodies[0]?.textContent?.trim() ?? '',
+      };
+    });
+
+  const initialContent = await readPrimaryContent();
+
+  assert.match(initialContent.heading, /April 12th, 2021/);
+  assert.match(initialContent.eyebrow, /Dispatch Log I: Sharing Journey/);
+  assert.match(initialContent.headline, /Publishing Before It Felt Polished/);
 
   await page.mouse.wheel(0, 120);
   await page.waitForTimeout(250);
 
-  const wheelUpdated = await page.evaluate(() => ({
-    heading: document.querySelector('[data-career-detail-block="date-title"]')?.textContent ?? '',
-    eyebrow: document.querySelector('[data-career-detail-block="eyebrow"]')?.textContent ?? '',
-    body: document.querySelector('[data-career-detail-block="body"]')?.textContent ?? '',
-  }));
+  const wheelUpdated = await readPrimaryContent();
+  const afterLockedWheel = await page.evaluate(() => {
+    const section = document.getElementById('career-detail-section');
+    return {
+      rectTop: section?.getBoundingClientRect().top ?? null,
+    };
+  });
 
-  assert.match(wheelUpdated.heading, /May 3rd, 1901/);
-  assert.match(wheelUpdated.eyebrow, /Chronicle I: Sharing Journey/);
-  assert.match(wheelUpdated.body, /By the second chapter, sharing was less about confession/i);
+  assert.match(wheelUpdated.heading, /April 12th, 2021/);
+  assert.match(wheelUpdated.eyebrow, /Dispatch Log I: Sharing Journey/);
+  assert.match(wheelUpdated.body, /I started sharing small working notes before they felt complete/i);
+  assert.ok(
+    Math.abs(afterLockedWheel.rectTop ?? 999) <= 2,
+    `Expected locked wheel input to keep CareerDetailSection pinned. Got rectTop=${afterLockedWheel.rectTop}`,
+  );
 
   const dragTrack = page.locator('[data-career-detail-drag-track="desktop"]');
   const dragBox = await dragTrack.boundingBox();
@@ -84,40 +114,55 @@ const baseUrl = process.env.BASE_URL || 'http://127.0.0.1:3000';
   await page.mouse.up();
   await page.waitForTimeout(250);
 
-  const dragUpdated = await page.evaluate(() => ({
-    heading: document.querySelector('[data-career-detail-block="date-title"]')?.textContent ?? '',
-    eyebrow: document.querySelector('[data-career-detail-block="eyebrow"]')?.textContent ?? '',
-    body: document.querySelector('[data-career-detail-block="body"]')?.textContent ?? '',
-  }));
+  const dragUpdated = await readPrimaryContent();
 
-  assert.match(dragUpdated.heading, /January 18th, 1908/);
-  assert.match(dragUpdated.eyebrow, /Chronicle I: Sharing Journey/);
-  assert.match(dragUpdated.body, /Sharing entered a steadier phase here/i);
+  assert.match(dragUpdated.heading, /September 3rd, 2021/);
+  assert.match(dragUpdated.eyebrow, /Dispatch Log II: Sharing Journey/);
+  assert.match(dragUpdated.body, /Repeated questions became a pattern library/i);
+
+  await page.mouse.wheel(0, -120);
+  await page.waitForTimeout(250);
+
+  const upwardWheelUpdated = await readPrimaryContent();
+
+  assert.match(upwardWheelUpdated.heading, /April 12th, 2021/);
+  assert.match(upwardWheelUpdated.eyebrow, /Dispatch Log I: Sharing Journey/);
+  assert.match(
+    upwardWheelUpdated.body,
+    /I started sharing small working notes before they felt complete/i,
+  );
 
   await page
     .locator('[data-career-detail-tab-surface="desktop"][data-career-detail-tab="workExperience"]')
     .click();
   await page.waitForTimeout(250);
 
-  const clickedWorkExperience = await page.evaluate(() => ({
-    eyebrow: document.querySelector('[data-career-detail-block="eyebrow"]')?.textContent ?? '',
-    headline: document.querySelector('h3')?.textContent ?? '',
-    body: document.querySelector('[data-career-detail-block="body"]')?.textContent ?? '',
-    workExperiencePressed:
-      document
-        .querySelector(
-          '[data-career-detail-tab-surface="desktop"][data-career-detail-tab="workExperience"]',
-        )
-        ?.getAttribute('aria-pressed') ?? '',
-    workExperienceConnectorActive:
-      document
-        .querySelector('[data-career-detail-connector="workExperience"]')
-        ?.getAttribute('data-career-detail-connector-active') ?? '',
-  }));
+  const clickedWorkExperience = await page.evaluate(() => {
+    const section = document.getElementById('career-detail-section');
+    const eyebrows = section?.querySelectorAll('[data-career-detail-block="eyebrow"]') ?? [];
+    const headlines = section?.querySelectorAll('h3') ?? [];
+    const bodies = section?.querySelectorAll('[data-career-detail-block="body"]') ?? [];
 
-  assert.match(clickedWorkExperience.eyebrow, /Chronicle II: Work Experience/);
-  assert.match(clickedWorkExperience.headline, /Relay Operations Lead/);
-  assert.match(clickedWorkExperience.body, /Work became less about isolated execution/i);
+    return {
+      eyebrow: eyebrows[0]?.textContent?.trim() ?? '',
+      headline: headlines[0]?.textContent?.trim() ?? '',
+      body: bodies[0]?.textContent?.trim() ?? '',
+      workExperiencePressed:
+        section
+          ?.querySelector(
+            '[data-career-detail-tab-surface="desktop"][data-career-detail-tab="workExperience"]',
+          )
+          ?.getAttribute('aria-pressed') ?? '',
+      workExperienceConnectorActive:
+        section
+          ?.querySelector('[data-career-detail-connector="workExperience"]')
+          ?.getAttribute('data-career-detail-connector-active') ?? '',
+    };
+  });
+
+  assert.match(clickedWorkExperience.eyebrow, /Dispatch Log I: Work Experience/);
+  assert.match(clickedWorkExperience.headline, /Learning To Make Fast Work Legible/);
+  assert.match(clickedWorkExperience.body, /speed alone was not enough/i);
   assert.equal(clickedWorkExperience.workExperiencePressed, 'true');
   assert.equal(clickedWorkExperience.workExperienceConnectorActive, 'true');
 
@@ -128,25 +173,32 @@ const baseUrl = process.env.BASE_URL || 'http://127.0.0.1:3000';
     .click();
   await page.waitForTimeout(250);
 
-  const clickedIndustryKnowledge = await page.evaluate(() => ({
-    eyebrow: document.querySelector('[data-career-detail-block="eyebrow"]')?.textContent ?? '',
-    headline: document.querySelector('h3')?.textContent ?? '',
-    body: document.querySelector('[data-career-detail-block="body"]')?.textContent ?? '',
-    industryKnowledgePressed:
-      document
-        .querySelector(
-          '[data-career-detail-tab-surface="desktop"][data-career-detail-tab="industryKnowledge"]',
-        )
-        ?.getAttribute('aria-pressed') ?? '',
-    industryKnowledgeConnectorActive:
-      document
-        .querySelector('[data-career-detail-connector="industryKnowledge"]')
-        ?.getAttribute('data-career-detail-connector-active') ?? '',
-  }));
+  const clickedIndustryKnowledge = await page.evaluate(() => {
+    const section = document.getElementById('career-detail-section');
+    const eyebrows = section?.querySelectorAll('[data-career-detail-block="eyebrow"]') ?? [];
+    const headlines = section?.querySelectorAll('h3') ?? [];
+    const bodies = section?.querySelectorAll('[data-career-detail-block="body"]') ?? [];
 
-  assert.match(clickedIndustryKnowledge.eyebrow, /Chronicle III: Industry Knowledge/);
-  assert.match(clickedIndustryKnowledge.headline, /Relay Signals Across Emerging Markets/);
-  assert.match(clickedIndustryKnowledge.body, /I began reading market shifts through velocity/i);
+    return {
+      eyebrow: eyebrows[0]?.textContent?.trim() ?? '',
+      headline: headlines[0]?.textContent?.trim() ?? '',
+      body: bodies[0]?.textContent?.trim() ?? '',
+      industryKnowledgePressed:
+        section
+          ?.querySelector(
+            '[data-career-detail-tab-surface="desktop"][data-career-detail-tab="industryKnowledge"]',
+          )
+          ?.getAttribute('aria-pressed') ?? '',
+      industryKnowledgeConnectorActive:
+        section
+          ?.querySelector('[data-career-detail-connector="industryKnowledge"]')
+          ?.getAttribute('data-career-detail-connector-active') ?? '',
+    };
+  });
+
+  assert.match(clickedIndustryKnowledge.eyebrow, /Dispatch Log I: Industry Knowledge/);
+  assert.match(clickedIndustryKnowledge.headline, /Watching Where AI Moved From Demo To Habit/);
+  assert.match(clickedIndustryKnowledge.body, /workflow infrastructure instead of spectacle/i);
   assert.equal(clickedIndustryKnowledge.industryKnowledgePressed, 'true');
   assert.equal(clickedIndustryKnowledge.industryKnowledgeConnectorActive, 'true');
 
@@ -154,7 +206,7 @@ const baseUrl = process.env.BASE_URL || 'http://127.0.0.1:3000';
     classified: document.querySelector('[data-career-detail-block="classified"]')?.textContent ?? '',
   }));
 
-  assert.match(archivePanel.classified, /CLASSIFIED/);
+  assert.equal(archivePanel.classified, '');
 
   await browser.close().catch(() => {});
   process.exit(0);
