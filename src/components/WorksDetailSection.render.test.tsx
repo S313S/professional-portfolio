@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { renderToStaticMarkup } from 'react-dom/server';
 
 import WorksDetailSection from './WorksDetailSection';
@@ -14,8 +15,10 @@ test('renders the works detail transition stage with loading iframe and hidden b
   assert.match(markup, /\/images\/workDetail_bg\.jpeg/);
   assert.match(markup, />ON</);
   assert.match(markup, />OFF</);
-  assert.match(markup, />TRACK</);
-  assert.match(markup, /Most recent results, career stats and photos from trackside\./);
+  assert.match(markup, />CODING</);
+  assert.match(markup, />DESIGN</);
+  assert.doesNotMatch(markup, />TRACK</);
+  assert.match(markup, /Workflows, systems and prototypes built to make ideas actually run\./);
   assert.match(markup, /Campaigns, shoots and other such promotional materials for fans/);
   assert.match(markup, /\/images\/workDetail_left_icon\.png\.png/);
   assert.match(markup, /\/images\/workDetail_rigtht_icon\.png/);
@@ -28,25 +31,37 @@ test('renders the works detail transition stage with loading iframe and hidden b
   assert.doesNotMatch(markup, /radial-gradient\(circle_at_center/);
 });
 
-test('uses the approved symmetric text offsets and equalized description heights', () => {
+test('keeps the current text blocks edge-aligned with equalized description heights', () => {
   const markup = renderToStaticMarkup(<WorksDetailSection />);
   const minHeightMatches = markup.match(/min-h-\[3\.8rem\]/g) ?? [];
 
   assert.match(
     markup,
-    /class="flex flex-col items-center translate-x-\[50px\] translate-y-\[6px\]"/,
+    /class="flex flex-col items-end translate-y-\[6px\]"/,
   );
   assert.match(
     markup,
-    /class="flex flex-col items-center translate-x-\[-50px\] translate-y-\[6px\]"/,
+    /class="flex flex-col items-start translate-y-\[6px\]"/,
   );
   assert.match(
     markup,
-    /Most recent results, career stats and photos from trackside\.<\/p>/,
+    /Workflows, systems and prototypes built to make ideas actually run\.<\/p>/,
   );
   assert.match(
     markup,
     /Campaigns, shoots and other such promotional materials for fans<\/p>/,
   );
   assert.equal(minHeightMatches.length, 2);
+});
+
+test('exposes dedicated tuning hooks for each icon button size and vertical position', () => {
+  const markup = renderToStaticMarkup(<WorksDetailSection />);
+  const componentSource = readFileSync(new URL('./WorksDetailSection.tsx', import.meta.url), 'utf8');
+
+  assert.match(markup, /data-works-detail-icon-button="left"/);
+  assert.match(markup, /data-works-detail-icon-button="right"/);
+  assert.match(componentSource, /WORKS_DETAIL_BUTTON_LAYOUT/);
+  assert.match(componentSource, /iconSizeClassName/);
+  assert.match(componentSource, /buttonSpacingClassName/);
+  assert.match(componentSource, /buttonOffsetClassName/);
 });

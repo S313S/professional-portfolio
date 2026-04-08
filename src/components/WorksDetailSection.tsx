@@ -23,6 +23,25 @@ const WORKS_DETAIL_WHEEL_UNIT_DELTA = 120;
 const WORKS_DETAIL_LEFT_BUTTON_SRC = '/images/workDetail_left_icon.png.png';
 const WORKS_DETAIL_RIGHT_BUTTON_SRC = '/images/workDetail_rigtht_icon.png';
 
+// 图标按钮手调区：
+// 1. `iconSizeClassName` 控制图标本体大小。
+// 2. `buttonSpacingClassName` 控制图标和上方文案之间的基础间距。
+// 3. `buttonOffsetClassName` 用来做最终的上下微调。
+//    - `translate-y-[8px]` 表示整体下移 8px
+//    - `-translate-y-[6px]` 表示整体上移 6px
+const WORKS_DETAIL_BUTTON_LAYOUT = {
+  left: {
+    buttonOffsetClassName: 'translate-y-[-35px]',
+    buttonSpacingClassName: 'mt-5 sm:mt-6',
+    iconSizeClassName: 'h-[2.1rem] w-[2.1rem] sm:h-[2.5rem] sm:w-[2.5rem] md:h-[3rem] md:w-[3rem]',
+  },
+  right: {
+    buttonOffsetClassName: 'translate-y-[-35px]',
+    buttonSpacingClassName: 'mt-5 sm:mt-6',
+    iconSizeClassName: 'h-[2.1rem] w-[2.1rem] sm:h-[2.5rem] sm:w-[2.5rem] md:h-[3rem] md:w-[3rem]',
+  },
+} as const;
+
 export default function WorksDetailSection() {
   const sectionRef = useRef<HTMLElement>(null);
   const touchStartYRef = useRef<number | null>(null);
@@ -344,25 +363,30 @@ export default function WorksDetailSection() {
                   ON
                 </p>
                 <p className="text-[2.9rem] font-black uppercase tracking-[-0.08em] sm:text-[3.7rem] md:text-[4.7rem]">
-                  TRACK
+                  CODING
                 </p>
               </div>
               <p className="mt-4 min-h-[3.8rem] max-w-[13rem] text-right text-[0.74rem] font-semibold leading-tight text-[#3e382b] sm:mt-5 sm:max-w-[14.5rem] sm:text-[0.88rem] md:mt-6 md:max-w-[15.5rem] md:text-[0.98rem]">
-                Most recent results, career stats and photos from trackside.
+                Workflows and prototypes are builted to make ideas  run
               </p>
-              <button
-                type="button"
-                aria-label="Open On Track collection"
-                tabIndex={isContentInteractive ? 0 : -1}
-                className="mt-5 rounded-[0.8rem] transition duration-200 ease-out hover:scale-105 hover:drop-shadow-[0_8px_18px_rgba(117,126,23,0.28)] focus-visible:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8d9a26]/45 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent sm:mt-6"
+              <div
+                data-works-detail-icon-button="left"
+                className={WORKS_DETAIL_BUTTON_LAYOUT.left.buttonOffsetClassName}
               >
-                <img
-                  src={WORKS_DETAIL_LEFT_BUTTON_SRC}
-                  alt=""
-                  aria-hidden="true"
-                  className="h-[3.2rem] w-[3.2rem] object-contain sm:h-[3.8rem] sm:w-[3.8rem] md:h-[4rem] md:w-[4rem]"
-                />
-              </button>
+                <button
+                  type="button"
+                  aria-label="Open On Track collection"
+                  tabIndex={isContentInteractive ? 0 : -1}
+                  className={`${WORKS_DETAIL_BUTTON_LAYOUT.left.buttonSpacingClassName} rounded-[0.8rem] transition duration-200 ease-out hover:scale-105 hover:drop-shadow-[0_8px_18px_rgba(117,126,23,0.28)] focus-visible:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8d9a26]/45 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent`}
+                >
+                  <img
+                    src={WORKS_DETAIL_LEFT_BUTTON_SRC}
+                    alt=""
+                    aria-hidden="true"
+                    className={`${WORKS_DETAIL_BUTTON_LAYOUT.left.iconSizeClassName} object-contain`}
+                  />
+                </button>
+              </div>
             </div>
 
             <div className="flex flex-col items-start translate-y-[6px]">
@@ -371,25 +395,30 @@ export default function WorksDetailSection() {
                   OFF
                 </p>
                 <p className="text-[2.9rem] font-black uppercase tracking-[-0.08em] sm:text-[3.7rem] md:text-[4.7rem]">
-                  TRACK
+                  DESIGN
                 </p>
               </div>
               <p className="mt-4 min-h-[3.8rem] max-w-[13rem] text-left text-[0.74rem] font-semibold leading-tight text-[#3e382b] sm:mt-5 sm:max-w-[14.5rem] sm:text-[0.88rem] md:mt-6 md:max-w-[15.5rem] md:text-[0.98rem]">
-                Campaigns, shoots and other such promotional materials for fans
+                Visual concepts shaped into tangible experiences
               </p>
-              <button
-                type="button"
-                aria-label="Open Off Track collection"
-                tabIndex={isContentInteractive ? 0 : -1}
-                className="mt-5 rounded-[0.8rem] transition duration-200 ease-out hover:scale-105 hover:drop-shadow-[0_8px_18px_rgba(117,126,23,0.28)] focus-visible:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8d9a26]/45 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent sm:mt-6"
+              <div
+                data-works-detail-icon-button="right"
+                className={WORKS_DETAIL_BUTTON_LAYOUT.right.buttonOffsetClassName}
               >
-                <img
-                  src={WORKS_DETAIL_RIGHT_BUTTON_SRC}
-                  alt=""
-                  aria-hidden="true"
-                  className="h-[3.2rem] w-[3.2rem] object-contain sm:h-[3.8rem] sm:w-[3.8rem] md:h-[4rem] md:w-[4rem]"
-                />
-              </button>
+                <button
+                  type="button"
+                  aria-label="Open Off Track collection"
+                  tabIndex={isContentInteractive ? 0 : -1}
+                  className={`${WORKS_DETAIL_BUTTON_LAYOUT.right.buttonSpacingClassName} rounded-[0.8rem] transition duration-200 ease-out hover:scale-105 hover:drop-shadow-[0_8px_18px_rgba(117,126,23,0.28)] focus-visible:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8d9a26]/45 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent`}
+                >
+                  <img
+                    src={WORKS_DETAIL_RIGHT_BUTTON_SRC}
+                    alt=""
+                    aria-hidden="true"
+                    className={`${WORKS_DETAIL_BUTTON_LAYOUT.right.iconSizeClassName} object-contain`}
+                  />
+                </button>
+              </div>
             </div>
           </div>
         </div>
