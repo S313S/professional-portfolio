@@ -34,7 +34,7 @@ const WORKS_DETAIL_STAGE_ITEMS = [
   { src: '/images/growPath_01.png', label: '04' },
   { src: '/images/growPath_02.png', label: '05' },
   { src: '/images/growPath_03.png', label: '06' },
-  { src: '/images/WorksCollectionRoom_Bg.jpg', label: '07' },
+  { src: '/images/works-detail-07-square.png', label: '07' },
   { src: '/images/growPath_04.png', label: '08' },
 ] as const;
 const WORKS_DETAIL_STAGE_PROJECTS = [

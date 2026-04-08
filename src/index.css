@@ -340,19 +340,9 @@
 }
 
 .works-detail-stage__grid {
-  background-image:
-    repeating-linear-gradient(135deg,
-      transparent 0,
-      transparent 128px,
-      rgba(163, 174, 190, 0.18) 129px,
-      transparent 131px,
-      transparent 260px),
-    repeating-linear-gradient(45deg,
-      transparent 0,
-      transparent 128px,
-      rgba(163, 174, 190, 0.18) 129px,
-      transparent 131px,
-      transparent 260px);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260' viewBox='0 0 260 260'%3E%3Cline x1='0' y1='260' x2='260' y2='0' stroke='rgba(163%2C174%2C190%2C0.18)' stroke-width='1.5' stroke-dasharray='8,6'/%3E%3Cline x1='0' y1='0' x2='260' y2='260' stroke='rgba(163%2C174%2C190%2C0.18)' stroke-width='1.5' stroke-dasharray='8,6'/%3E%3C/svg%3E");
+  background-size: 260px 260px;
+  background-position: calc(50% - 130px) calc(50% - 130px);
   opacity: 0.6;
 }
 

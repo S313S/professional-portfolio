@@ -250,3 +250,14 @@ test('uses the fixed-gap bookmark rail only for non-sharing categories', () => {
   assert.match(componentSource, /justify-between/);
   assert.match(componentSource, /justify-start gap-\[1\.2rem\] pt-\[0\.6rem\]/);
 });
+
+test('uses a single page-switch position and size config across desktop widths', () => {
+  const componentSource = readFileSync(new URL('./CareerDetailSection.tsx', import.meta.url), 'utf8');
+
+  assert.match(componentSource, /const CAREER_DETAIL_PAGE_SWITCH_LAYOUT = \{/);
+  assert.match(componentSource, /position:\s*'lg:bottom-\[[^\]]+\] lg:right-\[[^\]]+\]'/);
+  assert.match(componentSource, /size:\s*'lg:h-\[[^\]]+\] lg:w-\[[^\]]+\]'/);
+  assert.doesNotMatch(componentSource, /wrapper:\s*\{/);
+  assert.doesNotMatch(componentSource, /desktop:\s*'lg:/);
+  assert.doesNotMatch(componentSource, /xl:\s*'xl:/);
+});

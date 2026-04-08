@@ -1,7 +1,7 @@
-1. **理解**：背景网格已有 135° 方向的重复线，但缺少与之交叉的 45° 方向，因此画面只是一组单向斜线，没有形成参考稿里的菱形网格。
-2. **分析**：我检查了 `src/index.css` 中 `.works-detail-stage__grid` 的 `background-image`，确认它只有一个 `repeating-linear-gradient(135deg, ...)`。我把这个要求也并入 `src/components/WorksDetailSection.render.test.tsx` 的新增断言中，要求同一个规则块同时包含 135° 与 45° 两组 gradient；在修复前该断言失败。
-3. **方案**：直接在现有 `background-image` 上叠加第二个 `repeating-linear-gradient(45deg, ...)`，保持颜色、线宽和间距参数一致，避免引入额外变量或改动 opacity，确保改动最小且与 QA 指令一致。
-4. **改动**：修改了 `src/index.css` 中 `.works-detail-stage__grid` 的 `background-image`，将单一 gradient 扩展为两个方向的叠加；`src/components/WorksDetailSection.render.test.tsx` 增加了对应的回归断言。
-5. **验证**：运行 `node --import tsx --test src/components/WorksDetailSection.render.test.tsx` 完成红绿验证；修复后再次运行通过。额外运行 `npm run build`，确认 CSS 变更未影响整体构建。随后通过 Playwright 打开 live Works Detail 页面并生成截图 `/tmp/works-detail-round2-after-fix.png`，作为交叉网格已随 detail 态一并渲染的运行时验证。
-6. **遗留**：目前只验证了源码层与构建层，没有重新截图确认交叉后的密度和亮度是否正好贴近设计稿；如果视觉上仍显得偏密或偏亮，可以继续微调两组 gradient 的步距或整体 opacity。
-7. **可调参数**：两个 gradient 目前共用 `128px / 129px / 131px / 260px` 这组节距参数，后续如需调密度，只要同步修改这两个 gradient 的对应 stop 值即可。
+1. **理解**：这次问题不只是“少一条 45° 线”，而是当前 grid 方案本身选错了技术路径。`repeating-linear-gradient` 只能稳定画连续实线，不能做出参考稿那种清晰的 dashed 斜线，而且它的平铺原点和卡片/走廊的中心定位不是同一套坐标系。
+2. **分析**：我先读了 `docs/diff-reports/round2_2026-04-08_card-alignment-and-grid/report.md` 和 `issues/02_secondary-diagonal-lines.md`，然后检查 `src/index.css` 的 `.works-detail-stage__grid`。当前实现仍是双 `repeating-linear-gradient(135deg/45deg)`，这和报告里指出的根因一致。接着我先修改 `src/components/WorksDetailSection.render.test.tsx`，把断言从“有两条 gradient”收紧为“必须使用 SVG data URI、必须有 `stroke-dasharray='8,6'`、必须声明 `background-size` 与 `background-position`、并且不能再出现 `repeating-linear-gradient`”。测试在改实现前确实失败。
+3. **方案**：采用报告推荐的 SVG pattern 方案，不再继续堆 gradient。具体做法是在一个 260×260 的 tile 里同时画 135° 与 45° 两条 dashed line，用 `stroke-dasharray='8,6'` 控制虚线节奏；再通过 `background-position` 把 tile 中心对齐到 stage 中心，让网格和卡片/走廊共享更一致的视觉基准。
+4. **改动**：修改了 `src/index.css:342-346`，把 `.works-detail-stage__grid` 从双 `repeating-linear-gradient` 改为 inline SVG data URI，并新增 `background-size: 260px 260px;` 与 `background-position: calc(50% - 130px) calc(50% - 130px);`。同时修改了 `src/components/WorksDetailSection.render.test.tsx:141-163`，把回归测试更新为校验 SVG dashed grid、定位偏移、以及两条对角线都存在。
+5. **验证**：先运行 `node --import tsx --test src/components/WorksDetailSection.render.test.tsx`，新增断言在改 CSS 前失败；更新 CSS 后再次运行，同一组 9 个测试全部通过。随后运行 `npm run build`，Vite 生产构建成功，说明这次 CSS data URI 改动没有破坏打包链路。
+6. **遗留**：这次没有重新跑浏览器截图对比，所以 `background-position` 目前是一个基于坐标系对齐的合理初值，不是像素级手工微调值。如果后续视觉上还想更贴近参考图，优先微调这两个偏移量即可。
+7. **可调参数**：现在最容易继续调的是两个参数组。其一是 `background-position`，用于整体挪动网格原点；其二是 SVG 里的 `stroke-dasharray='8,6'`，用于调整 dash/gap 密度。两者都集中在同一个 CSS 规则里，后续继续细调成本很低。

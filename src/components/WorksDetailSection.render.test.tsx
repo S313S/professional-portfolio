@@ -54,6 +54,8 @@ test('renders the in-page detail view with a close button when the left entry ha
   assert.match(markup, />KINDY</);
   assert.match(markup, />SANOFI</);
   assert.match(markup, />WHAT&#x27;S HOT</);
+  assert.match(markup, /\/images\/works-detail-07-square\.png/);
+  assert.doesNotMatch(markup, /\/images\/WorksCollectionRoom_Bg\.jpg/);
   assert.match(markup, />blacknegative</);
   assert.match(
     markup,
@@ -136,11 +138,15 @@ test('matches the approved works gallery footer spacing, socials format, and fil
   assert.match(componentSource, /const WORKS_DETAIL_STAGE_SOCIALS = \['f', 't', '▶'\] as const;/);
 });
 
-test('keeps the works gallery grid lines and socials styling aligned with the approved css treatment', () => {
+test('keeps the works gallery dashed SVG grid and socials styling aligned with the approved css treatment', () => {
   const cssSource = readFileSync(new URL('../index.css', import.meta.url), 'utf8');
 
-  assert.match(cssSource, /\.works-detail-stage__grid\s*\{[\s\S]*rgba\(163, 174, 190, 0\.18\)/);
+  assert.match(cssSource, /\.works-detail-stage__grid\s*\{[\s\S]*background-image:\s*url\("data:image\/svg\+xml,/);
+  assert.match(cssSource, /\.works-detail-stage__grid\s*\{[\s\S]*stroke-dasharray='8,6'/);
+  assert.match(cssSource, /\.works-detail-stage__grid\s*\{[\s\S]*background-size:\s*260px 260px;/);
+  assert.match(cssSource, /\.works-detail-stage__grid\s*\{[\s\S]*background-position:\s*[^;]+;/);
   assert.match(cssSource, /\.works-detail-stage__grid\s*\{[\s\S]*opacity:\s*0\.6;/);
+  assert.doesNotMatch(cssSource, /\.works-detail-stage__grid\s*\{[\s\S]*repeating-linear-gradient\(/);
   assert.match(
     cssSource,
     /\.works-detail-track__corridor--top,\s*\.works-detail-track__corridor--bottom\s*\{[\s\S]*border-top:\s*1\.5px dashed rgba\(200, 210, 220, 0\.25\);/,
@@ -153,7 +159,7 @@ test('locks the gallery cards, corridor, and background grid to the same 45 degr
 
   assert.match(
     cssSource,
-    /\.works-detail-stage__grid\s*\{[\s\S]*repeating-linear-gradient\(135deg,[\s\S]*repeating-linear-gradient\(45deg,/,
+    /\.works-detail-stage__grid\s*\{[\s\S]*x1='0' y1='260' x2='260' y2='0'[\s\S]*x1='0' y1='0' x2='260' y2='260'/,
   );
   assert.match(
     cssSource,

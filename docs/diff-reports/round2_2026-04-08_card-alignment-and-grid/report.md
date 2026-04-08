@@ -23,7 +23,7 @@
 | # | 严重程度 | 问题 | 文件 |
 |---|---------|------|------|
 | 1 | 🔴 严重 | 卡片排列角度 28° 与卡片旋转 45° 不匹配 | [issues/01_card-diagonal-alignment.md](./issues/01_card-diagonal-alignment.md) |
-| 2 | 🟡 主要 | 次对角线（45°方向）缺失 | [issues/02_secondary-diagonal-lines.md](./issues/02_secondary-diagonal-lines.md) |
+| 2 | 🟡 主要 | 背景网格线与卡片布局不统一（实线→虚线 + 坐标系对齐） | [issues/02_secondary-diagonal-lines.md](./issues/02_secondary-diagonal-lines.md) |
 
 ## 核心发现
 

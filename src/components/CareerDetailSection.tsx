@@ -49,6 +49,34 @@ const CAREER_DETAIL_ARCHIVE_CARD_IMAGE_STYLE: CSSProperties = {
   transform: `translate(${CAREER_DETAIL_ARCHIVE_CARD_NUDGE.x}px, ${CAREER_DETAIL_ARCHIVE_CARD_NUDGE.y}px)`,
 };
 
+// 中文注释：右下角“翻页按钮”的位置与大小统一在这里调。
+// 现在只保留一套桌面配置，避免 lg / xl 断点互相覆盖，导致你改了却看不到变化。
+//
+// 怎么改：
+// 1. 调位置：改 position 里的 bottom / right
+// 2. 调大小：改 size 里的 h / w
+//
+// 示范案例：
+// - 想让按钮更靠右下：
+//   position: 'lg:bottom-[3.6%] lg:right-[0.6%]'
+// - 想让按钮更大一点：
+//   size: 'lg:h-[5.2rem] lg:w-[5.2rem]'
+// - 想让按钮更靠里一点并缩小：
+//   position: 'lg:bottom-[4.8%] lg:right-[1.4%]'
+//   size: 'lg:h-[3.8rem] lg:w-[3.8rem]'
+// 注意：
+// - bottom 如果写成负数，按钮可能会被推到当前 section 可视区域外面。
+// - h / w 如果过小，按钮虽然还在，但会看起来像“消失了”。
+const CAREER_DETAIL_PAGE_SWITCH_LAYOUT = {
+  wrapperBase: 'absolute z-40 hidden lg:block',
+  position: 'lg:bottom-[2.2%] lg:right-[-0.01%]',
+  buttonBase:
+    'group flex items-center justify-center rounded-full outline-none transition-transform duration-200 ease-out hover:scale-[1.03] focus-visible:scale-[1.03] focus-visible:ring-2 focus-visible:ring-[#6d4b35]/38 focus-visible:ring-offset-4 focus-visible:ring-offset-[#ece2d0]',
+  size: 'lg:h-[2.45rem] lg:w-[2.45rem]',
+  image:
+    'h-full w-full object-contain opacity-92 transition-opacity duration-200 ease-out group-hover:opacity-100 group-focus-visible:opacity-100',
+} as const;
+
 const CAREER_DETAIL_SELECTION_STORAGE_KEY = 'career-detail-selection:v1';
 
 export type CareerDetailTabKey = 'sharingJourney' | 'workExperience' | 'industryKnowledge';
@@ -1273,19 +1301,27 @@ export default function CareerDetailSection() {
         </div>
       </div>
 
-      <div className="absolute bottom-[4.2%] right-[1.15%] z-40 hidden lg:block xl:bottom-[4.1%] xl:right-[1%]">
+      <div
+        className={joinClasses(
+          CAREER_DETAIL_PAGE_SWITCH_LAYOUT.wrapperBase,
+          CAREER_DETAIL_PAGE_SWITCH_LAYOUT.position,
+        )}
+      >
         <button
           type="button"
           data-career-detail-cta="page-switch"
           aria-label="Open works lobby section"
-          className="group flex h-[4.45rem] w-[4.45rem] items-center justify-center rounded-full outline-none transition-transform duration-200 ease-out hover:scale-[1.03] focus-visible:scale-[1.03] focus-visible:ring-2 focus-visible:ring-[#6d4b35]/38 focus-visible:ring-offset-4 focus-visible:ring-offset-[#ece2d0] xl:h-[4.95rem] xl:w-[4.95rem]"
+          className={joinClasses(
+            CAREER_DETAIL_PAGE_SWITCH_LAYOUT.buttonBase,
+            CAREER_DETAIL_PAGE_SWITCH_LAYOUT.size,
+          )}
           onClick={handlePageSwitchClick}
         >
           <img
             src={CAREER_DETAIL_ASSETS.pageSwitch}
             alt=""
             aria-hidden="true"
-            className="h-full w-full object-contain opacity-92 transition-opacity duration-200 ease-out group-hover:opacity-100 group-focus-visible:opacity-100"
+            className={CAREER_DETAIL_PAGE_SWITCH_LAYOUT.image}
           />
         </button>
       </div>
