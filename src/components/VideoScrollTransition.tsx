@@ -17,6 +17,8 @@ import {
   getVideoVisualState,
   getVideoWheelState,
   isScrollWithinVideoSection,
+  shouldPlayLoopVideoInSection,
+  shouldRestartLoopPlaybackOnSectionEnter,
   shouldPinVideoSectionOnPrompt,
   shouldRepinAwaitingActivationOnScroll,
   shouldResetCompletedVideoOnScroll,
@@ -40,6 +42,8 @@ export default function VideoScrollTransition() {
   const isMobileRef = useRef(false);
   const lastTouchYRef = useRef<number | null>(null);
   const previousScrollYRef = useRef(0);
+  const sectionInViewRef = useRef(false);
+  const hasEnteredSectionBeforeRef = useRef(false);
   const awaitingActivationRepinFrameRef = useRef<number | null>(null);
   const awaitingActivationRepinStartTimeRef = useRef<number | null>(null);
   const awaitingActivationRepinStartYRef = useRef(0);
@@ -47,6 +51,7 @@ export default function VideoScrollTransition() {
 
   const [videoState, setVideoState] = useState<VideoScrollState>(DEFAULT_VIDEO_SCROLL_INITIAL_STATE);
   const [isMobile, setIsMobile] = useState(false);
+  const [isSectionInView, setIsSectionInView] = useState(false);
   const visualState = getVideoVisualState(videoState);
   const ctaButtonAnimationClassName = visualState.showCtaPromptAnimation
     ? 'video-cta-prompt-button'
@@ -70,6 +75,37 @@ export default function VideoScrollTransition() {
       sectionTop: container.getBoundingClientRect().top + window.scrollY,
       sectionHeight: container.offsetHeight,
     };
+  };
+
+  const syncSectionInView = (scrollY = window.scrollY) => {
+    const metrics = getSectionMetrics();
+    const wasSectionInView = sectionInViewRef.current;
+    const nextValue = metrics
+      ? isScrollWithinVideoSection(scrollY, metrics.sectionTop, metrics.sectionHeight)
+      : false;
+
+    if (
+      shouldRestartLoopPlaybackOnSectionEnter({
+        state: stateRef.current,
+        wasSectionInView,
+        isSectionInView: nextValue,
+        hasEnteredSectionBefore: hasEnteredSectionBeforeRef.current,
+      })
+    ) {
+      const loopVideo = loopVideoRef.current;
+      if (loopVideo) {
+        loopVideo.pause();
+        loopVideo.currentTime = 0;
+      }
+      hasEnteredSectionBeforeRef.current = true;
+    }
+
+    if (wasSectionInView !== nextValue) {
+      sectionInViewRef.current = nextValue;
+      setIsSectionInView(nextValue);
+    }
+
+    return nextValue;
   };
 
   const getNavigationType = (): VideoNavigationType => {
@@ -165,7 +201,14 @@ export default function VideoScrollTransition() {
 
     loopVideo.pause();
     loopVideo.currentTime = 0;
-    ensureLoopVideoPlaying();
+    if (
+      shouldPlayLoopVideoInSection({
+        state: DEFAULT_VIDEO_SCROLL_INITIAL_STATE,
+        isSectionInView: sectionInViewRef.current,
+      })
+    ) {
+      ensureLoopVideoPlaying();
+    }
   };
 
   const pinSectionTop = () => {
@@ -373,6 +416,7 @@ export default function VideoScrollTransition() {
     previousScrollYRef.current = window.scrollY;
     resetToInitialState(false);
     resetVideoSectionIfNeeded();
+    syncSectionInView();
   }, []);
 
   useEffect(() => {
@@ -388,7 +432,12 @@ export default function VideoScrollTransition() {
   }, []);
 
   useEffect(() => {
-    if (visualState.shouldPlayLoopVideo) {
+    if (
+      shouldPlayLoopVideoInSection({
+        state: videoState,
+        isSectionInView,
+      })
+    ) {
       ensureLoopVideoPlaying();
     } else {
       loopVideoRef.current?.pause();
@@ -409,12 +458,14 @@ export default function VideoScrollTransition() {
       pushVideoRef.current?.pause();
       queuePushVideoTime(1);
     }
-  }, [videoState.phase, videoState.scrubProgress, visualState.shouldPlayLoopVideo]);
+  }, [isSectionInView, videoState, visualState.shouldPlayLoopVideo]);
 
   useEffect(() => {
     const handleScroll = () => {
       const scrollY = window.scrollY;
       const metrics = getSectionMetrics();
+
+      syncSectionInView(scrollY);
 
       if (
         metrics &&
@@ -570,6 +621,7 @@ export default function VideoScrollTransition() {
 
     const frame = requestAnimationFrame(() => {
       const didReset = resetVideoSectionIfNeeded();
+      syncSectionInView();
       if (!didReset) {
         syncReloadMarker();
       }
@@ -633,12 +685,31 @@ export default function VideoScrollTransition() {
   }, [isMobile, videoState.phase]);
 
   const handleLoopLoadedData = () => {
-    if (stateRef.current.phase === 'loopPlaying') {
+    if (
+      shouldPlayLoopVideoInSection({
+        state: stateRef.current,
+        isSectionInView: sectionInViewRef.current,
+      })
+    ) {
       ensureLoopVideoPlaying();
     }
   };
 
   const handleLoopEnded = () => {
+    if (
+      !shouldPlayLoopVideoInSection({
+        state: stateRef.current,
+        isSectionInView: sectionInViewRef.current,
+      })
+    ) {
+      const loopVideo = loopVideoRef.current;
+      if (loopVideo && stateRef.current.phase === 'loopPlaying') {
+        loopVideo.pause();
+        loopVideo.currentTime = 0;
+      }
+      return;
+    }
+
     showActivationPrompt();
   };
 
@@ -682,7 +753,6 @@ export default function VideoScrollTransition() {
         className="absolute inset-0 h-full w-full object-cover transition-opacity duration-500"
         style={{ opacity: visualState.loopOpacity }}
         muted
-        autoPlay
         playsInline
         preload="auto"
         onLoadedData={handleLoopLoadedData}

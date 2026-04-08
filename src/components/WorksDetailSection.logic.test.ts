@@ -2,8 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  closeWorksDetailView,
   getWorksDetailActivationState,
+  getWorksDetailBackNavigationState,
   getWorksDetailCompletionState,
+  isWorksDetailContentInteractive,
+  openWorksDetailView,
   getWorksDetailPinnedScrollY,
   getWorksDetailVisualState,
   getWorksDetailWheelBufferState,
@@ -22,6 +26,23 @@ test('activating the works detail transition enters loading and advances the ifr
     nextPhase: 'loading',
     nextCycleKey: 4,
     nextTransitionProgress: 0,
+  });
+});
+
+test('opening and closing the works detail subview switches between entry and detail', () => {
+  assert.equal(openWorksDetailView('entry'), 'detail');
+  assert.equal(closeWorksDetailView('detail'), 'entry');
+});
+
+test('back navigation exits detail to entry before leaving the works detail experience', () => {
+  assert.deepEqual(getWorksDetailBackNavigationState('detail'), {
+    nextView: 'entry',
+    shouldExitToLobby: false,
+  });
+
+  assert.deepEqual(getWorksDetailBackNavigationState('entry'), {
+    nextView: 'entry',
+    shouldExitToLobby: true,
   });
 });
 
@@ -62,6 +83,12 @@ test('loading phase locks scroll while the viewport is inside the works detail s
     }),
     true,
   );
+});
+
+test('late reveal state is already interactive once the entry content is fully visible', () => {
+  assert.equal(isWorksDetailContentInteractive('revealing', 0.8), true);
+  assert.equal(isWorksDetailContentInteractive('revealing', 0.4), false);
+  assert.equal(isWorksDetailContentInteractive('settled', 1), true);
 });
 
 test('visual state keeps the background fixed and pushes the loading layer upward', () => {

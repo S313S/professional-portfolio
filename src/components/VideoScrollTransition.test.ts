@@ -13,7 +13,9 @@ import {
   getVideoStateAfterActivation,
   getVideoStateAfterMobilePlaybackEnd,
   getVideoStateAfterPrompt,
+  shouldRestartLoopPlaybackOnSectionEnter,
   shouldPinVideoSectionOnPrompt,
+  shouldPlayLoopVideoInSection,
   getVideoVisualState,
   getVideoWheelState,
   shouldRepinAwaitingActivationOnScroll,
@@ -29,6 +31,72 @@ test('starts in loopPlaying with only the curtain video visible', () => {
   assert.equal(state.loopOpacity, 1);
   assert.equal(state.showCta, false);
   assert.equal(state.shouldPlayLoopVideo, true);
+});
+
+test('does not allow the curtain loop to autoplay before the section is in view', () => {
+  assert.equal(
+    shouldPlayLoopVideoInSection({
+      state: DEFAULT_VIDEO_SCROLL_INITIAL_STATE,
+      isSectionInView: false,
+    }),
+    false,
+  );
+});
+
+test('allows the curtain loop only while loopPlaying and in view', () => {
+  assert.equal(
+    shouldPlayLoopVideoInSection({
+      state: DEFAULT_VIDEO_SCROLL_INITIAL_STATE,
+      isSectionInView: true,
+    }),
+    true,
+  );
+  assert.equal(
+    shouldPlayLoopVideoInSection({
+      state: {
+        phase: 'awaitingActivation',
+        scrubProgress: 0,
+      },
+      isSectionInView: true,
+    }),
+    false,
+  );
+});
+
+test('restarts the curtain loop when the section becomes visible for the first time', () => {
+  assert.equal(
+    shouldRestartLoopPlaybackOnSectionEnter({
+      state: DEFAULT_VIDEO_SCROLL_INITIAL_STATE,
+      wasSectionInView: false,
+      isSectionInView: true,
+      hasEnteredSectionBefore: false,
+    }),
+    true,
+  );
+});
+
+test('does not restart the curtain loop after the first visible entry', () => {
+  assert.equal(
+    shouldRestartLoopPlaybackOnSectionEnter({
+      state: DEFAULT_VIDEO_SCROLL_INITIAL_STATE,
+      wasSectionInView: false,
+      isSectionInView: true,
+      hasEnteredSectionBefore: true,
+    }),
+    false,
+  );
+  assert.equal(
+    shouldRestartLoopPlaybackOnSectionEnter({
+      state: {
+        phase: 'awaitingActivation',
+        scrubProgress: 0,
+      },
+      wasSectionInView: false,
+      isSectionInView: true,
+      hasEnteredSectionBefore: false,
+    }),
+    false,
+  );
 });
 
 test('shows the CTA when the curtain video finishes naturally', () => {

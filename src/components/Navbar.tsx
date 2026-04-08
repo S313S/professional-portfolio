@@ -1,47 +1,68 @@
-import { useState, useEffect } from 'react';
-import { motion, useScroll, useMotionValueEvent } from 'motion/react';
+import { useEffect, useRef, useState } from 'react';
+import { motion } from 'motion/react';
 import { Menu, X } from 'lucide-react';
 
-import { shouldHideNavbarForWorksLobby } from './Navbar.logic';
+import { shouldHideNavbar } from './Navbar.logic';
+
+const IMMERSIVE_SECTION_IDS = ['career-journey-section', 'works-lobby-section'] as const;
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
-  const [hidden, setHidden] = useState(false);
-  const [worksLobbyActive, setWorksLobbyActive] = useState(false);
-  const { scrollY } = useScroll();
-
-  useMotionValueEvent(scrollY, "change", (latest) => {
-    const previous = scrollY.getPrevious() ?? 0;
-    if (latest > previous && latest > 150 && !isOpen) {
-      setHidden(true);
-    } else {
-      setHidden(false);
-    }
-  });
+  const [shouldHide, setShouldHide] = useState(false);
+  const previousScrollYRef = useRef(0);
 
   useEffect(() => {
-    const syncWorksLobbyVisibility = () => {
-      const worksLobbySection = document.getElementById('works-lobby-section');
-      if (!worksLobbySection) {
-        setWorksLobbyActive(false);
-        return;
-      }
+    const syncNavbarVisibility = () => {
+      const immersiveSectionRects = IMMERSIVE_SECTION_IDS.map((sectionId) =>
+        document.getElementById(sectionId)?.getBoundingClientRect(),
+      ).filter((sectionRect): sectionRect is DOMRect => Boolean(sectionRect));
+      const latestScrollY = window.scrollY;
 
-      const rect = worksLobbySection.getBoundingClientRect();
-      setWorksLobbyActive(
-        shouldHideNavbarForWorksLobby(rect.top, rect.bottom, window.innerHeight),
+      setShouldHide(
+        shouldHideNavbar({
+          latestScrollY,
+          previousScrollY: previousScrollYRef.current,
+          isOpen,
+          immersiveSectionRects,
+          viewportHeight: window.innerHeight,
+        }),
       );
+
+      previousScrollYRef.current = latestScrollY;
     };
 
-    syncWorksLobbyVisibility();
-    window.addEventListener('scroll', syncWorksLobbyVisibility, { passive: true });
-    window.addEventListener('resize', syncWorksLobbyVisibility);
+    let rafId = 0;
+    let secondRafId = 0;
+    let timeoutId = 0;
+
+    const scheduleNavbarSync = () => {
+      syncNavbarVisibility();
+
+      rafId = window.requestAnimationFrame(() => {
+        syncNavbarVisibility();
+        secondRafId = window.requestAnimationFrame(syncNavbarVisibility);
+      });
+
+      timeoutId = window.setTimeout(syncNavbarVisibility, 160);
+    };
+
+    previousScrollYRef.current = window.scrollY;
+    scheduleNavbarSync();
+    window.addEventListener('scroll', syncNavbarVisibility, { passive: true });
+    window.addEventListener('resize', syncNavbarVisibility);
+    window.addEventListener('load', scheduleNavbarSync);
+    window.addEventListener('pageshow', scheduleNavbarSync);
 
     return () => {
-      window.removeEventListener('scroll', syncWorksLobbyVisibility);
-      window.removeEventListener('resize', syncWorksLobbyVisibility);
+      window.cancelAnimationFrame(rafId);
+      window.cancelAnimationFrame(secondRafId);
+      window.clearTimeout(timeoutId);
+      window.removeEventListener('scroll', syncNavbarVisibility);
+      window.removeEventListener('resize', syncNavbarVisibility);
+      window.removeEventListener('load', scheduleNavbarSync);
+      window.removeEventListener('pageshow', scheduleNavbarSync);
     };
-  }, []);
+  }, [isOpen]);
 
   const navLinks = [
     { name: "About", href: "#home" },
@@ -57,7 +78,7 @@ export default function Navbar() {
         visible: { y: 0 },
         hidden: { y: "-100%" },
       }}
-      animate={hidden || worksLobbyActive ? "hidden" : "visible"}
+      animate={shouldHide ? "hidden" : "visible"}
       transition={{ duration: 0.35, ease: "easeInOut" }}
       className="fixed w-full top-0 z-50 bg-white/80 backdrop-blur-md border-b border-zinc-100"
     >

@@ -31,6 +31,43 @@ test('renders the works detail transition stage with loading iframe and hidden b
   assert.doesNotMatch(markup, /radial-gradient\(circle_at_center/);
 });
 
+test('renders the in-page detail view with a close button when the left entry has been opened', () => {
+  const markup = renderToStaticMarkup(
+    <WorksDetailSection initialPhase="settled" initialView="detail" initialTransitionProgress={1} />,
+  );
+
+  assert.match(markup, /data-works-detail-view="detail"/);
+  assert.match(markup, /aria-label="Close work detail"/);
+  assert.match(markup, /works-detail-stage/);
+  assert.match(
+    markup,
+    /data-works-detail-layer="content" class="absolute inset-0 flex items-center justify-center"/,
+  );
+  assert.doesNotMatch(
+    markup,
+    /data-works-detail-layer="content" class="absolute inset-0 flex items-center justify-center px-4 sm:px-8"/,
+  );
+  assert.doesNotMatch(markup, /data-works-detail-nav="rail"/);
+});
+
+test('keeps the left entry button clickable once the reveal is visually complete', () => {
+  const markup = renderToStaticMarkup(
+    <WorksDetailSection initialPhase="revealing" initialTransitionProgress={0.8} />,
+  );
+
+  assert.match(markup, /pointer-events:auto/);
+  assert.match(markup, /aria-label="Open On Track collection" tabindex="0"/);
+});
+
+test('transparent loading fallback does not keep intercepting clicks after the transition settles', () => {
+  const markup = renderToStaticMarkup(
+    <WorksDetailSection initialPhase="settled" initialTransitionProgress={1} />,
+  );
+
+  assert.match(markup, /data-works-detail-layer="loading"/);
+  assert.match(markup, /opacity:0;pointer-events:none/);
+});
+
 test('keeps the current text blocks edge-aligned with equalized description heights', () => {
   const markup = renderToStaticMarkup(<WorksDetailSection />);
   const minHeightMatches = markup.match(/min-h-\[3\.8rem\]/g) ?? [];

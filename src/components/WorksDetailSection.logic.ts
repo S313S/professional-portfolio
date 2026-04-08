@@ -3,8 +3,10 @@ export const WORKS_DETAIL_REVEAL_IMAGE_SRC = '/images/workDetail_bg.jpeg';
 export const WORKS_DETAIL_TRANSITION_START_EVENT = 'works-detail-transition:start';
 export const WORKS_DETAIL_RETURN_TO_LOBBY_EVENT = 'works-detail:return-to-lobby';
 export const WORKS_DETAIL_LOADING_FALLBACK_MS = 10350;
+export const WORKS_DETAIL_INTERACTIVE_REVEAL_PROGRESS = 1 / 1.35;
 
 export type WorksDetailPhase = 'idle' | 'loading' | 'revealing' | 'settled';
+export type WorksDetailView = 'entry' | 'detail';
 
 export interface WorksDetailActivationState {
   nextPhase: WorksDetailPhase;
@@ -32,6 +34,11 @@ export interface WorksDetailVisualState {
   loadingPointerEvents: 'auto' | 'none';
   showIframe: boolean;
   shouldLockScroll: boolean;
+}
+
+export interface WorksDetailBackNavigationState {
+  nextView: WorksDetailView;
+  shouldExitToLobby: boolean;
 }
 
 export interface WorksDetailWheelInput {
@@ -62,6 +69,30 @@ export interface WorksDetailWheelState {
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
+export function openWorksDetailView(_currentView: WorksDetailView): WorksDetailView {
+  return 'detail';
+}
+
+export function closeWorksDetailView(_currentView: WorksDetailView): WorksDetailView {
+  return 'entry';
+}
+
+export function getWorksDetailBackNavigationState(
+  currentView: WorksDetailView,
+): WorksDetailBackNavigationState {
+  if (currentView === 'detail') {
+    return {
+      nextView: 'entry',
+      shouldExitToLobby: false,
+    };
+  }
+
+  return {
+    nextView: 'entry',
+    shouldExitToLobby: true,
+  };
+}
+
 export function getWorksDetailActivationState(previousCycleKey = 0): WorksDetailActivationState {
   return {
     nextPhase: 'loading',
@@ -79,6 +110,21 @@ export function getWorksDetailCompletionState(): WorksDetailCompletionState {
 
 export function getWorksDetailPinnedScrollY(sectionTop: number) {
   return Math.max(Math.round(sectionTop), 0);
+}
+
+export function isWorksDetailContentInteractive(
+  phase: WorksDetailPhase,
+  transitionProgress: number,
+) {
+  if (phase === 'settled') {
+    return true;
+  }
+
+  if (phase !== 'revealing') {
+    return false;
+  }
+
+  return clamp(transitionProgress, 0, 1) >= WORKS_DETAIL_INTERACTIVE_REVEAL_PROGRESS;
 }
 
 export function getWorksDetailWheelBufferState({

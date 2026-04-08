@@ -143,6 +143,18 @@ export interface VideoWheelState {
   shouldPreventScroll: boolean;
 }
 
+export interface LoopPlaybackInput {
+  state: VideoScrollState;
+  isSectionInView: boolean;
+}
+
+export interface LoopPlaybackRestartInput {
+  state: VideoScrollState;
+  wasSectionInView: boolean;
+  isSectionInView: boolean;
+  hasEnteredSectionBefore: boolean;
+}
+
 export interface CompletedScrollResetInput {
   state: VideoScrollState;
   previousScrollY: number;
@@ -272,6 +284,27 @@ export function getVideoWheelState({ state, deltaY, step }: VideoWheelInput): Vi
     },
     shouldPreventScroll: true,
   };
+}
+
+export function shouldPlayLoopVideoInSection({
+  state,
+  isSectionInView,
+}: LoopPlaybackInput): boolean {
+  return state.phase === 'loopPlaying' && isSectionInView;
+}
+
+export function shouldRestartLoopPlaybackOnSectionEnter({
+  state,
+  wasSectionInView,
+  isSectionInView,
+  hasEnteredSectionBefore,
+}: LoopPlaybackRestartInput): boolean {
+  return (
+    state.phase === 'loopPlaying' &&
+    !wasSectionInView &&
+    isSectionInView &&
+    !hasEnteredSectionBefore
+  );
 }
 
 export function getVideoVisualState(state: VideoScrollState): VideoVisualState {

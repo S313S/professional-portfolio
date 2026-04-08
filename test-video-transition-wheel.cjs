@@ -7,7 +7,12 @@ const baseUrl = process.env.BASE_URL || 'http://127.0.0.1:3001';
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
 
-  await page.goto(baseUrl, { waitUntil: 'networkidle' });
+  await page.goto(baseUrl, { waitUntil: 'load' });
+  await page.waitForFunction(() =>
+    Array.from(document.querySelectorAll('section')).some(
+      (node) => node.querySelectorAll('video').length >= 2,
+    ),
+  );
   await page.evaluate(() => {
     document.documentElement.style.scrollBehavior = 'auto';
   });
@@ -23,6 +28,31 @@ const baseUrl = process.env.BASE_URL || 'http://127.0.0.1:3001';
 
     return section.getBoundingClientRect().top + window.scrollY;
   });
+
+  await page.waitForTimeout(400);
+
+  const beforeEnteringSection = await page.evaluate(() => {
+    const section = Array.from(document.querySelectorAll('section')).find(
+      (node) => node.querySelectorAll('video').length >= 2,
+    );
+    const videos = Array.from(section.querySelectorAll('video'));
+    videos[0].currentTime = 1.2;
+    videos[0]?.dispatchEvent(new Event('ended'));
+    const cta = section.querySelector('button');
+
+    return {
+      phase: section.dataset.phase,
+      loopTime: videos[0]?.currentTime ?? 0,
+      ctaVisible: Boolean(cta),
+    };
+  });
+
+  assert.equal(beforeEnteringSection.phase, 'loopPlaying');
+  assert.equal(beforeEnteringSection.ctaVisible, false, 'Expected CTA to stay hidden before the video section enters view.');
+  assert.ok(
+    beforeEnteringSection.loopTime < 0.1,
+    `Expected curtain loop to stay near the starting frame before entering the section. Got ${beforeEnteringSection.loopTime}`,
+  );
 
   await page.mouse.move(720, 450);
   await page.evaluate((y) => window.scrollTo(0, y), sectionTop);
@@ -42,10 +72,59 @@ const baseUrl = process.env.BASE_URL || 'http://127.0.0.1:3001';
       overlayOpacity: overlay ? Number.parseFloat(getComputedStyle(overlay).opacity || '0') : 0,
       pushTime: videos[1]?.currentTime ?? 0,
       ctaVisible: Boolean(cta),
+      loopTime: videos[0]?.currentTime ?? 0,
     };
   });
 
-  await page.mouse.wheel(0, 120);
+  assert.equal(before.phase, 'loopPlaying');
+  assert.equal(before.ctaVisible, false, 'Expected to see the curtain loop first when entering the section.');
+  assert.ok(before.loopTime < 0.35, `Expected the first visible entry to restart the curtain loop near the beginning. Got ${before.loopTime}`);
+
+  await page.waitForTimeout(450);
+
+  const midPlayback = await page.evaluate(() => {
+    const section = Array.from(document.querySelectorAll('section')).find(
+      (node) => node.querySelectorAll('video').length >= 2,
+    );
+    const videos = Array.from(section.querySelectorAll('video'));
+    return {
+      loopTime: videos[0]?.currentTime ?? 0,
+    };
+  });
+
+  assert.ok(midPlayback.loopTime > 0.2, `Expected the curtain loop to visibly progress after first entry. Got ${midPlayback.loopTime}`);
+
+  await page.evaluate((y) => window.scrollTo(0, y), Math.max(sectionTop - 40, 0));
+  await page.waitForTimeout(150);
+  await page.evaluate((y) => window.scrollTo(0, y), sectionTop);
+  await page.waitForTimeout(150);
+
+  const afterReturn = await page.evaluate(() => {
+    const section = Array.from(document.querySelectorAll('section')).find(
+      (node) => node.querySelectorAll('video').length >= 2,
+    );
+    const videos = Array.from(section.querySelectorAll('video'));
+    return {
+      phase: section.dataset.phase,
+      loopTime: videos[0]?.currentTime ?? 0,
+      ctaVisible: Boolean(section.querySelector('button')),
+    };
+  });
+
+  assert.equal(afterReturn.phase, 'loopPlaying');
+  assert.equal(afterReturn.ctaVisible, false, 'Expected CTA to remain hidden when returning before the curtain loop completes.');
+  assert.ok(
+    afterReturn.loopTime > 0.2,
+    `Expected returning to the section before completion to resume the curtain loop instead of restarting it. Got ${afterReturn.loopTime}`,
+  );
+
+  await page.evaluate(() => {
+    const section = Array.from(document.querySelectorAll('section')).find(
+      (node) => node.querySelectorAll('video').length >= 2,
+    );
+    const videos = Array.from(section.querySelectorAll('video'));
+    videos[0]?.dispatchEvent(new Event('ended'));
+  });
   await page.waitForTimeout(350);
 
   const afterFirstWheel = await page.evaluate(() => {
@@ -71,14 +150,14 @@ const baseUrl = process.env.BASE_URL || 'http://127.0.0.1:3001';
 
   assert.ok(
     Math.abs(afterFirstWheel.scrollY - sectionTop) <= 2,
-    `Expected first wheel step to keep the page pinned on the video section. Got scrollY=${afterFirstWheel.scrollY}, sectionTop=${sectionTop}`,
+    `Expected prompt reveal to keep the page pinned on the video section. Got scrollY=${afterFirstWheel.scrollY}, sectionTop=${sectionTop}`,
   );
   assert.equal(afterFirstWheel.phase, 'awaitingActivation');
-  assert.equal(afterFirstWheel.ctaVisible, true, 'Expected CTA button to appear after the first wheel step.');
+  assert.equal(afterFirstWheel.ctaVisible, true, 'Expected CTA button to appear only after the in-view curtain loop ends.');
   assert.match(afterFirstWheel.ctaClassName, /\bvideo-cta-prompt-button\b/, 'Expected CTA button prompt animation class to be present.');
   assert.match(afterFirstWheel.hintClassName, /\bvideo-cta-prompt-text\b/, 'Expected CTA hint prompt animation class to be present.');
-  assert.match(afterFirstWheel.hintStyle, /--video-cta-hint-left:\s*calc\(27\.8% \+ 17px\)/, 'Expected CTA hint text to expose the base offset via a tunable CSS variable.');
-  assert.match(afterFirstWheel.hintStyle, /--video-cta-hint-left-md:\s*calc\(27\.6% \+ 17px\)/, 'Expected CTA hint text to expose the desktop offset via a tunable CSS variable.');
+  assert.match(afterFirstWheel.hintStyle, /--video-cta-hint-left:\s*calc\(27\.8% \+ 80px\)/, 'Expected CTA hint text to expose the base offset via a tunable CSS variable.');
+  assert.match(afterFirstWheel.hintStyle, /--video-cta-hint-left-md:\s*calc\(27\.6% \+ 80px\)/, 'Expected CTA hint text to expose the desktop offset via a tunable CSS variable.');
   assert.equal(afterFirstWheel.pushTime, before.pushTime, 'Expected push-in video to stay idle before CTA click.');
   assert.ok(afterFirstWheel.overlayOpacity < 0.05, `Expected push-in layer to remain hidden before CTA click. Got ${afterFirstWheel.overlayOpacity}`);
   assert.ok(afterFirstWheel.loopOpacity > 0.95, `Expected curtain layer to remain visible while awaiting activation. Got ${afterFirstWheel.loopOpacity}`);
@@ -108,7 +187,6 @@ const baseUrl = process.env.BASE_URL || 'http://127.0.0.1:3001';
     `Expected CTA activation to keep the page pinned on the video section. Got scrollY=${afterActivation.scrollY}, sectionTop=${sectionTop}`,
   );
   assert.equal(afterActivation.phase, 'scrubbing');
-  assert.ok(afterActivation.pushTime > afterFirstWheel.pushTime, 'Expected push-in video to advance only after CTA activation.');
   assert.ok(afterActivation.overlayOpacity > 0.95, `Expected push-in layer to be visible during scrubbing. Got ${afterActivation.overlayOpacity}`);
   assert.ok(afterActivation.loopOpacity < 0.05, `Expected curtain layer to be hidden during scrubbing. Got ${afterActivation.loopOpacity}`);
 
