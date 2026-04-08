@@ -20,6 +20,8 @@ const TOUCH_STEP_TOLERANCE_PX = 4;
 const WORKS_DETAIL_REVEAL_STEP = 0.18;
 const WORKS_DETAIL_WHEEL_THRESHOLD_PX = 30;
 const WORKS_DETAIL_WHEEL_UNIT_DELTA = 120;
+const WORKS_DETAIL_LEFT_BUTTON_SRC = '/images/workDetail_left_icon.png.png';
+const WORKS_DETAIL_RIGHT_BUTTON_SRC = '/images/workDetail_rigtht_icon.png';
 
 export default function WorksDetailSection() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -66,6 +68,9 @@ export default function WorksDetailSection() {
     () => getWorksDetailVisualState(phase, transitionProgress),
     [phase, transitionProgress],
   );
+  const contentOpacity =
+    phase === 'settled' ? 1 : phase === 'revealing' ? Math.min(transitionProgress * 1.35, 1) : 0;
+  const isContentInteractive = phase === 'settled';
 
   const exitToLobby = () => {
     clearLoadingTimeout();
@@ -323,6 +328,71 @@ export default function WorksDetailSection() {
             transform: `scale(${visualState.backgroundScale})`,
           }}
         />
+
+        <div
+          data-works-detail-layer="content"
+          className="absolute inset-0 flex items-center justify-center px-4 sm:px-8"
+          style={{
+            opacity: contentOpacity,
+            pointerEvents: isContentInteractive ? 'auto' : 'none',
+          }}
+        >
+          <div className="grid w-full max-w-[44rem] grid-cols-2 gap-6 pt-[12vh] text-[#2f2a1f] sm:max-w-[48rem] sm:gap-10 md:max-w-[52rem] md:gap-12">
+            <div className="flex flex-col items-end translate-y-[6px]">
+              <div className="text-right leading-[0.86] text-[#2f2a1f]">
+                <p className="font-serif text-[3.2rem] font-semibold tracking-[-0.06em] sm:text-[4rem] md:text-[5rem]">
+                  ON
+                </p>
+                <p className="text-[2.9rem] font-black uppercase tracking-[-0.08em] sm:text-[3.7rem] md:text-[4.7rem]">
+                  TRACK
+                </p>
+              </div>
+              <p className="mt-4 min-h-[3.8rem] max-w-[13rem] text-right text-[0.74rem] font-semibold leading-tight text-[#3e382b] sm:mt-5 sm:max-w-[14.5rem] sm:text-[0.88rem] md:mt-6 md:max-w-[15.5rem] md:text-[0.98rem]">
+                Most recent results, career stats and photos from trackside.
+              </p>
+              <button
+                type="button"
+                aria-label="Open On Track collection"
+                tabIndex={isContentInteractive ? 0 : -1}
+                className="mt-5 rounded-[0.8rem] transition duration-200 ease-out hover:scale-105 hover:drop-shadow-[0_8px_18px_rgba(117,126,23,0.28)] focus-visible:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8d9a26]/45 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent sm:mt-6"
+              >
+                <img
+                  src={WORKS_DETAIL_LEFT_BUTTON_SRC}
+                  alt=""
+                  aria-hidden="true"
+                  className="h-[3.2rem] w-[3.2rem] object-contain sm:h-[3.8rem] sm:w-[3.8rem] md:h-[4rem] md:w-[4rem]"
+                />
+              </button>
+            </div>
+
+            <div className="flex flex-col items-start translate-y-[6px]">
+              <div className="text-left leading-[0.86] text-[#2f2a1f]">
+                <p className="font-serif text-[3.2rem] font-semibold tracking-[-0.06em] sm:text-[4rem] md:text-[5rem]">
+                  OFF
+                </p>
+                <p className="text-[2.9rem] font-black uppercase tracking-[-0.08em] sm:text-[3.7rem] md:text-[4.7rem]">
+                  TRACK
+                </p>
+              </div>
+              <p className="mt-4 min-h-[3.8rem] max-w-[13rem] text-left text-[0.74rem] font-semibold leading-tight text-[#3e382b] sm:mt-5 sm:max-w-[14.5rem] sm:text-[0.88rem] md:mt-6 md:max-w-[15.5rem] md:text-[0.98rem]">
+                Campaigns, shoots and other such promotional materials for fans
+              </p>
+              <button
+                type="button"
+                aria-label="Open Off Track collection"
+                tabIndex={isContentInteractive ? 0 : -1}
+                className="mt-5 rounded-[0.8rem] transition duration-200 ease-out hover:scale-105 hover:drop-shadow-[0_8px_18px_rgba(117,126,23,0.28)] focus-visible:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8d9a26]/45 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent sm:mt-6"
+              >
+                <img
+                  src={WORKS_DETAIL_RIGHT_BUTTON_SRC}
+                  alt=""
+                  aria-hidden="true"
+                  className="h-[3.2rem] w-[3.2rem] object-contain sm:h-[3.8rem] sm:w-[3.8rem] md:h-[4rem] md:w-[4rem]"
+                />
+              </button>
+            </div>
+          </div>
+        </div>
 
         {visualState.showIframe ? (
           <div
