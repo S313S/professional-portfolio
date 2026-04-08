@@ -39,6 +39,22 @@ test('renders the in-page detail view with a close button when the left entry ha
   assert.match(markup, /data-works-detail-view="detail"/);
   assert.match(markup, /aria-label="Close work detail"/);
   assert.match(markup, /works-detail-stage/);
+  assert.doesNotMatch(markup, /works-detail-stage__close-dock/);
+  assert.match(markup, /works-detail-stage__footer-center/);
+  assert.match(markup, /data-project-state="muted">/);
+  assert.match(markup, /data-project-state="active">/);
+  assert.match(markup, /data-visibility="preview"/);
+  assert.match(markup, /data-visibility="active"/);
+  assert.match(markup, />04</);
+  assert.match(markup, />05</);
+  assert.match(markup, />06</);
+  assert.match(markup, />07</);
+  assert.match(markup, />08</);
+  assert.match(markup, /data-active="true"/);
+  assert.match(markup, />KINDY</);
+  assert.match(markup, />SANOFI</);
+  assert.match(markup, />WHAT&#x27;S HOT</);
+  assert.match(markup, />blacknegative</);
   assert.match(
     markup,
     /data-works-detail-layer="content" class="absolute inset-0 flex items-center justify-center"/,

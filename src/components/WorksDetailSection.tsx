@@ -28,13 +28,36 @@ const WORKS_DETAIL_WHEEL_UNIT_DELTA = 120;
 const WORKS_DETAIL_LEFT_BUTTON_SRC = '/images/workDetail_left_icon.png.png';
 const WORKS_DETAIL_RIGHT_BUTTON_SRC = '/images/workDetail_rigtht_icon.png';
 const WORKS_DETAIL_STAGE_BACKGROUND_SRC = '';
+const WORKS_DETAIL_ACTIVE_ITEM_LABEL = '07';
+const WORKS_DETAIL_ACTIVE_PAGER_INDEX = 6;
 const WORKS_DETAIL_STAGE_ITEMS = [
-  '/images/video-transition-poster.png',
-  '/images/video-loop-poster.png',
-  '/images/WorksCollectionRoom_Bg.jpg',
-  '/images/before.png',
-  '/images/after.png',
+  { src: '/images/growPath_01.png', label: '04' },
+  { src: '/images/growPath_02.png', label: '05' },
+  { src: '/images/growPath_03.png', label: '06' },
+  { src: '/images/WorksCollectionRoom_Bg.jpg', label: '07' },
+  { src: '/images/growPath_04.png', label: '08' },
 ] as const;
+const WORKS_DETAIL_STAGE_PROJECTS = [
+  {
+    title: 'KINDY',
+    subtitle: 'The fantastic adventures george the Sock',
+    positionClassName: 'works-detail-stage__project works-detail-stage__project--left',
+    state: 'muted',
+  },
+  {
+    title: 'SANOFI',
+    subtitle: 'Capturing the richness of a major event',
+    positionClassName: 'works-detail-stage__project works-detail-stage__project--center',
+    state: 'active',
+  },
+  {
+    title: "WHAT'S HOT",
+    subtitle: 'Our latest news',
+    positionClassName: 'works-detail-stage__project works-detail-stage__project--right',
+    state: 'muted',
+  },
+] as const;
+const WORKS_DETAIL_STAGE_SOCIALS = ['f', 'l', 't', '▶'] as const;
 
 // 图标按钮手调区：
 // 1. `iconSizeClassName` 控制图标本体大小。
@@ -465,75 +488,63 @@ export default function WorksDetailSection({
                   className="works-detail-stage__close"
                   onClick={handleCloseDetailView}
                 >
-                  <span aria-hidden="true">X</span>
+                  <span aria-hidden="true">Close</span>
                 </button>
               </div>
 
               <div className="works-detail-track" aria-hidden="true">
-                {WORKS_DETAIL_STAGE_ITEMS.map((src, index) => {
-                  const offset = index - 2;
-
+                {WORKS_DETAIL_STAGE_ITEMS.map((item, index) => {
                   return (
                     <div
-                      key={src}
+                      key={item.label}
                       className="works-detail-track__item"
-                      data-offset={offset}
-                      data-active={offset === 0}
-                      style={{ backgroundImage: `url(${src})` }}
+                      data-slot={index}
+                      data-active={item.label === WORKS_DETAIL_ACTIVE_ITEM_LABEL}
+                      data-visibility={item.label === WORKS_DETAIL_ACTIVE_ITEM_LABEL ? 'active' : 'preview'}
+                      style={{ backgroundImage: `url(${item.src})` }}
                     >
                       <div className="works-detail-track__shade" />
-                      <span className="works-detail-track__index">{`0${index + 1}`}</span>
+                      <span className="works-detail-track__index">{item.label}</span>
                     </div>
                   );
                 })}
               </div>
 
-              <div className="works-detail-stage__center">
-                <div className="works-detail-stage__ghost works-detail-stage__ghost--left">
-                  DETAIL
-                  <br />
-                  VIEW
-                </div>
-                <div className="works-detail-stage__ghost works-detail-stage__ghost--right">
-                  INSIDE
-                  <br />
-                  CASE
-                </div>
-
-                <div className="works-detail-stage__copy">
-                  <p className="works-detail-stage__eyebrow">
-                    A quiet page held inside the portfolio
-                  </p>
-                  <div className="works-detail-stage__headline-row">
-                    <p className="works-detail-stage__headline works-detail-stage__headline--left">
-                      ON TRACK
-                    </p>
-                    <p className="works-detail-stage__headline works-detail-stage__headline--right">
-                      CONTACT
-                    </p>
+              <div className="works-detail-stage__projects">
+                {WORKS_DETAIL_STAGE_PROJECTS.map((project) => (
+                  <div
+                    key={project.title}
+                    className={project.positionClassName}
+                    data-project-state={project.state}
+                  >
+                    <p className="works-detail-stage__project-title">{project.title}</p>
+                    <p className="works-detail-stage__project-subtitle">{project.subtitle}</p>
                   </div>
-                  <p className="works-detail-stage__subcopy">
-                    If you can imagine it, you can build it.
-                  </p>
-                  <div className="works-detail-stage__diamond" aria-hidden="true">
-                    <span className="works-detail-stage__diamond-label">
-                      OPEN
-                      <br />
-                      CASE
-                    </span>
-                    <span className="works-detail-stage__diamond-arrow">↓</span>
-                  </div>
-                </div>
+                ))}
               </div>
 
-              <div className="works-detail-stage__footer relative z-10 mt-auto">
-                <p className="works-detail-stage__footer-copy text-[0.72rem] uppercase tracking-[0.24em] text-[#f1d9bb]/55">
-                  Scroll up to return
-                </p>
-                <div className="works-detail-stage__bottom-rail" aria-hidden="true">
-                  <span className="works-detail-stage__rail-line" />
-                  <span className="works-detail-stage__rail-center">MENU</span>
-                  <span className="works-detail-stage__rail-right">CREDITS</span>
+              <div className="relative z-10 mt-auto flex flex-col gap-6">
+                <div className="works-detail-stage__footer" aria-hidden="true">
+                  <div className="works-detail-stage__footer-left">
+                    <span className="works-detail-stage__footer-line" />
+                    <span className="works-detail-stage__brand">blacknegative</span>
+                  </div>
+                  <div className="works-detail-stage__footer-center">
+                    <div className="works-detail-stage__pager">
+                      {Array.from({ length: 12 }, (_, index) => (
+                        <span
+                          key={index}
+                          className={`works-detail-stage__pager-tick ${index === WORKS_DETAIL_ACTIVE_PAGER_INDEX ? 'works-detail-stage__pager-tick--active' : ''}`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <div className="works-detail-stage__footer-right">
+                    <span className="works-detail-stage__socials">
+                      {WORKS_DETAIL_STAGE_SOCIALS.join(' ')}
+                    </span>
+                    <span className="works-detail-stage__credits">CREDITS</span>
+                  </div>
                 </div>
               </div>
             </div>

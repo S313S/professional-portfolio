@@ -82,7 +82,7 @@ export function getWorksDetailBackNavigationState(
 ): WorksDetailBackNavigationState {
   if (currentView === 'detail') {
     return {
-      nextView: 'entry',
+      nextView: 'detail',
       shouldExitToLobby: false,
     };
   }

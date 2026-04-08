@@ -34,9 +34,9 @@ test('opening and closing the works detail subview switches between entry and de
   assert.equal(closeWorksDetailView('detail'), 'entry');
 });
 
-test('back navigation exits detail to entry before leaving the works detail experience', () => {
+test('detail view ignores upward back navigation and entry view remains the only scroll-exit state', () => {
   assert.deepEqual(getWorksDetailBackNavigationState('detail'), {
-    nextView: 'entry',
+    nextView: 'detail',
     shouldExitToLobby: false,
   });
 
@@ -231,6 +231,13 @@ test('upward wheel during reveal or settled exits the workdetail interaction bac
       shouldExitToLobby: true,
     },
   );
+});
+
+test('detail view no longer maps upward scroll to closing the current page', () => {
+  assert.deepEqual(getWorksDetailBackNavigationState('detail'), {
+    nextView: 'detail',
+    shouldExitToLobby: false,
+  });
 });
 
 test('settled stage remains locked on downward scroll so the background can hold future actions', () => {
