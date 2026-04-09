@@ -84,7 +84,10 @@ test('detail markup includes a fullscreen project scene with the active work ima
 
   assert.match(markup, /data-detail-scene-panel="project"/);
   assert.match(markup, /works-detail-project__panel/);
+  assert.match(markup, /works-detail-project__backdrop/);
+  assert.match(markup, /works-detail-project__media/);
   assert.match(markup, /works-detail-project__image/);
+  assert.match(markup, /works-detail-project__meta/);
   assert.match(
     markup,
     new RegExp(personalData.featuredWorks[3]!.eyebrow.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
@@ -196,9 +199,22 @@ test('keeps the works gallery dashed SVG grid and socials styling aligned with t
     /\.works-detail-track__corridor--top,\s*\.works-detail-track__corridor--bottom\s*\{[\s\S]*border-top:\s*1\.5px dashed rgba\(200, 210, 220, 0\.25\);/,
   );
   assert.match(cssSource, /\.works-detail-stage__socials\s*\{[\s\S]*text-transform:\s*none;/);
-  assert.match(cssSource, /\.works-detail-project__panel\s*\{/);
-  assert.match(cssSource, /\.works-detail-project__media\s*\{/);
-  assert.match(cssSource, /\.works-detail-project__meta\s*\{/);
+  assert.match(
+    cssSource,
+    /\.works-detail-project__panel\s*\{[\s\S]*inset:\s*-2rem -2rem -3rem;/,
+  );
+  assert.match(
+    cssSource,
+    /\.works-detail-project__media\s*\{[\s\S]*inset:\s*0;/,
+  );
+  assert.match(
+    cssSource,
+    /\.works-detail-project__image\s*\{[\s\S]*object-fit:\s*cover;/,
+  );
+  assert.match(
+    cssSource,
+    /\.works-detail-project__meta\s*\{[\s\S]*inset:\s*auto 0 0 0;[\s\S]*background:/,
+  );
 });
 
 test('locks the gallery cards, corridor, and background grid to the same 45 degree diagonal system', () => {
