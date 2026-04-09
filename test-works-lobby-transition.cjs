@@ -79,6 +79,7 @@ const baseUrl = process.env.BASE_URL || 'http://127.0.0.1:3000';
     return {
       rectTop: section?.getBoundingClientRect().top ?? null,
       phase: section?.getAttribute('data-works-lobby-phase') ?? '',
+      progress: Number(section?.getAttribute('data-works-lobby-progress') ?? '0'),
       buttonLayerExists: Boolean(section?.querySelector('[data-works-lobby-layer="button"]')),
     };
   });
@@ -90,8 +91,31 @@ const baseUrl = process.env.BASE_URL || 'http://127.0.0.1:3000';
   assert.equal(snapped.buttonLayerExists, true, 'Expected works lobby CTA layer to render.');
   assert.equal(
     snapped.phase,
-    'holding',
-    `Expected CTA click to enter WorksLobbySection in holding state immediately. Got phase=${snapped.phase}`,
+    'revealing',
+    `Expected CTA click to enter WorksLobbySection in its first revealing screen. Got phase=${snapped.phase}`,
+  );
+  assert.equal(snapped.progress, 0);
+
+  await page.mouse.wheel(0, 120);
+  await page.waitForTimeout(250);
+
+  const afterRevealWheel = await page.evaluate(() => {
+    const section = document.getElementById('works-lobby-section');
+    return {
+      rectTop: section?.getBoundingClientRect().top ?? null,
+      phase: section?.getAttribute('data-works-lobby-phase') ?? '',
+      progress: Number(section?.getAttribute('data-works-lobby-progress') ?? '0'),
+    };
+  });
+
+  assert.ok(
+    Math.abs(afterRevealWheel.rectTop ?? 999) <= 2,
+    `Expected WorksLobbySection to remain pinned while revealing after a downward wheel. Got rectTop=${afterRevealWheel.rectTop}`,
+  );
+  assert.equal(afterRevealWheel.phase, 'revealing');
+  assert.ok(
+    afterRevealWheel.progress > 0,
+    `Expected downward wheel to start revealing the next works lobby screen. Got progress=${afterRevealWheel.progress}`,
   );
 
   await browser.close().catch(() => {});

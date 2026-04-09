@@ -142,10 +142,7 @@ export default function WorksLobbySection() {
       clearHintTimer();
       setShouldShowHint(false);
       setHasDismissedHint(false);
-      commitState({
-        phase: 'holding',
-        progress: 1,
-      });
+      commitState(DEFAULT_WORKS_LOBBY_SCROLL_STATE);
       lastScrollYRef.current = targetY;
 
       window.scrollTo({

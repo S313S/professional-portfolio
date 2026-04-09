@@ -165,6 +165,9 @@ test('matches the approved works gallery footer spacing, socials format, and fil
   assert.match(markup, />f \| t \| ▶</);
   assert.match(componentSource, /const WORKS_DETAIL_STAGE_SOCIALS = \['f', 't', '▶'\] as const;/);
   assert.match(componentSource, /from 'gsap'/);
+  assert.match(componentSource, /const WORKS_DETAIL_GALLERY_LAYOUT = \{/);
+  assert.match(componentSource, /'--works-detail-corridor-rail-offset'/);
+  assert.match(componentSource, /'--works-detail-slot-x'/);
 });
 
 test('keeps the works gallery dashed SVG grid and socials styling aligned with the approved css treatment', () => {
@@ -188,6 +191,7 @@ test('keeps the works gallery dashed SVG grid and socials styling aligned with t
 
 test('locks the gallery cards, corridor, and background grid to the same 45 degree diagonal system', () => {
   const cssSource = readFileSync(new URL('../index.css', import.meta.url), 'utf8');
+  const componentSource = readFileSync(new URL('./WorksDetailSection.tsx', import.meta.url), 'utf8');
 
   assert.match(
     cssSource,
@@ -203,22 +207,22 @@ test('locks the gallery cards, corridor, and background grid to the same 45 degr
   );
   assert.match(
     cssSource,
-    /\.works-detail-track__item\[data-slot="0"\]\s*\{[\s\S]*translate3d\(-26\.2rem,\s*21\.5rem,\s*0\)\s*rotate\(45deg\)\s*scale\(0\.9\)/,
+    /\.works-detail-track__corridor--top\s*\{[\s\S]*top:\s*calc\(50% - var\(--works-detail-corridor-rail-offset\)\);/,
   );
   assert.match(
     cssSource,
-    /\.works-detail-track__item\[data-slot="1"\]\s*\{[\s\S]*translate3d\(-15\.2rem,\s*10\.5rem,\s*0\)\s*rotate\(45deg\)\s*scale\(0\.94\)/,
+    /\.works-detail-track__corridor--bottom\s*\{[\s\S]*top:\s*calc\(50% \+ var\(--works-detail-corridor-rail-offset\)\);/,
   );
   assert.match(
     cssSource,
-    /\.works-detail-track__item\[data-slot="2"\]\s*\{[\s\S]*translate3d\(-4\.2rem,\s*0\.5rem,\s*0\)\s*rotate\(45deg\)\s*scale\(0\.98\)/,
+    /\.works-detail-track__item\s*\{[\s\S]*translate3d\(var\(--works-detail-slot-x\), var\(--works-detail-slot-y\), 0\)\s*rotate\(45deg\)\s*scale\(var\(--works-detail-slot-scale\)\)/,
   );
   assert.match(
-    cssSource,
-    /\.works-detail-track__item\[data-slot="3"\]\s*\{[\s\S]*translate3d\(6\.8rem,\s*-10\.5rem,\s*0\)\s*rotate\(45deg\)\s*scale\(1\.04\)/,
+    componentSource,
+    /slots:\s*\[\s*\{[\s\S]*x:\s*'-26\.2rem'[\s\S]*y:\s*'21\.5rem'[\s\S]*scale:\s*0\.9/,
   );
   assert.match(
-    cssSource,
-    /\.works-detail-track__item\[data-slot="4"\]\s*\{[\s\S]*translate3d\(17\.8rem,\s*-21\.5rem,\s*0\)\s*rotate\(45deg\)\s*scale\(0\.94\)/,
+    componentSource,
+    /x:\s*'6\.8rem'[\s\S]*y:\s*'-10\.5rem'[\s\S]*scale:\s*1\.04/,
   );
 });

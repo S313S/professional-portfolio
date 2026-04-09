@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import gsap from 'gsap';
 
 import { personalData } from '../data';
@@ -44,6 +44,69 @@ const WORKS_DETAIL_MANIFESTO_LINES = [
   ['AND', 'PASSION'],
 ] as const;
 const WORKS_DETAIL_HIGHLIGHT_WORDS = new Set(['PRECISION', 'PASSION']);
+type WorksDetailCustomProperties = CSSProperties & Record<`--${string}`, string>;
+
+// 图二位置参数总控区：
+// 1. `stage` 控制背景虚线网格原点偏移。
+// 2. `track` 控制中间两条亮虚线和整条 45° corridor 的位置尺寸。
+// 3. `slots` 按顺序控制 5 张菱形卡片的位置与明暗。
+// 之后只需要改这里，不需要再去 CSS 里找具体选择器。
+const WORKS_DETAIL_GALLERY_LAYOUT = {
+  stage: {
+    '--works-detail-grid-offset-x': '-130px',
+    '--works-detail-grid-offset-y': '-130px',
+  },
+  track: {
+    '--works-detail-track-top': '-12.5%',
+    '--works-detail-track-height': '34rem',
+    '--works-detail-corridor-width': 'min(88rem, 170vw)',
+    '--works-detail-corridor-band-height': '15.5rem',
+    '--works-detail-corridor-rail-offset': '8.75rem',
+  },
+  slots: [
+    {
+      x: '-26.2rem',
+      y: '21.5rem',
+      scale: 0.9,
+      opacity: 0.3,
+      grayscale: 0.62,
+      brightness: 0.42,
+    },
+    {
+      x: '-15.2rem',
+      y: '10.5rem',
+      scale: 0.94,
+      opacity: 0.34,
+      grayscale: 0.54,
+      brightness: 0.48,
+    },
+    {
+      x: '-4.2rem',
+      y: '0.5rem',
+      scale: 0.98,
+      opacity: 0.38,
+      grayscale: 0.52,
+      brightness: 0.44,
+    },
+    {
+      x: '6.8rem',
+      y: '-10.5rem',
+      scale: 1.04,
+      opacity: 0.94,
+      grayscale: 0.08,
+      brightness: 0.92,
+      boxShadow: '0 26px 64px rgba(0, 0, 0, 0.38)',
+    },
+    {
+      x: '17.8rem',
+      y: '-21.5rem',
+      scale: 0.94,
+      opacity: 0.32,
+      grayscale: 0.6,
+      brightness: 0.42,
+    },
+  ],
+} as const;
 
 // 图标按钮手调区：
 // 1. `iconSizeClassName` 控制图标本体大小。
@@ -99,6 +162,36 @@ function getGallerySlots(activeProjectIndex: number) {
       visibility: projectIndex === activeProjectIndex ? 'active' : 'preview',
     };
   });
+}
+
+function getGalleryTrackStyle(): WorksDetailCustomProperties {
+  return WORKS_DETAIL_GALLERY_LAYOUT.track as WorksDetailCustomProperties;
+}
+
+function getGalleryStageStyle(): WorksDetailCustomProperties {
+  return WORKS_DETAIL_GALLERY_LAYOUT.stage as WorksDetailCustomProperties;
+}
+
+function getGallerySlotStyle(slotIndex: number, backgroundImage?: string): WorksDetailCustomProperties {
+  const slotLayout = WORKS_DETAIL_GALLERY_LAYOUT.slots[slotIndex] ?? WORKS_DETAIL_GALLERY_LAYOUT.slots[0];
+  const slotStyle: WorksDetailCustomProperties = {
+    '--works-detail-slot-x': slotLayout.x,
+    '--works-detail-slot-y': slotLayout.y,
+    '--works-detail-slot-scale': String(slotLayout.scale),
+    '--works-detail-slot-opacity': String(slotLayout.opacity),
+    '--works-detail-slot-grayscale': String(slotLayout.grayscale),
+    '--works-detail-slot-brightness': String(slotLayout.brightness),
+  };
+
+  if (slotLayout.boxShadow) {
+    slotStyle['--works-detail-slot-box-shadow'] = slotLayout.boxShadow;
+  }
+
+  if (backgroundImage) {
+    slotStyle.backgroundImage = `url(${backgroundImage})`;
+  }
+
+  return slotStyle;
 }
 
 export default function WorksDetailSection({
@@ -706,6 +799,7 @@ export default function WorksDetailSection({
               data-works-detail-view="detail"
               data-works-detail-scene={detailScene}
               className="works-detail-stage relative flex h-full w-full flex-col overflow-hidden px-5 pt-6 pb-10 text-[#f8ebdb] sm:px-8 sm:pt-8 sm:pb-12"
+              style={getGalleryStageStyle()}
             >
               <div
                 aria-hidden="true"
@@ -735,7 +829,7 @@ export default function WorksDetailSection({
                     </button>
                   </div>
 
-                  <div ref={trackRef} className="works-detail-track">
+                  <div ref={trackRef} className="works-detail-track" style={getGalleryTrackStyle()}>
                     <div className="works-detail-track__corridor works-detail-track__corridor--band" />
                     <div className="works-detail-track__corridor works-detail-track__corridor--top" />
                     <div className="works-detail-track__corridor works-detail-track__corridor--bottom" />
@@ -748,11 +842,7 @@ export default function WorksDetailSection({
                         data-active={slot.isActive}
                         data-empty={slot.project === null}
                         data-visibility={slot.visibility}
-                        style={
-                          slot.project
-                            ? { backgroundImage: `url(${slot.project.image})` }
-                            : undefined
-                        }
+                        style={getGallerySlotStyle(slot.slotIndex, slot.project?.image)}
                         aria-label={
                           slot.project
                             ? `Open ${slot.project.title} project`
