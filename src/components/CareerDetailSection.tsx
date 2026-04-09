@@ -20,6 +20,7 @@ import {
   isCareerDetailSectionActive,
   isCareerDetailSectionPinned,
 } from './CareerDetailSection.logic';
+import { WORKS_LOBBY_ACTIVATE_FROM_CAREER_DETAIL_EVENT } from './WorksLobbySection.logic';
 
 const CAREER_DETAIL_ASSETS = {
   background: '/images/careerDetail_bg.png',
@@ -29,8 +30,6 @@ const CAREER_DETAIL_ASSETS = {
   scrollSelector: '/images/careerDetail_scroll_icon.png',
   pageSwitch: '/images/careerDetail_pageSwitch.png',
 } as const;
-
-const WORKS_LOBBY_SECTION_ID = 'works-lobby-section';
 
 const CAREER_DETAIL_DESKTOP_ASIDE_LAYOUT = {
   left: 'left-[67.48%]',
@@ -978,21 +977,11 @@ export default function CareerDetailSection() {
   }, [selectedCategory.key, selectedEntryState.selectedEntryId, selectedEntries.length]);
 
   const handlePageSwitchClick = () => {
-    const targetSection = document.getElementById(WORKS_LOBBY_SECTION_ID);
-    if (!targetSection) {
-      return;
-    }
-
     hasActivatedPageSwitchRef.current = true;
     wheelDeltaAccumulatorRef.current = 0;
     lastWheelDirectionRef.current = 0;
     setIsPageSwitchHintHovered(false);
-
-    const targetY = targetSection.getBoundingClientRect().top + window.scrollY;
-    window.scrollTo({
-      top: Math.max(Math.round(targetY), 0),
-      behavior: 'auto',
-    });
+    window.dispatchEvent(new Event(WORKS_LOBBY_ACTIVATE_FROM_CAREER_DETAIL_EVENT));
   };
 
   return (

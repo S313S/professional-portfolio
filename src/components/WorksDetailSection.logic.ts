@@ -354,7 +354,7 @@ export function getWorksDetailSceneNavigationState({
     return {
       nextScene: 'gallery',
       nextProjectIndex: 0,
-      shouldCloseDetail: true,
+      shouldCloseDetail: false,
     };
   }
 

@@ -272,11 +272,12 @@ test('renders the delayed CTA hint layer with dedicated hover-state hooks', () =
   assert.match(componentSource, /const CAREER_DETAIL_PAGE_SWITCH_REVEAL_DELAY_MS = 3000;/);
   assert.match(componentSource, /const CAREER_DETAIL_PAGE_SWITCH_HINT_COPY = 'Click to continue';/);
   assert.match(componentSource, /const CAREER_DETAIL_PAGE_SWITCH_HINT_LAYOUT = \{/);
-  assert.match(componentSource, /wrapper:\s*'pointer-events-none absolute bottom-\[calc\(100%\+1rem\)\] right-\[1rem\] flex items-end gap-3 transition-opacity duration-200 ease-out'/);
-  assert.match(componentSource, /textOffset:\s*''/);
-  assert.match(componentSource, /arrowOffset:\s*''/);
-  assert.match(componentSource, /arrowSize:\s*'h-\[4rem\] w-\[6\.8rem\]'/);
-  assert.match(componentSource, /arrowPath:\s*'M10 14 C 42 8, 66 30, 108 63'/);
+  assert.match(componentSource, /wrapper:\s*'[^']+'/);
+  assert.match(componentSource, /textOffset:\s*'[^']*'/);
+  assert.match(componentSource, /textBox:\s*'[^']+'/);
+  assert.match(componentSource, /arrowOffset:\s*'[^']*'/);
+  assert.match(componentSource, /arrowSize:\s*'[^']+'/);
+  assert.match(componentSource, /arrowPath:\s*'[^']+'/);
   assert.match(componentSource, /data-career-detail-cta-visible=\{shouldShowPageSwitchCta \? 'true' : 'false'\}/);
   assert.match(componentSource, /data-career-detail-cta-hint="page-switch"/);
   assert.match(

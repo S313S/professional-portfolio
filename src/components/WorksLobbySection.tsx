@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   DEFAULT_WORKS_LOBBY_SCROLL_STATE,
   DEFAULT_WORKS_LOBBY_WHEEL_STEP,
+  WORKS_LOBBY_ACTIVATE_FROM_CAREER_DETAIL_EVENT,
   getWorksLobbyNavigationTargetY,
   getWorksLobbyPhaseForProgress,
   getWorksLobbyScrollMountState,
@@ -125,6 +126,46 @@ export default function WorksLobbySection() {
     setShouldShowHint(false);
     setHasDismissedHint(true);
   };
+
+  useEffect(() => {
+    const handleActivateFromCareerDetail = () => {
+      const section = sectionRef.current;
+      if (!section) {
+        return;
+      }
+
+      const targetY = getWorksLobbyScrollTargetY(
+        section.getBoundingClientRect().top + window.scrollY,
+      );
+
+      hasSnappedOnCurrentEntryRef.current = true;
+      clearHintTimer();
+      setShouldShowHint(false);
+      setHasDismissedHint(false);
+      commitState({
+        phase: 'holding',
+        progress: 1,
+      });
+      lastScrollYRef.current = targetY;
+
+      window.scrollTo({
+        top: targetY,
+        behavior: 'auto',
+      });
+    };
+
+    window.addEventListener(
+      WORKS_LOBBY_ACTIVATE_FROM_CAREER_DETAIL_EVENT,
+      handleActivateFromCareerDetail,
+    );
+
+    return () => {
+      window.removeEventListener(
+        WORKS_LOBBY_ACTIVATE_FROM_CAREER_DETAIL_EVENT,
+        handleActivateFromCareerDetail,
+      );
+    };
+  }, []);
 
   useEffect(() => {
     const handleRestoreFromWorksDetail = () => {

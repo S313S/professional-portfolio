@@ -333,7 +333,7 @@ test('contact and manifesto scenes follow the approved forward and backward flow
   );
 });
 
-test('backing out from the first gallery project closes detail instead of changing the outer transition logic', () => {
+test('backing out from the first gallery project keeps detail open and holds the first project', () => {
   assert.deepEqual(
     getWorksDetailSceneNavigationState({
       scene: 'gallery',
@@ -344,7 +344,7 @@ test('backing out from the first gallery project closes detail instead of changi
     {
       nextScene: 'gallery',
       nextProjectIndex: 0,
-      shouldCloseDetail: true,
+      shouldCloseDetail: false,
     },
   );
 });

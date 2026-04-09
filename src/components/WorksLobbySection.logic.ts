@@ -1,4 +1,6 @@
 export type WorksLobbyPhase = 'revealing' | 'holding' | 'navigating';
+export const WORKS_LOBBY_ACTIVATE_FROM_CAREER_DETAIL_EVENT =
+  'works-lobby:activate-from-career-detail';
 
 export interface WorksLobbyScrollState {
   phase: WorksLobbyPhase;

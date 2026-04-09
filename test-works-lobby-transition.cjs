@@ -88,7 +88,11 @@ const baseUrl = process.env.BASE_URL || 'http://127.0.0.1:3000';
     `Expected WorksLobbySection to snap flush to the viewport top after CTA click. Got rectTop=${snapped.rectTop}`,
   );
   assert.equal(snapped.buttonLayerExists, true, 'Expected works lobby CTA layer to render.');
-  assert.match(snapped.phase, /revealing|holding/);
+  assert.equal(
+    snapped.phase,
+    'holding',
+    `Expected CTA click to enter WorksLobbySection in holding state immediately. Got phase=${snapped.phase}`,
+  );
 
   await browser.close().catch(() => {});
   process.exit(0);
