@@ -55,6 +55,8 @@ const WORKS_DETAIL_GALLERY_LAYOUT = {
   stage: {
     '--works-detail-grid-offset-x': '-130px',
     '--works-detail-grid-offset-y': '-130px',
+    '--works-detail-projects-offset-x': '2.7rem',
+    '--works-detail-projects-offset-y': '4.9rem',
   },
   track: {
     '--works-detail-track-top': '-9.1%',
@@ -68,32 +70,32 @@ const WORKS_DETAIL_GALLERY_LAYOUT = {
   },
   slots: [
     {
-      x: '-25.2rem',
-      y: '21.5rem',
+      x: '-37.5rem',
+      y: '33.7rem',
       scale: 1.04,
       opacity: 0.3,
       grayscale: 0.62,
       brightness: 0.42,
     },
     {
-      x: '-14.2rem',
-      y: '10.5rem',
+      x: '-26.5rem',
+      y: '22.7rem',
       scale: 1.04,
       opacity: 0.34,
       grayscale: 0.54,
       brightness: 0.48,
     },
     {
-      x: '-4.2rem',
-      y: '0.5rem',
+      x: '-15.5rem',
+      y: '11.7rem',
       scale: 1.04,
       opacity: 0.38,
       grayscale: 0.52,
       brightness: 0.44,
     },
     {
-      x: '6.8rem',
-      y: '-10.5rem',
+      x: '-4.5rem',
+      y: '0.7rem',
       scale: 1.04,
       opacity: 0.94,
       grayscale: 0.08,
@@ -101,8 +103,8 @@ const WORKS_DETAIL_GALLERY_LAYOUT = {
       boxShadow: '0 26px 64px rgba(0, 0, 0, 0.38)',
     },
     {
-      x: '17.8rem',
-      y: '-21.5rem',
+      x: '6.5rem',
+      y: '-10.3rem',
       scale: 1.04,
       opacity: 0.32,
       grayscale: 0.6,
@@ -470,10 +472,9 @@ export default function WorksDetailSection({
     const context = gsap.context(() => {
       if (detailScene === 'gallery') {
         if (trackRef.current) {
-          const diagonalOffset = (activeProjectIndex - WORKS_DETAIL_DEFAULT_ACTIVE_INDEX) * 18;
           gsap.to(trackRef.current, {
-            x: -diagonalOffset,
-            y: diagonalOffset,
+            x: 0,
+            y: 0,
             duration: 0.68,
             ease: 'power3.out',
             overwrite: 'auto',

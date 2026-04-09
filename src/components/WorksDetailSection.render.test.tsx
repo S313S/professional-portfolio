@@ -167,6 +167,8 @@ test('matches the approved works gallery footer spacing, socials format, and fil
   assert.match(componentSource, /const WORKS_DETAIL_STAGE_SOCIALS = \['f', 't', '▶'\] as const;/);
   assert.match(componentSource, /from 'gsap'/);
   assert.match(componentSource, /const WORKS_DETAIL_GALLERY_LAYOUT = \{/);
+  assert.match(componentSource, /'--works-detail-projects-offset-x'/);
+  assert.match(componentSource, /'--works-detail-projects-offset-y'/);
   assert.match(componentSource, /'--works-detail-corridor-center-y'/);
   assert.match(componentSource, /'--works-detail-corridor-rail-offset'/);
   assert.match(componentSource, /'--works-detail-slot-x'/);
@@ -221,18 +223,38 @@ test('locks the gallery cards, corridor, and background grid to the same 45 degr
   );
   assert.match(
     cssSource,
+    /\.works-detail-stage__projects\s*\{[\s\S]*transform:\s*translate3d\(var\(--works-detail-projects-offset-x,\s*[^)]+\),\s*var\(--works-detail-projects-offset-y,\s*[^)]+\),\s*0\);/,
+  );
+  assert.match(
+    cssSource,
     /\.works-detail-track__item\s*\{[\s\S]*translate3d\(var\(--works-detail-slot-x\), var\(--works-detail-slot-y\), 0\)\s*rotate\(45deg\)\s*scale\(var\(--works-detail-slot-scale\)\)/,
   );
   assert.match(
     componentSource,
-    /slots:\s*\[\s*\{[\s\S]*x:\s*'-26\.2rem'[\s\S]*y:\s*'21\.5rem'[\s\S]*scale:\s*1\.04/,
+    /slots:\s*\[\s*\{[\s\S]*x:\s*'-37\.5rem'[\s\S]*y:\s*'33\.7rem'[\s\S]*scale:\s*1\.04/,
   );
   assert.match(
     componentSource,
-    /x:\s*'6\.8rem'[\s\S]*y:\s*'-10\.5rem'[\s\S]*scale:\s*1\.04/,
+    /x:\s*'-26\.5rem'[\s\S]*y:\s*'22\.7rem'[\s\S]*scale:\s*1\.04/,
   );
   assert.match(
     componentSource,
-    /x:\s*'17\.8rem'[\s\S]*y:\s*'-21\.5rem'[\s\S]*scale:\s*1\.04/,
+    /x:\s*'-15\.5rem'[\s\S]*y:\s*'11\.7rem'[\s\S]*scale:\s*1\.04/,
+  );
+  assert.match(
+    componentSource,
+    /x:\s*'-4\.5rem'[\s\S]*y:\s*'0\.7rem'[\s\S]*scale:\s*1\.04/,
+  );
+  assert.match(
+    componentSource,
+    /x:\s*'6\.5rem'[\s\S]*y:\s*'-10\.3rem'[\s\S]*scale:\s*1\.04/,
+  );
+  assert.doesNotMatch(
+    componentSource,
+    /const diagonalOffset = \(activeProjectIndex - WORKS_DETAIL_DEFAULT_ACTIVE_INDEX\) \* 18;/,
+  );
+  assert.doesNotMatch(
+    componentSource,
+    /gsap\.to\(trackRef\.current,\s*\{[\s\S]*x:\s*-diagonalOffset,[\s\S]*y:\s*diagonalOffset,[\s\S]*\}\);/,
   );
 });

@@ -368,8 +368,7 @@
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260' viewBox='0 0 260 260'%3E%3Cline x1='0' y1='260' x2='260' y2='0' stroke='rgba(163%2C174%2C190%2C0.18)' stroke-width='1.5' stroke-dasharray='8,6'/%3E%3Cline x1='0' y1='0' x2='260' y2='260' stroke='rgba(163%2C174%2C190%2C0.18)' stroke-width='1.5' stroke-dasharray='8,6'/%3E%3C/svg%3E");
   background-size: 260px 260px;
   background-position:
-    calc(50% + var(--works-detail-grid-offset-x, -130px))
-    calc(50% + var(--works-detail-grid-offset-y, -130px));
+    calc(50% + var(--works-detail-grid-offset-x, -130px)) calc(50% + var(--works-detail-grid-offset-y, -130px));
   opacity: 0.6;
 }
 
@@ -439,13 +438,10 @@
   background-color: rgba(16, 20, 28, 0.55);
   opacity: var(--works-detail-slot-opacity, 0.32);
   filter:
-    grayscale(var(--works-detail-slot-grayscale, 0.6))
-    brightness(var(--works-detail-slot-brightness, 0.42));
+    grayscale(var(--works-detail-slot-grayscale, 0.6)) brightness(var(--works-detail-slot-brightness, 0.42));
   box-shadow: var(--works-detail-slot-box-shadow, 0 22px 52px rgba(0, 0, 0, 0.18));
   transform:
-    translate3d(var(--works-detail-slot-x), var(--works-detail-slot-y), 0)
-    rotate(45deg)
-    scale(var(--works-detail-slot-scale));
+    translate3d(var(--works-detail-slot-x), var(--works-detail-slot-y), 0) rotate(45deg) scale(var(--works-detail-slot-scale));
   transition:
     opacity 360ms ease,
     filter 360ms ease,
@@ -495,11 +491,12 @@
 
 .works-detail-stage__projects {
   position: absolute;
-  inset: auto 5% 22.5% 5%;
+  inset: auto 4% 25% 8%;
   z-index: 2;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.12fr) minmax(0, 1fr);
   align-items: end;
+  transform: translate3d(var(--works-detail-projects-offset-x, 10.5rem), var(--works-detail-projects-offset-y, -10rem), 0);
 }
 
 .works-detail-stage__project {
@@ -510,7 +507,7 @@
 
 .works-detail-stage__project--left {
   align-items: flex-start;
-  transform: translate3d(-0.3rem, 0.2rem, 0);
+  transform: translate3d(-8.3rem, 0.2rem, 0);
 }
 
 .works-detail-stage__project--center {
@@ -520,7 +517,7 @@
 
 .works-detail-stage__project--right {
   align-items: flex-end;
-  transform: translate3d(0.35rem, 0.2rem, 0);
+  transform: translate3d(4.5rem, 0.2rem, 0);
 }
 
 .works-detail-stage__project-title {
@@ -1062,6 +1059,7 @@
 }
 
 @media (max-width: 767px) {
+
   .works-detail-contact__panel,
   .works-detail-manifesto__panel {
     padding-left: 1.4rem;
