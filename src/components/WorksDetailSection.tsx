@@ -129,12 +129,12 @@ const WORKS_DETAIL_GALLERY_LAYOUT = {
 //    - `-translate-y-[6px]` 表示整体上移 6px
 const WORKS_DETAIL_BUTTON_LAYOUT = {
   left: {
-    buttonOffsetClassName: 'translate-y-[-35px]',
+    buttonOffsetClassName: 'translate-y-[-45px]',
     buttonSpacingClassName: 'mt-5 sm:mt-6',
     iconSizeClassName: 'h-[2.1rem] w-[2.1rem] sm:h-[2.5rem] sm:w-[2.5rem] md:h-[3rem] md:w-[3rem]',
   },
   right: {
-    buttonOffsetClassName: 'translate-y-[-35px]',
+    buttonOffsetClassName: 'translate-y-[-45px]',
     buttonSpacingClassName: 'mt-5 sm:mt-6',
     iconSizeClassName: 'h-[2.1rem] w-[2.1rem] sm:h-[2.5rem] sm:w-[2.5rem] md:h-[3rem] md:w-[3rem]',
   },
@@ -992,7 +992,7 @@ export default function WorksDetailSection({
                   </p>
                 </div>
                 <p className="mt-4 min-h-[3.8rem] max-w-[13rem] text-right text-[0.74rem] font-semibold leading-tight text-[#3e382b] sm:mt-5 sm:max-w-[14.5rem] sm:text-[0.88rem] md:mt-6 md:max-w-[15.5rem] md:text-[0.98rem]">
-                  Workflows, systems and prototypes built to make ideas actually run.
+                  Workflows and prototypes built to make ideas actually run.
                 </p>
                 <div
                   data-works-detail-icon-button="left"
@@ -1018,14 +1018,14 @@ export default function WorksDetailSection({
               <div className="flex flex-col items-start translate-y-[6px]">
                 <div className="text-left leading-[0.86] text-[#2f2a1f]">
                   <p className="font-serif text-[3.2rem] font-semibold tracking-[-0.06em] sm:text-[4rem] md:text-[5rem]">
-                    OFF
+                    ON
                   </p>
                   <p className="text-[2.9rem] font-black uppercase tracking-[-0.08em] sm:text-[3.7rem] md:text-[4.7rem]">
                     DESIGN
                   </p>
                 </div>
                 <p className="mt-4 min-h-[3.8rem] max-w-[13rem] text-left text-[0.74rem] font-semibold leading-tight text-[#3e382b] sm:mt-5 sm:max-w-[14.5rem] sm:text-[0.88rem] md:mt-6 md:max-w-[15.5rem] md:text-[0.98rem]">
-                  Campaigns, shoots and other such promotional materials for fans
+                Fusing concepts in mind with art and bringing them into life
                 </p>
                 <div
                   data-works-detail-icon-button="right"

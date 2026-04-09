@@ -15,11 +15,11 @@ test('renders the works detail transition stage with loading iframe and hidden b
   assert.match(markup, /\/detailWork-loading\.html\?embed=portfolio/);
   assert.match(markup, /\/images\/workDetail_bg\.jpeg/);
   assert.match(markup, />ON</);
-  assert.match(markup, />OFF</);
+  assert.match(markup, />ON</);
   assert.match(markup, />CODING</);
   assert.match(markup, />DESIGN</);
   assert.doesNotMatch(markup, />TRACK</);
-  assert.match(markup, /Workflows, systems and prototypes built to make ideas actually run\./);
+  assert.match(markup, /Workflows and prototypes built to make ideas actually run\./);
   assert.match(markup, /Campaigns, shoots and other such promotional materials for fans/);
   assert.match(markup, /\/images\/workDetail_left_icon\.png\.png/);
   assert.match(markup, /\/images\/workDetail_rigtht_icon\.png/);
