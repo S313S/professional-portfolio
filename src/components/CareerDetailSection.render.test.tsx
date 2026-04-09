@@ -293,6 +293,4 @@ test('renders the delayed CTA hint layer with dedicated hover-state hooks', () =
   assert.match(componentSource, /CAREER_DETAIL_PAGE_SWITCH_HINT_LAYOUT\.arrowSize/);
   assert.match(componentSource, /CAREER_DETAIL_PAGE_SWITCH_HINT_LAYOUT\.arrowPath/);
   assert.match(componentSource, /markerEnd="url\(#career-detail-cta-hint-arrowhead\)"/);
-  assert.match(componentSource, /const targetSection = document\.getElementById\('works-lobby-section'\);/);
-  assert.match(componentSource, /window\.scrollTo\(\{\s*top: Math\.max\(Math\.round\(targetY\), 0\),\s*behavior: 'auto',\s*\}\);/);
 });

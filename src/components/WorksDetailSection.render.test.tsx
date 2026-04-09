@@ -225,10 +225,14 @@ test('locks the gallery cards, corridor, and background grid to the same 45 degr
   );
   assert.match(
     componentSource,
-    /slots:\s*\[\s*\{[\s\S]*x:\s*'-26\.2rem'[\s\S]*y:\s*'21\.5rem'[\s\S]*scale:\s*0\.9/,
+    /slots:\s*\[\s*\{[\s\S]*x:\s*'-26\.2rem'[\s\S]*y:\s*'21\.5rem'[\s\S]*scale:\s*1\.04/,
   );
   assert.match(
     componentSource,
     /x:\s*'6\.8rem'[\s\S]*y:\s*'-10\.5rem'[\s\S]*scale:\s*1\.04/,
+  );
+  assert.match(
+    componentSource,
+    /x:\s*'17\.8rem'[\s\S]*y:\s*'-21\.5rem'[\s\S]*scale:\s*1\.04/,
   );
 });

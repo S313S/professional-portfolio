@@ -68,17 +68,17 @@ const WORKS_DETAIL_GALLERY_LAYOUT = {
   },
   slots: [
     {
-      x: '-26.2rem',
+      x: '-25.2rem',
       y: '21.5rem',
-      scale: 0.9,
+      scale: 1.04,
       opacity: 0.3,
       grayscale: 0.62,
       brightness: 0.42,
     },
     {
-      x: '-15.2rem',
+      x: '-14.2rem',
       y: '10.5rem',
-      scale: 0.94,
+      scale: 1.04,
       opacity: 0.34,
       grayscale: 0.54,
       brightness: 0.48,
@@ -86,7 +86,7 @@ const WORKS_DETAIL_GALLERY_LAYOUT = {
     {
       x: '-4.2rem',
       y: '0.5rem',
-      scale: 0.98,
+      scale: 1.04,
       opacity: 0.38,
       grayscale: 0.52,
       brightness: 0.44,
@@ -103,7 +103,7 @@ const WORKS_DETAIL_GALLERY_LAYOUT = {
     {
       x: '17.8rem',
       y: '-21.5rem',
-      scale: 0.94,
+      scale: 1.04,
       opacity: 0.32,
       grayscale: 0.6,
       brightness: 0.42,
