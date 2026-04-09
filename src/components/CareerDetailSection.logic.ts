@@ -50,6 +50,19 @@ export interface CareerDetailWheelLockState {
   targetScrollY: number | null;
 }
 
+export interface CareerDetailPageSwitchRevealInput {
+  deltaY: number;
+  scrollY: number;
+  sectionTop: number;
+  sectionHeight: number;
+  hasRevealDelayElapsed: boolean;
+  hasActivatedPageSwitch: boolean;
+}
+
+export interface CareerDetailPageSwitchRevealState {
+  shouldReveal: boolean;
+}
+
 export interface CareerDetailDragGestureInput {
   dragStartY: number | null;
   currentY: number;
@@ -219,6 +232,30 @@ export function getCareerDetailWheelLockState({
   return {
     shouldPreventScroll: true,
     targetScrollY: getCareerDetailSnapTargetY(sectionTop),
+  };
+}
+
+export function getCareerDetailPageSwitchRevealState({
+  deltaY,
+  scrollY,
+  sectionTop,
+  sectionHeight,
+  hasRevealDelayElapsed,
+  hasActivatedPageSwitch,
+}: CareerDetailPageSwitchRevealInput): CareerDetailPageSwitchRevealState {
+  if (
+    deltaY <= 0 ||
+    !hasRevealDelayElapsed ||
+    hasActivatedPageSwitch ||
+    !isCareerDetailSectionActive(scrollY, sectionTop, sectionHeight)
+  ) {
+    return {
+      shouldReveal: false,
+    };
+  }
+
+  return {
+    shouldReveal: true,
   };
 }
 

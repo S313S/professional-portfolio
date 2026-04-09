@@ -4,7 +4,12 @@ import { Menu, X } from 'lucide-react';
 
 import { shouldHideNavbar } from './Navbar.logic';
 
-const IMMERSIVE_SECTION_IDS = ['career-journey-section', 'works-lobby-section'] as const;
+const IMMERSIVE_SECTION_IDS = [
+  'career-journey-section',
+  'career-detail-section',
+  'works-lobby-section',
+  'works-detail-section',
+] as const;
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);

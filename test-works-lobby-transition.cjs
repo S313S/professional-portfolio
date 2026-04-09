@@ -53,9 +53,25 @@ const baseUrl = process.env.BASE_URL || 'http://127.0.0.1:3000';
 
   await page.evaluate((y) => window.scrollTo(0, y), careerDetailTop);
   await page.waitForTimeout(200);
-  await page.evaluate(() => {
-    document.querySelector('[data-career-detail-cta="page-switch"]')?.click();
+  await page.waitForTimeout(3200);
+  await page.mouse.wheel(0, 120);
+  await page.waitForTimeout(250);
+
+  const revealedCtaState = await page.evaluate(() => {
+    const cta = document.querySelector('[data-career-detail-cta="page-switch"]');
+    const hint = document.querySelector('[data-career-detail-cta-hint="page-switch"]');
+    const wrapper = cta?.closest('[data-career-detail-cta-visible]');
+
+    return {
+      ctaVisible: wrapper?.getAttribute('data-career-detail-cta-visible') ?? '',
+      hintVisible: hint?.getAttribute('data-career-detail-cta-hint-visible') ?? '',
+    };
   });
+
+  assert.equal(revealedCtaState.ctaVisible, 'true');
+  assert.equal(revealedCtaState.hintVisible, 'true');
+
+  await page.locator('[data-career-detail-cta="page-switch"]').click();
   await page.waitForTimeout(1400);
 
   const snapped = await page.evaluate(() => {

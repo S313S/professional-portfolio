@@ -6,6 +6,8 @@ import {
   getWorksDetailActivationState,
   getWorksDetailBackNavigationState,
   getWorksDetailCompletionState,
+  getWorksDetailProjectSelectionState,
+  getWorksDetailSceneNavigationState,
   isWorksDetailContentInteractive,
   openWorksDetailView,
   getWorksDetailPinnedScrollY,
@@ -253,6 +255,122 @@ test('settled stage remains locked on downward scroll so the background can hold
       nextTransitionProgress: 1,
       shouldPreventScroll: true,
       shouldExitToLobby: false,
+    },
+  );
+});
+
+test('detail gallery navigation advances through projects before entering the contact scene', () => {
+  assert.deepEqual(
+    getWorksDetailSceneNavigationState({
+      scene: 'gallery',
+      activeProjectIndex: 1,
+      direction: 'next',
+      projectCount: 5,
+    }),
+    {
+      nextScene: 'gallery',
+      nextProjectIndex: 2,
+      shouldCloseDetail: false,
+    },
+  );
+
+  assert.deepEqual(
+    getWorksDetailSceneNavigationState({
+      scene: 'gallery',
+      activeProjectIndex: 4,
+      direction: 'next',
+      projectCount: 5,
+    }),
+    {
+      nextScene: 'contact',
+      nextProjectIndex: 4,
+      shouldCloseDetail: false,
+    },
+  );
+});
+
+test('contact and manifesto scenes follow the approved forward and backward flow', () => {
+  assert.deepEqual(
+    getWorksDetailSceneNavigationState({
+      scene: 'contact',
+      activeProjectIndex: 4,
+      direction: 'next',
+      projectCount: 5,
+    }),
+    {
+      nextScene: 'manifesto',
+      nextProjectIndex: 4,
+      shouldCloseDetail: false,
+    },
+  );
+
+  assert.deepEqual(
+    getWorksDetailSceneNavigationState({
+      scene: 'contact',
+      activeProjectIndex: 4,
+      direction: 'previous',
+      projectCount: 5,
+    }),
+    {
+      nextScene: 'gallery',
+      nextProjectIndex: 4,
+      shouldCloseDetail: false,
+    },
+  );
+
+  assert.deepEqual(
+    getWorksDetailSceneNavigationState({
+      scene: 'manifesto',
+      activeProjectIndex: 4,
+      direction: 'previous',
+      projectCount: 5,
+    }),
+    {
+      nextScene: 'contact',
+      nextProjectIndex: 4,
+      shouldCloseDetail: false,
+    },
+  );
+});
+
+test('backing out from the first gallery project closes detail instead of changing the outer transition logic', () => {
+  assert.deepEqual(
+    getWorksDetailSceneNavigationState({
+      scene: 'gallery',
+      activeProjectIndex: 0,
+      direction: 'previous',
+      projectCount: 5,
+    }),
+    {
+      nextScene: 'gallery',
+      nextProjectIndex: 0,
+      shouldCloseDetail: true,
+    },
+  );
+});
+
+test('project selection clamps to the available featured works and keeps the gallery scene active', () => {
+  assert.deepEqual(
+    getWorksDetailProjectSelectionState({
+      activeProjectIndex: 2,
+      nextProjectIndex: 99,
+      projectCount: 5,
+    }),
+    {
+      nextScene: 'gallery',
+      nextProjectIndex: 4,
+    },
+  );
+
+  assert.deepEqual(
+    getWorksDetailProjectSelectionState({
+      activeProjectIndex: 2,
+      nextProjectIndex: -4,
+      projectCount: 5,
+    }),
+    {
+      nextScene: 'gallery',
+      nextProjectIndex: 0,
     },
   );
 });

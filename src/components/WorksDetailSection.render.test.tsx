@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { renderToStaticMarkup } from 'react-dom/server';
 
+import { personalData } from '../data';
 import WorksDetailSection from './WorksDetailSection';
 
 test('renders the works detail transition stage with loading iframe and hidden background scene', () => {
@@ -37,6 +38,7 @@ test('renders the in-page detail view with a close button when the left entry ha
   );
 
   assert.match(markup, /data-works-detail-view="detail"/);
+  assert.match(markup, /data-works-detail-scene="gallery"/);
   assert.match(markup, /aria-label="Close work detail"/);
   assert.match(markup, /works-detail-stage/);
   assert.doesNotMatch(markup, /works-detail-stage__close-dock/);
@@ -45,17 +47,24 @@ test('renders the in-page detail view with a close button when the left entry ha
   assert.match(markup, /data-project-state="active">/);
   assert.match(markup, /data-visibility="preview"/);
   assert.match(markup, /data-visibility="active"/);
+  assert.match(markup, /data-detail-scene-panel="gallery"/);
+  assert.match(markup, /data-scene-active="true"/);
   assert.match(markup, />04</);
   assert.match(markup, />05</);
   assert.match(markup, />06</);
   assert.match(markup, />07</);
   assert.match(markup, />08</);
   assert.match(markup, /data-active="true"/);
-  assert.match(markup, />KINDY</);
-  assert.match(markup, />SANOFI</);
-  assert.match(markup, />WHAT&#x27;S HOT</);
-  assert.match(markup, /\/images\/works-detail-07-square\.png/);
-  assert.doesNotMatch(markup, /\/images\/WorksCollectionRoom_Bg\.jpg/);
+  assert.match(markup, new RegExp(personalData.featuredWorks[1]!.title));
+  assert.match(markup, new RegExp(personalData.featuredWorks[2]!.title));
+  assert.match(markup, new RegExp(personalData.featuredWorks[3]!.title));
+  assert.match(
+    markup,
+    new RegExp(
+      personalData.featuredWorks[2]!.subtitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+    ),
+  );
+  assert.doesNotMatch(markup, />SANOFI</);
   assert.match(markup, />blacknegative</);
   assert.match(
     markup,
@@ -66,6 +75,25 @@ test('renders the in-page detail view with a close button when the left entry ha
     /data-works-detail-layer="content" class="absolute inset-0 flex items-center justify-center px-4 sm:px-8"/,
   );
   assert.doesNotMatch(markup, /data-works-detail-nav="rail"/);
+});
+
+test('detail markup includes the contact and manifesto follow-up scenes sourced from current portfolio content', () => {
+  const markup = renderToStaticMarkup(
+    <WorksDetailSection initialPhase="settled" initialView="detail" initialTransitionProgress={1} />,
+  );
+
+  assert.match(markup, /data-detail-scene-panel="contact"/);
+  assert.match(markup, /data-detail-scene-panel="manifesto"/);
+  assert.match(markup, />Say Hello</);
+  assert.match(
+    markup,
+    new RegExp(personalData.email.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
+  );
+  assert.match(markup, />See All Projects</);
+  assert.match(markup, />MENU</);
+  assert.match(markup, />PRECISION</);
+  assert.match(markup, />PASSION</);
+  assert.doesNotMatch(markup, /A BETTER PLACE/);
 });
 
 test('keeps the left entry button clickable once the reveal is visually complete', () => {
@@ -136,6 +164,7 @@ test('matches the approved works gallery footer spacing, socials format, and fil
   assert.match(markup, /works-detail-track__corridor works-detail-track__corridor--bottom/);
   assert.match(markup, />f \| t \| ▶</);
   assert.match(componentSource, /const WORKS_DETAIL_STAGE_SOCIALS = \['f', 't', '▶'\] as const;/);
+  assert.match(componentSource, /from 'gsap'/);
 });
 
 test('keeps the works gallery dashed SVG grid and socials styling aligned with the approved css treatment', () => {
@@ -152,6 +181,9 @@ test('keeps the works gallery dashed SVG grid and socials styling aligned with t
     /\.works-detail-track__corridor--top,\s*\.works-detail-track__corridor--bottom\s*\{[\s\S]*border-top:\s*1\.5px dashed rgba\(200, 210, 220, 0\.25\);/,
   );
   assert.match(cssSource, /\.works-detail-stage__socials\s*\{[\s\S]*text-transform:\s*none;/);
+  assert.match(cssSource, /\.works-detail-contact__panel\s*\{/);
+  assert.match(cssSource, /\.works-detail-manifesto__panel\s*\{/);
+  assert.match(cssSource, /\.works-detail-manifesto__word--highlight\s*\{/);
 });
 
 test('locks the gallery cards, corridor, and background grid to the same 45 degree diagonal system', () => {

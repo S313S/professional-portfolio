@@ -302,6 +302,31 @@
     linear-gradient(180deg, #010204 0%, #05060a 48%, #020306 100%);
 }
 
+.works-detail-scene-shell {
+  position: relative;
+  flex: 1;
+}
+
+.works-detail-scene {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.works-detail-scene[data-scene-active="true"] {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.works-detail-gallery__panel {
+  display: flex;
+  flex-direction: column;
+}
+
 .works-detail-stage__noise,
 .works-detail-stage__grid,
 .works-detail-stage__background,
@@ -400,12 +425,27 @@
   box-shadow: 0 22px 52px rgba(0, 0, 0, 0.18);
   overflow: hidden;
   transform-origin: center;
+  pointer-events: auto;
+  cursor: pointer;
+  padding: 0;
+  background-color: rgba(16, 20, 28, 0.55);
   transition:
     opacity 360ms ease,
     filter 360ms ease,
     box-shadow 360ms ease,
-    transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
-  transform-origin: center;
+    transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 260ms ease;
+}
+
+.works-detail-track__item:hover,
+.works-detail-track__item:focus-visible {
+  border-color: rgba(238, 242, 247, 0.28);
+  outline: none;
+}
+
+.works-detail-track__item[data-empty="true"] {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .works-detail-track__item[data-slot="0"] {
@@ -659,9 +699,24 @@
 }
 
 .works-detail-stage__pager-tick {
+  border: none;
   width: 1px;
   height: 3.25rem;
   background: rgba(228, 232, 238, 0.34);
+  padding: 0;
+  cursor: pointer;
+  transition:
+    width 240ms ease,
+    height 240ms ease,
+    background-color 240ms ease,
+    transform 240ms ease;
+}
+
+.works-detail-stage__pager-tick:hover,
+.works-detail-stage__pager-tick:focus-visible {
+  background: rgba(250, 250, 252, 0.78);
+  outline: none;
+  transform: translateY(-1px);
 }
 
 .works-detail-stage__pager-tick--active {
@@ -689,6 +744,235 @@
 
 .works-detail-stage__credits {
   color: rgba(238, 241, 245, 0.34);
+}
+
+.works-detail-contact__panel,
+.works-detail-manifesto__panel {
+  overflow: hidden;
+}
+
+.works-detail-contact__panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7rem 2.5rem 6rem;
+}
+
+.works-detail-contact__background,
+.works-detail-contact__overlay,
+.works-detail-manifesto__background {
+  position: absolute;
+  inset: 0;
+}
+
+.works-detail-contact__background {
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  filter: saturate(0.76) brightness(0.5);
+  transform-origin: center;
+}
+
+.works-detail-contact__overlay {
+  background:
+    linear-gradient(180deg, rgba(4, 5, 8, 0.42) 0%, rgba(4, 5, 8, 0.78) 100%),
+    radial-gradient(circle at center, rgba(10, 12, 18, 0.1) 0%, rgba(10, 12, 18, 0.56) 100%);
+}
+
+.works-detail-contact__content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  max-width: 40rem;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  text-align: center;
+}
+
+.works-detail-contact__eyebrow,
+.works-detail-contact__menu,
+.works-detail-manifesto__menu {
+  font-size: 0.72rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(243, 239, 230, 0.74);
+}
+
+.works-detail-contact__title {
+  font-size: clamp(2.4rem, 4vw, 4.3rem);
+  line-height: 0.96;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(247, 247, 249, 0.96);
+}
+
+.works-detail-contact__body {
+  max-width: 36rem;
+  font-size: 0.95rem;
+  line-height: 1.8;
+  letter-spacing: 0.06em;
+  color: rgba(236, 237, 240, 0.68);
+}
+
+.works-detail-contact__meta {
+  font-size: 0.88rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(250, 248, 243, 0.88);
+}
+
+.works-detail-contact__socials {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.works-detail-contact__social-link {
+  font-size: 0.68rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(232, 235, 239, 0.7);
+  transition: color 180ms ease, transform 180ms ease;
+}
+
+.works-detail-contact__social-link:hover,
+.works-detail-contact__social-link:focus-visible {
+  color: rgba(250, 248, 243, 0.96);
+  transform: translateY(-1px);
+  outline: none;
+}
+
+.works-detail-contact__cta {
+  position: absolute;
+  left: 50%;
+  bottom: 8.25rem;
+  z-index: 1;
+  display: inline-flex;
+  width: 8rem;
+  height: 8rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(248, 242, 231, 0.24);
+  background: rgba(247, 243, 235, 0.05);
+  padding: 0;
+  transform: translateX(-50%) rotate(45deg);
+  cursor: pointer;
+}
+
+.works-detail-contact__cta-copy {
+  display: inline-flex;
+  width: 5.4rem;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 0.66rem;
+  line-height: 1.6;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(251, 247, 240, 0.92);
+  transform: rotate(-45deg);
+}
+
+.works-detail-contact__footer,
+.works-detail-manifesto__footer {
+  position: absolute;
+  inset: auto 0 2.2rem 0;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.works-detail-contact__menu,
+.works-detail-manifesto__menu {
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
+.works-detail-manifesto__panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 5rem 3rem 6rem;
+}
+
+.works-detail-manifesto__background {
+  background:
+    radial-gradient(circle at 50% 38%, rgba(17, 21, 34, 0.68) 0%, rgba(7, 9, 16, 0.16) 28%, transparent 52%),
+    linear-gradient(180deg, #06080d 0%, #090b12 100%);
+}
+
+.works-detail-manifesto__label {
+  position: absolute;
+  left: 2.5rem;
+  top: 2.5rem;
+  z-index: 1;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  border: 1px solid rgba(232, 236, 242, 0.18);
+  padding: 0.7rem 0.9rem;
+  font-size: 0.64rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(238, 241, 245, 0.72);
+}
+
+.works-detail-manifesto__grid {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.55rem;
+  margin: 0 auto;
+  width: min(100%, 64rem);
+}
+
+.works-detail-manifesto__line {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem 1.4rem;
+}
+
+.works-detail-manifesto__word {
+  font-size: clamp(2rem, 6vw, 5rem);
+  line-height: 0.95;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: rgba(119, 132, 150, 0.5);
+}
+
+.works-detail-manifesto__word--highlight {
+  color: rgba(242, 244, 248, 0.92);
+}
+
+.works-detail-manifesto__thumb {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: min(100%, 15rem);
+  flex-direction: column;
+  gap: 0.8rem;
+  margin: 3rem auto 0;
+}
+
+.works-detail-manifesto__thumb-image {
+  width: 100%;
+  aspect-ratio: 5 / 4;
+  object-fit: cover;
+  border: 1px solid rgba(236, 239, 244, 0.12);
+}
+
+.works-detail-manifesto__thumb-copy {
+  font-size: 0.66rem;
+  line-height: 1.7;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(194, 201, 211, 0.62);
 }
 
 .works-detail-stage__nav {
@@ -783,12 +1067,51 @@
   .works-detail-track__item,
   .works-detail-stage__link,
   .works-detail-stage__nav-marker,
-  .works-detail-stage__nav-button {
+  .works-detail-stage__nav-button,
+  .works-detail-scene,
+  .works-detail-stage__pager-tick,
+  .works-detail-contact__social-link {
     transition: none;
   }
 }
 
 @media (max-width: 767px) {
+  .works-detail-contact__panel,
+  .works-detail-manifesto__panel {
+    padding-left: 1.4rem;
+    padding-right: 1.4rem;
+  }
+
+  .works-detail-contact__cta {
+    bottom: 6.5rem;
+    width: 6.6rem;
+    height: 6.6rem;
+  }
+
+  .works-detail-contact__cta-copy {
+    width: 4.8rem;
+    font-size: 0.6rem;
+  }
+
+  .works-detail-manifesto__label {
+    left: 1.4rem;
+    top: 1.4rem;
+  }
+
+  .works-detail-manifesto__grid {
+    gap: 1rem;
+    margin-top: 2.4rem;
+  }
+
+  .works-detail-manifesto__line {
+    gap: 0.7rem;
+  }
+
+  .works-detail-manifesto__word {
+    font-size: clamp(1.4rem, 8vw, 2.6rem);
+    letter-spacing: 0.18em;
+  }
+
   .works-detail-track {
     inset: 8% 0 auto 0;
     height: 20rem;

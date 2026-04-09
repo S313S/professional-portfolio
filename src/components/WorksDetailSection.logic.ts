@@ -7,6 +7,7 @@ export const WORKS_DETAIL_INTERACTIVE_REVEAL_PROGRESS = 1 / 1.35;
 
 export type WorksDetailPhase = 'idle' | 'loading' | 'revealing' | 'settled';
 export type WorksDetailView = 'entry' | 'detail';
+export type WorksDetailScene = 'gallery' | 'contact' | 'manifesto';
 
 export interface WorksDetailActivationState {
   nextPhase: WorksDetailPhase;
@@ -67,7 +68,39 @@ export interface WorksDetailWheelState {
   shouldExitToLobby: boolean;
 }
 
+export interface WorksDetailSceneNavigationInput {
+  scene: WorksDetailScene;
+  activeProjectIndex: number;
+  direction: 'next' | 'previous';
+  projectCount: number;
+}
+
+export interface WorksDetailSceneNavigationState {
+  nextScene: WorksDetailScene;
+  nextProjectIndex: number;
+  shouldCloseDetail: boolean;
+}
+
+export interface WorksDetailProjectSelectionInput {
+  activeProjectIndex: number;
+  nextProjectIndex: number;
+  projectCount: number;
+}
+
+export interface WorksDetailProjectSelectionState {
+  nextScene: WorksDetailScene;
+  nextProjectIndex: number;
+}
+
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+
+function getClampedProjectIndex(activeProjectIndex: number, projectCount: number) {
+  if (projectCount <= 0) {
+    return 0;
+  }
+
+  return clamp(activeProjectIndex, 0, projectCount - 1);
+}
 
 export function openWorksDetailView(_currentView: WorksDetailView): WorksDetailView {
   return 'detail';
@@ -281,5 +314,80 @@ export function getWorksDetailVisualState(
     loadingPointerEvents: 'none',
     showIframe: true,
     shouldLockScroll: true,
+  };
+}
+
+export function getWorksDetailSceneNavigationState({
+  scene,
+  activeProjectIndex,
+  direction,
+  projectCount,
+}: WorksDetailSceneNavigationInput): WorksDetailSceneNavigationState {
+  const safeProjectIndex = getClampedProjectIndex(activeProjectIndex, projectCount);
+  const lastProjectIndex = Math.max(projectCount - 1, 0);
+
+  if (scene === 'gallery') {
+    if (direction === 'next') {
+      if (safeProjectIndex < lastProjectIndex) {
+        return {
+          nextScene: 'gallery',
+          nextProjectIndex: safeProjectIndex + 1,
+          shouldCloseDetail: false,
+        };
+      }
+
+      return {
+        nextScene: 'contact',
+        nextProjectIndex: safeProjectIndex,
+        shouldCloseDetail: false,
+      };
+    }
+
+    if (safeProjectIndex > 0) {
+      return {
+        nextScene: 'gallery',
+        nextProjectIndex: safeProjectIndex - 1,
+        shouldCloseDetail: false,
+      };
+    }
+
+    return {
+      nextScene: 'gallery',
+      nextProjectIndex: 0,
+      shouldCloseDetail: true,
+    };
+  }
+
+  if (scene === 'contact') {
+    return {
+      nextScene: direction === 'next' ? 'manifesto' : 'gallery',
+      nextProjectIndex: safeProjectIndex,
+      shouldCloseDetail: false,
+    };
+  }
+
+  if (direction === 'previous') {
+    return {
+      nextScene: 'contact',
+      nextProjectIndex: safeProjectIndex,
+      shouldCloseDetail: false,
+    };
+  }
+
+  return {
+    nextScene: 'manifesto',
+    nextProjectIndex: safeProjectIndex,
+    shouldCloseDetail: false,
+  };
+}
+
+export function getWorksDetailProjectSelectionState({
+  activeProjectIndex: _activeProjectIndex,
+  nextProjectIndex,
+  projectCount,
+}: WorksDetailProjectSelectionInput): WorksDetailProjectSelectionState {
+  return {
+    nextScene: 'gallery',
+    nextProjectIndex: getClampedProjectIndex(nextProjectIndex, projectCount),
   };
 }

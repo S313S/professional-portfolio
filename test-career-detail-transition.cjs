@@ -81,24 +81,93 @@ const baseUrl = process.env.BASE_URL || 'http://127.0.0.1:3000';
   assert.match(initialContent.eyebrow, /Dispatch Log I: Sharing Journey/);
   assert.match(initialContent.headline, /Publishing Before It Felt Polished/);
 
+  const initialCtaState = await page.evaluate(() => {
+    const cta = document.querySelector('[data-career-detail-cta="page-switch"]');
+    const hint = document.querySelector('[data-career-detail-cta-hint="page-switch"]');
+    const wrapper = cta?.closest('[data-career-detail-cta-visible]');
+
+    return {
+      ctaVisible: wrapper?.getAttribute('data-career-detail-cta-visible') ?? '',
+      hintVisible: hint?.getAttribute('data-career-detail-cta-hint-visible') ?? '',
+    };
+  });
+
+  assert.equal(initialCtaState.ctaVisible, 'false');
+  assert.equal(initialCtaState.hintVisible, 'false');
+
+  await page.mouse.wheel(0, 120);
+  await page.waitForTimeout(250);
+
+  const earlyWheelState = await page.evaluate(() => {
+    const section = document.getElementById('career-detail-section');
+    const cta = document.querySelector('[data-career-detail-cta="page-switch"]');
+    const hint = document.querySelector('[data-career-detail-cta-hint="page-switch"]');
+    const wrapper = cta?.closest('[data-career-detail-cta-visible]');
+    return {
+      rectTop: section?.getBoundingClientRect().top ?? null,
+      ctaVisible: wrapper?.getAttribute('data-career-detail-cta-visible') ?? '',
+      hintVisible: hint?.getAttribute('data-career-detail-cta-hint-visible') ?? '',
+    };
+  });
+
+  assert.equal(earlyWheelState.ctaVisible, 'false');
+  assert.equal(earlyWheelState.hintVisible, 'false');
+  assert.ok(
+    Math.abs(earlyWheelState.rectTop ?? 999) <= 2,
+    `Expected locked wheel input to keep CareerDetailSection pinned before CTA reveal. Got rectTop=${earlyWheelState.rectTop}`,
+  );
+
+  await page.waitForTimeout(3200);
   await page.mouse.wheel(0, 120);
   await page.waitForTimeout(250);
 
   const wheelUpdated = await readPrimaryContent();
   const afterLockedWheel = await page.evaluate(() => {
     const section = document.getElementById('career-detail-section');
+    const cta = document.querySelector('[data-career-detail-cta="page-switch"]');
+    const hint = document.querySelector('[data-career-detail-cta-hint="page-switch"]');
+    const wrapper = cta?.closest('[data-career-detail-cta-visible]');
     return {
       rectTop: section?.getBoundingClientRect().top ?? null,
+      ctaVisible: wrapper?.getAttribute('data-career-detail-cta-visible') ?? '',
+      hintVisible: hint?.getAttribute('data-career-detail-cta-hint-visible') ?? '',
     };
   });
 
   assert.match(wheelUpdated.heading, /April 12th, 2021/);
   assert.match(wheelUpdated.eyebrow, /Dispatch Log I: Sharing Journey/);
   assert.match(wheelUpdated.body, /I started sharing small working notes before they felt complete/i);
+  assert.equal(afterLockedWheel.ctaVisible, 'true');
+  assert.equal(afterLockedWheel.hintVisible, 'true');
   assert.ok(
     Math.abs(afterLockedWheel.rectTop ?? 999) <= 2,
     `Expected locked wheel input to keep CareerDetailSection pinned. Got rectTop=${afterLockedWheel.rectTop}`,
   );
+
+  const pageSwitchButton = page.locator('[data-career-detail-cta="page-switch"]');
+  await pageSwitchButton.hover();
+  await page.waitForTimeout(150);
+
+  const hoveredHintState = await page.evaluate(() => {
+    const hint = document.querySelector('[data-career-detail-cta-hint="page-switch"]');
+    return {
+      hintVisible: hint?.getAttribute('data-career-detail-cta-hint-visible') ?? '',
+    };
+  });
+
+  assert.equal(hoveredHintState.hintVisible, 'false');
+
+  await page.mouse.move(720, 450);
+  await page.waitForTimeout(150);
+
+  const restoredHintState = await page.evaluate(() => {
+    const hint = document.querySelector('[data-career-detail-cta-hint="page-switch"]');
+    return {
+      hintVisible: hint?.getAttribute('data-career-detail-cta-hint-visible') ?? '',
+    };
+  });
+
+  assert.equal(restoredHintState.hintVisible, 'true');
 
   const dragTrack = page.locator('[data-career-detail-drag-track="desktop"]');
   const dragBox = await dragTrack.boundingBox();

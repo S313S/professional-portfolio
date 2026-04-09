@@ -10,12 +10,14 @@ import {
 import {
   getCareerDetailDragGestureState,
   getCareerDetailInitialSelectedEntryIdByCategory,
+  getCareerDetailPageSwitchRevealState,
   getCareerDetailResolvedEntryState,
   getCareerDetailSnapState,
   getCareerDetailSnapTargetY,
   getCareerDetailWheelCaptureState,
   getCareerDetailWheelLockState,
   getCareerDetailWheelState,
+  isCareerDetailSectionActive,
   isCareerDetailSectionPinned,
 } from './CareerDetailSection.logic';
 
@@ -75,6 +77,32 @@ const CAREER_DETAIL_PAGE_SWITCH_LAYOUT = {
   size: 'lg:h-[2.45rem] lg:w-[2.45rem]',
   image:
     'h-full w-full object-contain opacity-92 transition-opacity duration-200 ease-out group-hover:opacity-100 group-focus-visible:opacity-100',
+} as const;
+
+const CAREER_DETAIL_PAGE_SWITCH_REVEAL_DELAY_MS = 3000;
+const CAREER_DETAIL_PAGE_SWITCH_HINT_COPY = 'Click to continue';
+// 中文注释：这里单独控制“Click to continue”文字和虚线箭头的位置。
+// 以后只改这里，不需要再进 JSX 结构里找具体节点。
+//
+// 怎么改：
+// 1. 调整整组提示相对按钮的位置：改 wrapper
+// 2. 单独调文字位置：改 textOffset
+// 3. 单独调箭头位置：改 arrowOffset
+// 4. 调箭头尺寸：改 arrowSize
+// 5. 调箭头弯曲和终点：改 arrowPath
+//
+// 示范案例：
+// - 文字往左上：textOffset: '-translate-x-4 -translate-y-3'
+// - 箭头往右下：arrowOffset: 'translate-x-4 translate-y-3'
+// - 箭头更长：arrowPath: 'M10 12 C 40 4, 70 30, 118 74'
+const CAREER_DETAIL_PAGE_SWITCH_HINT_LAYOUT = {
+  wrapper:
+    'pointer-events-none absolute bottom-[calc(100%+1rem)] right-[1rem] flex items-end gap-3 transition-opacity duration-200 ease-out',
+  textOffset: '-translate-x--1 -translate-y-12',
+  textBox: 'max-w-[9rem] text-right',
+  arrowOffset: 'translate-x--5 translate-y-2',
+  arrowSize: 'h-[4rem] w-[6.8rem]',
+  arrowPath: 'M10 0 C 42 8, 66 30, 108 73',
 } as const;
 
 const CAREER_DETAIL_SELECTION_STORAGE_KEY = 'career-detail-selection:v1';
@@ -469,6 +497,11 @@ export default function CareerDetailSection() {
   );
   const [isSelectorDragging, setIsSelectorDragging] = useState(false);
   const [isSelectionPersistenceReady, setIsSelectionPersistenceReady] = useState(false);
+  const [isCtaSectionActive, setIsCtaSectionActive] = useState(false);
+  const [isCtaSectionPinned, setIsCtaSectionPinned] = useState(false);
+  const [hasRevealDelayElapsed, setHasRevealDelayElapsed] = useState(false);
+  const [hasAttemptedDownwardScroll, setHasAttemptedDownwardScroll] = useState(false);
+  const [isPageSwitchHintHovered, setIsPageSwitchHintHovered] = useState(false);
 
   const selectedCategory = useMemo(
     () =>
@@ -489,6 +522,9 @@ export default function CareerDetailSection() {
   const selectedEntryIndex = selectedEntryState.selectedEntryIndex;
   const isCurrentCategoryEmpty = selectedEntry === null;
   const isSharingCategory = selectedCategory.key === 'sharingJourney';
+  const shouldShowPageSwitchCta =
+    hasAttemptedDownwardScroll && !hasActivatedPageSwitchRef.current && isCtaSectionActive;
+  const shouldShowPageSwitchHint = shouldShowPageSwitchCta && !isPageSwitchHintHovered;
   const displayedEntry: CareerDetailContentBlock = selectedEntry ?? {
     metaLine: `${selectedCategory.label} / Archive Pending`,
     dateTitle: 'Archive pending',
@@ -512,6 +548,25 @@ export default function CareerDetailSection() {
       [selectedCategory.key]: selectedEntryState.selectedEntryId,
     }));
   }, [selectedCategory.key, selectedEntryIdByCategory, selectedEntryState.selectedEntryId]);
+
+  useEffect(() => {
+    if (
+      !isCtaSectionActive ||
+      !isCtaSectionPinned ||
+      hasActivatedPageSwitchRef.current ||
+      hasRevealDelayElapsed
+    ) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setHasRevealDelayElapsed(true);
+    }, CAREER_DETAIL_PAGE_SWITCH_REVEAL_DELAY_MS);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [hasRevealDelayElapsed, isCtaSectionActive, isCtaSectionPinned]);
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -680,6 +735,21 @@ export default function CareerDetailSection() {
       const scrollY = window.scrollY;
       const sectionTop = section.getBoundingClientRect().top + scrollY;
       const sectionHeight = section.offsetHeight;
+      const isActive = isCareerDetailSectionActive(scrollY, sectionTop, sectionHeight);
+      const isPinned = isCareerDetailSectionPinned(scrollY, sectionTop);
+
+      setIsCtaSectionActive((current) => (current === isActive ? current : isActive));
+      setIsCtaSectionPinned((current) => (current === isPinned ? current : isPinned));
+
+      if (!isActive) {
+        hasActivatedPageSwitchRef.current = false;
+        wheelDeltaAccumulatorRef.current = 0;
+        lastWheelDirectionRef.current = 0;
+        setHasRevealDelayElapsed(false);
+        setHasAttemptedDownwardScroll(false);
+        setIsPageSwitchHintHovered(false);
+      }
+
       const snapState = getCareerDetailSnapState({
         scrollY,
         lastScrollY: lastScrollYRef.current,
@@ -723,6 +793,18 @@ export default function CareerDetailSection() {
         sectionHeight,
         hasActivatedPageSwitch: hasActivatedPageSwitchRef.current,
       });
+      const pageSwitchRevealState = getCareerDetailPageSwitchRevealState({
+        deltaY: event.deltaY,
+        scrollY: window.scrollY,
+        sectionTop,
+        sectionHeight,
+        hasRevealDelayElapsed,
+        hasActivatedPageSwitch: hasActivatedPageSwitchRef.current,
+      });
+
+      if (pageSwitchRevealState.shouldReveal) {
+        setHasAttemptedDownwardScroll(true);
+      }
 
       if (wheelLockState.shouldPreventScroll) {
         event.preventDefault();
@@ -826,12 +908,13 @@ export default function CareerDetailSection() {
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     window.addEventListener('wheel', handleWheel, { passive: false });
+    handleScroll();
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('wheel', handleWheel);
     };
-  }, [selectedEntries, selectedEntryIndex]);
+  }, [hasRevealDelayElapsed, selectedEntries, selectedEntryIndex]);
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -903,6 +986,7 @@ export default function CareerDetailSection() {
     hasActivatedPageSwitchRef.current = true;
     wheelDeltaAccumulatorRef.current = 0;
     lastWheelDirectionRef.current = 0;
+    setIsPageSwitchHintHovered(false);
 
     const targetY = targetSection.getBoundingClientRect().top + window.scrollY;
     window.scrollTo({
@@ -1302,28 +1386,99 @@ export default function CareerDetailSection() {
       </div>
 
       <div
+        data-career-detail-cta-visible={shouldShowPageSwitchCta ? 'true' : 'false'}
         className={joinClasses(
           CAREER_DETAIL_PAGE_SWITCH_LAYOUT.wrapperBase,
           CAREER_DETAIL_PAGE_SWITCH_LAYOUT.position,
         )}
       >
-        <button
-          type="button"
-          data-career-detail-cta="page-switch"
-          aria-label="Open works lobby section"
-          className={joinClasses(
-            CAREER_DETAIL_PAGE_SWITCH_LAYOUT.buttonBase,
-            CAREER_DETAIL_PAGE_SWITCH_LAYOUT.size,
-          )}
-          onClick={handlePageSwitchClick}
-        >
-          <img
-            src={CAREER_DETAIL_ASSETS.pageSwitch}
-            alt=""
+        <div className="relative">
+          <div
+            data-career-detail-cta-hint="page-switch"
+            data-career-detail-cta-hint-visible={shouldShowPageSwitchHint ? 'true' : 'false'}
             aria-hidden="true"
-            className={CAREER_DETAIL_PAGE_SWITCH_LAYOUT.image}
-          />
-        </button>
+            className={joinClasses(
+              CAREER_DETAIL_PAGE_SWITCH_HINT_LAYOUT.wrapper,
+              shouldShowPageSwitchHint ? 'opacity-100' : 'opacity-0',
+            )}
+          >
+            <div
+              className={joinClasses(
+                CAREER_DETAIL_PAGE_SWITCH_HINT_LAYOUT.textBox,
+                CAREER_DETAIL_PAGE_SWITCH_HINT_LAYOUT.textOffset,
+              )}
+            >
+              <p className="font-['Caveat','Dancing_Script',cursive] text-[1.6rem] leading-[0.92] tracking-[0.01em] text-[rgba(109,75,53,0.88)] drop-shadow-[0_1px_0_rgba(255,248,236,0.8)]">
+                {CAREER_DETAIL_PAGE_SWITCH_HINT_COPY}
+              </p>
+            </div>
+            <svg
+              data-career-detail-cta-hint-arrow="page-switch"
+              viewBox="0 0 124 84"
+              className={joinClasses(
+                CAREER_DETAIL_PAGE_SWITCH_HINT_LAYOUT.arrowSize,
+                CAREER_DETAIL_PAGE_SWITCH_HINT_LAYOUT.arrowOffset,
+                'overflow-visible',
+              )}
+            >
+              <defs>
+                <marker
+                  id="career-detail-cta-hint-arrowhead"
+                  data-career-detail-cta-hint-arrowhead="page-switch"
+                  markerWidth="9"
+                  markerHeight="9"
+                  refX="7.2"
+                  refY="4.5"
+                  orient="auto"
+                  markerUnits="strokeWidth"
+                >
+                  <path
+                    d="M 0 0 L 9 4.5 L 0 9 L 2.4 4.5 z"
+                    fill="rgba(117,84,60,0.78)"
+                    stroke="rgba(117,84,60,0.78)"
+                    strokeWidth="0.4"
+                  />
+                </marker>
+              </defs>
+              <path
+                d={CAREER_DETAIL_PAGE_SWITCH_HINT_LAYOUT.arrowPath}
+                fill="none"
+                stroke="rgba(117,84,60,0.72)"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeDasharray="6 8"
+                markerEnd="url(#career-detail-cta-hint-arrowhead)"
+              />
+            </svg>
+          </div>
+
+          <button
+            type="button"
+            data-career-detail-cta="page-switch"
+            aria-label="Open works lobby section"
+            disabled={!shouldShowPageSwitchCta}
+            tabIndex={shouldShowPageSwitchCta ? 0 : -1}
+            className={joinClasses(
+              CAREER_DETAIL_PAGE_SWITCH_LAYOUT.buttonBase,
+              CAREER_DETAIL_PAGE_SWITCH_LAYOUT.size,
+              shouldShowPageSwitchCta
+                ? 'pointer-events-auto opacity-100'
+                : 'pointer-events-none opacity-0',
+            )}
+            onClick={handlePageSwitchClick}
+            onMouseEnter={() => setIsPageSwitchHintHovered(true)}
+            onMouseLeave={() => setIsPageSwitchHintHovered(false)}
+            onFocus={() => setIsPageSwitchHintHovered(true)}
+            onBlur={() => setIsPageSwitchHintHovered(false)}
+          >
+            <img
+              src={CAREER_DETAIL_ASSETS.pageSwitch}
+              alt=""
+              aria-hidden="true"
+              className={CAREER_DETAIL_PAGE_SWITCH_LAYOUT.image}
+            />
+          </button>
+        </div>
       </div>
     </section>
   );

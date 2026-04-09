@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   getCareerDetailDragGestureState,
   getCareerDetailInitialSelectedEntryIdByCategory,
+  getCareerDetailPageSwitchRevealState,
   getCareerDetailResolvedEntryState,
   getCareerDetailSnapState,
   getCareerDetailSnapTargetY,
@@ -214,6 +215,80 @@ test('wheel lock releases for upward input, after activation, or outside the sec
     {
       shouldPreventScroll: false,
       targetScrollY: null,
+    },
+  );
+});
+
+test('page-switch reveal activates after delay once the user attempts a downward wheel inside the active section', () => {
+  assert.deepEqual(
+    getCareerDetailPageSwitchRevealState({
+      deltaY: 120,
+      scrollY: 3040,
+      sectionTop: 2800,
+      sectionHeight: 960,
+      hasRevealDelayElapsed: true,
+      hasActivatedPageSwitch: false,
+    }),
+    {
+      shouldReveal: true,
+    },
+  );
+});
+
+test('page-switch reveal stays hidden for upward input, before the delay, after activation, or outside the section', () => {
+  assert.deepEqual(
+    getCareerDetailPageSwitchRevealState({
+      deltaY: -120,
+      scrollY: 3040,
+      sectionTop: 2800,
+      sectionHeight: 960,
+      hasRevealDelayElapsed: true,
+      hasActivatedPageSwitch: false,
+    }),
+    {
+      shouldReveal: false,
+    },
+  );
+
+  assert.deepEqual(
+    getCareerDetailPageSwitchRevealState({
+      deltaY: 120,
+      scrollY: 3040,
+      sectionTop: 2800,
+      sectionHeight: 960,
+      hasRevealDelayElapsed: false,
+      hasActivatedPageSwitch: false,
+    }),
+    {
+      shouldReveal: false,
+    },
+  );
+
+  assert.deepEqual(
+    getCareerDetailPageSwitchRevealState({
+      deltaY: 120,
+      scrollY: 3040,
+      sectionTop: 2800,
+      sectionHeight: 960,
+      hasRevealDelayElapsed: true,
+      hasActivatedPageSwitch: true,
+    }),
+    {
+      shouldReveal: false,
+    },
+  );
+
+  assert.deepEqual(
+    getCareerDetailPageSwitchRevealState({
+      deltaY: 120,
+      scrollY: 2100,
+      sectionTop: 2800,
+      sectionHeight: 960,
+      hasRevealDelayElapsed: true,
+      hasActivatedPageSwitch: false,
+    }),
+    {
+      shouldReveal: false,
     },
   );
 });

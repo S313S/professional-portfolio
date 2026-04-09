@@ -26,7 +26,11 @@ test('renders the career detail stage with category-scoped bookmarks and default
   assert.match(markup, /data-career-detail-drag-thumb="desktop"/);
   assert.match(markup, /data-career-detail-drag-thumb-icon="desktop"/);
   assert.match(markup, /data-career-detail-cta="page-switch"/);
+  assert.match(markup, /data-career-detail-cta-visible="false"/);
+  assert.match(markup, /data-career-detail-cta-hint="page-switch"/);
+  assert.match(markup, /data-career-detail-cta-hint-visible="false"/);
   assert.match(markup, /aria-label="Open works lobby section"/);
+  assert.match(markup, /Click to continue/);
   assert.match(markup, /data-career-detail-record-button="sharing-essay-first-post"/);
   assert.match(markup, /data-career-detail-record-button="sharing-essay-pattern-library"/);
   assert.match(markup, /data-career-detail-record-button="sharing-essay-editorial-rhythm"/);
@@ -260,4 +264,32 @@ test('uses a single page-switch position and size config across desktop widths',
   assert.doesNotMatch(componentSource, /wrapper:\s*\{/);
   assert.doesNotMatch(componentSource, /desktop:\s*'lg:/);
   assert.doesNotMatch(componentSource, /xl:\s*'xl:/);
+});
+
+test('renders the delayed CTA hint layer with dedicated hover-state hooks', () => {
+  const componentSource = readFileSync(new URL('./CareerDetailSection.tsx', import.meta.url), 'utf8');
+
+  assert.match(componentSource, /const CAREER_DETAIL_PAGE_SWITCH_REVEAL_DELAY_MS = 3000;/);
+  assert.match(componentSource, /const CAREER_DETAIL_PAGE_SWITCH_HINT_COPY = 'Click to continue';/);
+  assert.match(componentSource, /const CAREER_DETAIL_PAGE_SWITCH_HINT_LAYOUT = \{/);
+  assert.match(componentSource, /wrapper:\s*'pointer-events-none absolute bottom-\[calc\(100%\+1rem\)\] right-\[1rem\] flex items-end gap-3 transition-opacity duration-200 ease-out'/);
+  assert.match(componentSource, /textOffset:\s*''/);
+  assert.match(componentSource, /arrowOffset:\s*''/);
+  assert.match(componentSource, /arrowSize:\s*'h-\[4rem\] w-\[6\.8rem\]'/);
+  assert.match(componentSource, /arrowPath:\s*'M10 14 C 42 8, 66 30, 108 63'/);
+  assert.match(componentSource, /data-career-detail-cta-visible=\{shouldShowPageSwitchCta \? 'true' : 'false'\}/);
+  assert.match(componentSource, /data-career-detail-cta-hint="page-switch"/);
+  assert.match(
+    componentSource,
+    /data-career-detail-cta-hint-visible=\{shouldShowPageSwitchHint \? 'true' : 'false'\}/,
+  );
+  assert.match(componentSource, /setIsPageSwitchHintHovered\(true\)/);
+  assert.match(componentSource, /setIsPageSwitchHintHovered\(false\)/);
+  assert.match(componentSource, /data-career-detail-cta-hint-arrow="page-switch"/);
+  assert.match(componentSource, /data-career-detail-cta-hint-arrowhead="page-switch"/);
+  assert.match(componentSource, /CAREER_DETAIL_PAGE_SWITCH_HINT_LAYOUT\.textOffset/);
+  assert.match(componentSource, /CAREER_DETAIL_PAGE_SWITCH_HINT_LAYOUT\.arrowOffset/);
+  assert.match(componentSource, /CAREER_DETAIL_PAGE_SWITCH_HINT_LAYOUT\.arrowSize/);
+  assert.match(componentSource, /CAREER_DETAIL_PAGE_SWITCH_HINT_LAYOUT\.arrowPath/);
+  assert.match(componentSource, /markerEnd="url\(#career-detail-cta-hint-arrowhead\)"/);
 });

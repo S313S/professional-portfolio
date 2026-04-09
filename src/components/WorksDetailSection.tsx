@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import gsap from 'gsap';
 
+import { personalData } from '../data';
 import {
   closeWorksDetailView,
   getWorksDetailActivationState,
-  getWorksDetailBackNavigationState,
   getWorksDetailCompletionState,
   getWorksDetailPinnedScrollY,
+  getWorksDetailProjectSelectionState,
+  getWorksDetailSceneNavigationState,
   getWorksDetailVisualState,
   getWorksDetailWheelBufferState,
   getWorksDetailWheelState,
@@ -18,6 +21,7 @@ import {
   WORKS_DETAIL_RETURN_TO_LOBBY_EVENT,
   WORKS_DETAIL_TRANSITION_START_EVENT,
   type WorksDetailPhase,
+  type WorksDetailScene,
   type WorksDetailView,
 } from './WorksDetailSection.logic';
 
@@ -28,36 +32,18 @@ const WORKS_DETAIL_WHEEL_UNIT_DELTA = 120;
 const WORKS_DETAIL_LEFT_BUTTON_SRC = '/images/workDetail_left_icon.png.png';
 const WORKS_DETAIL_RIGHT_BUTTON_SRC = '/images/workDetail_rigtht_icon.png';
 const WORKS_DETAIL_STAGE_BACKGROUND_SRC = '';
-const WORKS_DETAIL_ACTIVE_ITEM_LABEL = '07';
-const WORKS_DETAIL_ACTIVE_PAGER_INDEX = 6;
-const WORKS_DETAIL_STAGE_ITEMS = [
-  { src: '/images/growPath_01.png', label: '04' },
-  { src: '/images/growPath_02.png', label: '05' },
-  { src: '/images/growPath_03.png', label: '06' },
-  { src: '/images/works-detail-07-square.png', label: '07' },
-  { src: '/images/growPath_04.png', label: '08' },
-] as const;
-const WORKS_DETAIL_STAGE_PROJECTS = [
-  {
-    title: 'KINDY',
-    subtitle: 'The fantastic adventures george the Sock',
-    positionClassName: 'works-detail-stage__project works-detail-stage__project--left',
-    state: 'muted',
-  },
-  {
-    title: 'SANOFI',
-    subtitle: 'Capturing the richness of a major event',
-    positionClassName: 'works-detail-stage__project works-detail-stage__project--center',
-    state: 'active',
-  },
-  {
-    title: "WHAT'S HOT",
-    subtitle: 'Our latest news',
-    positionClassName: 'works-detail-stage__project works-detail-stage__project--right',
-    state: 'muted',
-  },
-] as const;
 const WORKS_DETAIL_STAGE_SOCIALS = ['f', 't', '▶'] as const;
+const WORKS_DETAIL_CARD_LABEL_OFFSET = 4;
+const WORKS_DETAIL_VISIBLE_SLOT_COUNT = 5;
+const WORKS_DETAIL_ACTIVE_SLOT_INDEX = 3;
+const WORKS_DETAIL_DEFAULT_ACTIVE_INDEX = Math.max(personalData.featuredWorks.length - 2, 0);
+const WORKS_DETAIL_MANIFESTO_LINES = [
+  ['CRAFTING'],
+  ['DIGITAL', 'EXPERIENCES'],
+  ['WITH', 'PRECISION'],
+  ['AND', 'PASSION'],
+] as const;
+const WORKS_DETAIL_HIGHLIGHT_WORDS = new Set(['PRECISION', 'PASSION']);
 
 // 图标按钮手调区：
 // 1. `iconSizeClassName` 控制图标本体大小。
@@ -84,25 +70,68 @@ interface WorksDetailSectionProps {
   initialView?: WorksDetailView;
 }
 
+function clampProjectIndex(nextProjectIndex: number) {
+  if (personalData.featuredWorks.length === 0) {
+    return 0;
+  }
+
+  return Math.min(
+    Math.max(nextProjectIndex, 0),
+    personalData.featuredWorks.length - 1,
+  );
+}
+
+function getProjectLabel(index: number) {
+  return String(index + WORKS_DETAIL_CARD_LABEL_OFFSET).padStart(2, '0');
+}
+
+function getGallerySlots(activeProjectIndex: number) {
+  return Array.from({ length: WORKS_DETAIL_VISIBLE_SLOT_COUNT }, (_, slotIndex) => {
+    const projectIndex = activeProjectIndex + slotIndex - WORKS_DETAIL_ACTIVE_SLOT_INDEX;
+    const project = personalData.featuredWorks[projectIndex] ?? null;
+
+    return {
+      slotIndex,
+      projectIndex,
+      project,
+      label: project ? getProjectLabel(projectIndex) : '',
+      isActive: projectIndex === activeProjectIndex && project !== null,
+      visibility: projectIndex === activeProjectIndex ? 'active' : 'preview',
+    };
+  });
+}
+
 export default function WorksDetailSection({
   initialPhase = 'idle',
   initialTransitionProgress = 0,
   initialView = 'entry',
 }: WorksDetailSectionProps) {
   const sectionRef = useRef<HTMLElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
   const touchStartYRef = useRef<number | null>(null);
   const phaseRef = useRef<WorksDetailPhase>(initialPhase);
   const viewRef = useRef<WorksDetailView>(initialView);
   const loadingTimeoutRef = useRef<number | null>(null);
   const wheelBufferRef = useRef(0);
+  const sceneUnlockTimeoutRef = useRef<number | null>(null);
+  const detailSceneRef = useRef<WorksDetailScene>('gallery');
+  const activeProjectIndexRef = useRef(WORKS_DETAIL_DEFAULT_ACTIVE_INDEX);
 
   const [phase, setPhase] = useState<WorksDetailPhase>(initialPhase);
   const [iframeKey, setIframeKey] = useState(0);
   const [transitionProgress, setTransitionProgress] = useState(initialTransitionProgress);
   const [view, setView] = useState<WorksDetailView>(initialView);
+  const [detailScene, setDetailScene] = useState<WorksDetailScene>('gallery');
+  const [activeProjectIndex, setActiveProjectIndex] = useState(WORKS_DETAIL_DEFAULT_ACTIVE_INDEX);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isTransitioningScene, setIsTransitioningScene] = useState(false);
 
   phaseRef.current = phase;
   viewRef.current = view;
+  detailSceneRef.current = detailScene;
+  activeProjectIndexRef.current = activeProjectIndex;
 
   const clearLoadingTimeout = () => {
     if (loadingTimeoutRef.current === null) {
@@ -113,12 +142,62 @@ export default function WorksDetailSection({
     loadingTimeoutRef.current = null;
   };
 
+  const clearSceneUnlockTimeout = () => {
+    if (sceneUnlockTimeoutRef.current === null) {
+      return;
+    }
+
+    window.clearTimeout(sceneUnlockTimeoutRef.current);
+    sceneUnlockTimeoutRef.current = null;
+  };
+
+  const resetDetailState = () => {
+    clearSceneUnlockTimeout();
+    setIsTransitioningScene(false);
+    setDetailScene('gallery');
+    setActiveProjectIndex(WORKS_DETAIL_DEFAULT_ACTIVE_INDEX);
+  };
+
+  const scheduleSceneUnlock = () => {
+    clearSceneUnlockTimeout();
+
+    if (prefersReducedMotion || isMobile) {
+      setIsTransitioningScene(false);
+      return;
+    }
+
+    sceneUnlockTimeoutRef.current = window.setTimeout(() => {
+      setIsTransitioningScene(false);
+    }, 720);
+  };
+
+  const commitDetailState = (nextScene: WorksDetailScene, nextProjectIndex: number) => {
+    setDetailScene(nextScene);
+    setActiveProjectIndex(clampProjectIndex(nextProjectIndex));
+  };
+
+  const transitionDetailState = (nextScene: WorksDetailScene, nextProjectIndex: number) => {
+    const safeProjectIndex = clampProjectIndex(nextProjectIndex);
+
+    if (
+      detailSceneRef.current === nextScene &&
+      activeProjectIndexRef.current === safeProjectIndex
+    ) {
+      return;
+    }
+
+    setIsTransitioningScene(true);
+    commitDetailState(nextScene, safeProjectIndex);
+    scheduleSceneUnlock();
+  };
+
   const completeLoading = () => {
     const completionState = getWorksDetailCompletionState();
     const section = sectionRef.current;
 
     clearLoadingTimeout();
     wheelBufferRef.current = 0;
+    resetDetailState();
     setPhase(completionState.nextPhase);
     setTransitionProgress(completionState.nextTransitionProgress);
 
@@ -140,12 +219,23 @@ export default function WorksDetailSection({
     phase === 'settled' ? 1 : phase === 'revealing' ? Math.min(transitionProgress * 1.35, 1) : 0;
   const isContentInteractive = isWorksDetailContentInteractive(phase, transitionProgress);
 
+  const activeProject = personalData.featuredWorks[activeProjectIndex] ?? personalData.featuredWorks[0];
+  const previousProject =
+    activeProjectIndex > 0 ? personalData.featuredWorks[activeProjectIndex - 1] : null;
+  const nextProject =
+    activeProjectIndex < personalData.featuredWorks.length - 1
+      ? personalData.featuredWorks[activeProjectIndex + 1]
+      : null;
+  const gallerySlots = getGallerySlots(activeProjectIndex);
+
   const exitToLobby = () => {
     clearLoadingTimeout();
+    clearSceneUnlockTimeout();
     wheelBufferRef.current = 0;
     setPhase('idle');
     setTransitionProgress(0);
     setView('entry');
+    resetDetailState();
     window.dispatchEvent(new Event(WORKS_DETAIL_RETURN_TO_LOBBY_EVENT));
   };
 
@@ -154,6 +244,7 @@ export default function WorksDetailSection({
 
     clearLoadingTimeout();
     wheelBufferRef.current = 0;
+    resetDetailState();
     setPhase(activationState.nextPhase);
     setIframeKey(activationState.nextCycleKey);
     setTransitionProgress(activationState.nextTransitionProgress);
@@ -244,6 +335,124 @@ export default function WorksDetailSection({
   }, [phase]);
 
   useEffect(() => {
+    if (typeof window === 'undefined') {
+      return undefined;
+    }
+
+    const reducedMotionMedia = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const mobileMedia = window.matchMedia('(max-width: 767px)');
+
+    const updateMediaState = () => {
+      setPrefersReducedMotion(reducedMotionMedia.matches);
+      setIsMobile(mobileMedia.matches);
+    };
+
+    updateMediaState();
+    reducedMotionMedia.addEventListener('change', updateMediaState);
+    mobileMedia.addEventListener('change', updateMediaState);
+
+    return () => {
+      reducedMotionMedia.removeEventListener('change', updateMediaState);
+      mobileMedia.removeEventListener('change', updateMediaState);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (
+      view !== 'detail' ||
+      phase !== 'settled' ||
+      prefersReducedMotion ||
+      !stageRef.current
+    ) {
+      return undefined;
+    }
+
+    const context = gsap.context(() => {
+      if (detailScene === 'gallery') {
+        if (trackRef.current) {
+          const diagonalOffset = (activeProjectIndex - WORKS_DETAIL_DEFAULT_ACTIVE_INDEX) * 18;
+          gsap.to(trackRef.current, {
+            x: -diagonalOffset,
+            y: diagonalOffset,
+            duration: 0.68,
+            ease: 'power3.out',
+            overwrite: 'auto',
+          });
+        }
+
+        gsap.fromTo(
+          '[data-gallery-animate="title"]',
+          { autoAlpha: 0, y: 16 },
+          { autoAlpha: 1, y: 0, duration: 0.52, ease: 'power3.out', stagger: 0.06 },
+        );
+        gsap.fromTo(
+          '[data-gallery-animate="subtitle"]',
+          { autoAlpha: 0, x: -24 },
+          { autoAlpha: 1, x: 0, duration: 0.56, ease: 'power3.out' },
+        );
+        gsap.fromTo(
+          '[data-gallery-animate="pager"]',
+          { autoAlpha: 0.42, scaleY: 0.8, transformOrigin: 'center bottom' },
+          {
+            autoAlpha: 1,
+            scaleY: 1,
+            duration: 0.48,
+            ease: 'power3.out',
+            stagger: 0.03,
+          },
+        );
+      }
+
+      if (detailScene === 'contact') {
+        gsap.fromTo(
+          '[data-contact-animate="background"]',
+          { autoAlpha: 0.7, scale: 1.08 },
+          { autoAlpha: 1, scale: 1, duration: 1.08, ease: 'power2.out' },
+        );
+        gsap.fromTo(
+          '[data-contact-animate="content"] > *',
+          { autoAlpha: 0, y: 24 },
+          { autoAlpha: 1, y: 0, duration: 0.62, ease: 'power3.out', stagger: 0.08 },
+        );
+        gsap.fromTo(
+          '[data-contact-animate="cta"]',
+          { autoAlpha: 0, scale: 0.84, rotate: 45 },
+          { autoAlpha: 1, scale: 1, rotate: 45, duration: 0.52, ease: 'power3.out' },
+        );
+      }
+
+      if (detailScene === 'manifesto') {
+        gsap.fromTo(
+          '[data-manifesto-animate="label"]',
+          { autoAlpha: 0, x: -24 },
+          { autoAlpha: 1, x: 0, duration: 0.44, ease: 'power3.out' },
+        );
+        gsap.fromTo(
+          '[data-manifesto-animate="word"]',
+          { autoAlpha: 0, y: 18 },
+          { autoAlpha: 1, y: 0, duration: 0.5, ease: 'power3.out', stagger: 0.018 },
+        );
+        gsap.fromTo(
+          '[data-manifesto-animate="thumb"]',
+          { autoAlpha: 0, y: 20, scale: 0.94 },
+          { autoAlpha: 1, y: 0, scale: 1, duration: 0.6, ease: 'power3.out' },
+        );
+      }
+    }, stageRef);
+
+    return () => {
+      context.revert();
+    };
+  }, [activeProjectIndex, detailScene, phase, prefersReducedMotion, view]);
+
+  useEffect(() => {
+    return () => {
+      clearLoadingTimeout();
+      clearSceneUnlockTimeout();
+    };
+  }, []);
+
+  useEffect(() => {
     const section = sectionRef.current;
     if (!section) {
       return;
@@ -273,6 +482,10 @@ export default function WorksDetailSection({
       }
 
       if (currentView === 'detail') {
+        if (isMobile || isTransitioningScene) {
+          return;
+        }
+
         const wheelBufferState = getWorksDetailWheelBufferState({
           buffer: wheelBufferRef.current,
           deltaY: event.deltaY,
@@ -284,14 +497,23 @@ export default function WorksDetailSection({
           return;
         }
 
-        if (wheelBufferState.direction < 0) {
-          const backNavigationState = getWorksDetailBackNavigationState(currentView);
-          setView(backNavigationState.nextView);
-          if (backNavigationState.shouldExitToLobby) {
-            exitToLobby();
-          }
+        const navigationState = getWorksDetailSceneNavigationState({
+          scene: detailSceneRef.current,
+          activeProjectIndex: activeProjectIndexRef.current,
+          direction: wheelBufferState.direction > 0 ? 'next' : 'previous',
+          projectCount: personalData.featuredWorks.length,
+        });
+
+        if (navigationState.shouldCloseDetail) {
+          resetDetailState();
+          setView((currentViewState) => closeWorksDetailView(currentViewState));
+          return;
         }
 
+        transitionDetailState(
+          navigationState.nextScene,
+          navigationState.nextProjectIndex,
+        );
         return;
       }
 
@@ -341,6 +563,10 @@ export default function WorksDetailSection({
         return;
       }
 
+      if (viewRef.current === 'detail') {
+        return;
+      }
+
       const startY = touchStartYRef.current;
       const currentY = event.touches[0]?.clientY;
       if (startY === null || currentY === undefined) {
@@ -348,21 +574,6 @@ export default function WorksDetailSection({
       }
 
       if (Math.abs(currentY - startY) < TOUCH_STEP_TOLERANCE_PX) {
-        return;
-      }
-
-      if (viewRef.current === 'detail') {
-        event.preventDefault();
-
-        if (startY - currentY < 0) {
-          const backNavigationState = getWorksDetailBackNavigationState(viewRef.current);
-          setView(backNavigationState.nextView);
-          if (backNavigationState.shouldExitToLobby) {
-            exitToLobby();
-          }
-        }
-
-        touchStartYRef.current = currentY;
         return;
       }
 
@@ -408,7 +619,7 @@ export default function WorksDetailSection({
       window.removeEventListener('touchend', resetTouch);
       window.removeEventListener('touchcancel', resetTouch);
     };
-  }, [transitionProgress, iframeKey]);
+  }, [isMobile, isTransitioningScene, transitionProgress, iframeKey]);
 
   const handleEnterDetailView = () => {
     if (!isContentInteractive) {
@@ -416,12 +627,36 @@ export default function WorksDetailSection({
     }
 
     wheelBufferRef.current = 0;
+    resetDetailState();
     setView((currentView) => openWorksDetailView(currentView));
   };
 
   const handleCloseDetailView = () => {
     wheelBufferRef.current = 0;
+    resetDetailState();
     setView((currentView) => closeWorksDetailView(currentView));
+  };
+
+  const handleProjectSelection = (nextProjectIndex: number) => {
+    if (isTransitioningScene) {
+      return;
+    }
+
+    const selectionState = getWorksDetailProjectSelectionState({
+      activeProjectIndex: activeProjectIndexRef.current,
+      nextProjectIndex,
+      projectCount: personalData.featuredWorks.length,
+    });
+
+    transitionDetailState(selectionState.nextScene, selectionState.nextProjectIndex);
+  };
+
+  const handleSceneJump = (nextScene: WorksDetailScene) => {
+    if (isTransitioningScene) {
+      return;
+    }
+
+    transitionDetailState(nextScene, activeProjectIndexRef.current);
   };
 
   return (
@@ -467,7 +702,9 @@ export default function WorksDetailSection({
         >
           {view === 'detail' ? (
             <div
+              ref={stageRef}
               data-works-detail-view="detail"
+              data-works-detail-scene={detailScene}
               className="works-detail-stage relative flex h-full w-full flex-col overflow-hidden px-5 pt-6 pb-10 text-[#f8ebdb] sm:px-8 sm:pt-8 sm:pb-12"
             >
               <div
@@ -480,75 +717,246 @@ export default function WorksDetailSection({
               <div aria-hidden="true" className="works-detail-stage__noise" />
               <div aria-hidden="true" className="works-detail-stage__grid" />
 
-              <div className="relative z-10 flex items-start justify-between gap-4">
-                <span className="works-detail-stage__tag">Work Detail</span>
-                <button
-                  type="button"
-                  aria-label="Close work detail"
-                  className="works-detail-stage__close"
-                  onClick={handleCloseDetailView}
+              <div className="works-detail-scene-shell">
+                <section
+                  data-detail-scene-panel="gallery"
+                  data-scene-active={detailScene === 'gallery'}
+                  className="works-detail-gallery__panel works-detail-scene"
                 >
-                  <span aria-hidden="true">Close</span>
-                </button>
-              </div>
-
-              <div className="works-detail-track" aria-hidden="true">
-                <div className="works-detail-track__corridor works-detail-track__corridor--band" />
-                <div className="works-detail-track__corridor works-detail-track__corridor--top" />
-                <div className="works-detail-track__corridor works-detail-track__corridor--bottom" />
-                {WORKS_DETAIL_STAGE_ITEMS.map((item, index) => {
-                  return (
-                    <div
-                      key={item.label}
-                      className="works-detail-track__item"
-                      data-slot={index}
-                      data-active={item.label === WORKS_DETAIL_ACTIVE_ITEM_LABEL}
-                      data-visibility={item.label === WORKS_DETAIL_ACTIVE_ITEM_LABEL ? 'active' : 'preview'}
-                      style={{ backgroundImage: `url(${item.src})` }}
+                  <div className="relative z-10 flex items-start justify-between gap-4">
+                    <span className="works-detail-stage__tag">Work Detail</span>
+                    <button
+                      type="button"
+                      aria-label="Close work detail"
+                      className="works-detail-stage__close"
+                      onClick={handleCloseDetailView}
                     >
-                      <div className="works-detail-track__shade" />
-                      <span className="works-detail-track__index">{item.label}</span>
+                      <span aria-hidden="true">Close</span>
+                    </button>
+                  </div>
+
+                  <div ref={trackRef} className="works-detail-track">
+                    <div className="works-detail-track__corridor works-detail-track__corridor--band" />
+                    <div className="works-detail-track__corridor works-detail-track__corridor--top" />
+                    <div className="works-detail-track__corridor works-detail-track__corridor--bottom" />
+                    {gallerySlots.map((slot) => (
+                      <button
+                        key={`${slot.slotIndex}-${slot.project?.id ?? 'empty'}-${activeProjectIndex}`}
+                        type="button"
+                        className="works-detail-track__item"
+                        data-slot={slot.slotIndex}
+                        data-active={slot.isActive}
+                        data-empty={slot.project === null}
+                        data-visibility={slot.visibility}
+                        style={
+                          slot.project
+                            ? { backgroundImage: `url(${slot.project.image})` }
+                            : undefined
+                        }
+                        aria-label={
+                          slot.project
+                            ? `Open ${slot.project.title} project`
+                            : `Empty works detail slot ${slot.slotIndex + 1}`
+                        }
+                        onClick={() => {
+                          if (!slot.project) {
+                            return;
+                          }
+
+                          handleProjectSelection(slot.projectIndex);
+                        }}
+                        disabled={slot.project === null}
+                      >
+                        <div className="works-detail-track__shade" />
+                        {slot.label ? <span className="works-detail-track__index">{slot.label}</span> : null}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="works-detail-stage__projects">
+                    <div
+                      className="works-detail-stage__project works-detail-stage__project--left"
+                      data-project-state="muted"
+                    >
+                      <p className="works-detail-stage__project-title" data-gallery-animate="title">
+                        {previousProject?.title ?? '\u00A0'}
+                      </p>
+                      <p className="works-detail-stage__project-subtitle">
+                        {previousProject?.subtitle ?? '\u00A0'}
+                      </p>
                     </div>
-                  );
-                })}
-              </div>
+                    <div
+                      className="works-detail-stage__project works-detail-stage__project--center"
+                      data-project-state="active"
+                    >
+                      <p className="works-detail-stage__project-title" data-gallery-animate="title">
+                        {activeProject?.title ?? '\u00A0'}
+                      </p>
+                      <p
+                        className="works-detail-stage__project-subtitle"
+                        data-gallery-animate="subtitle"
+                      >
+                        {activeProject?.subtitle ?? '\u00A0'}
+                      </p>
+                    </div>
+                    <div
+                      className="works-detail-stage__project works-detail-stage__project--right"
+                      data-project-state="muted"
+                    >
+                      <p className="works-detail-stage__project-title" data-gallery-animate="title">
+                        {nextProject?.title ?? '\u00A0'}
+                      </p>
+                      <p className="works-detail-stage__project-subtitle">
+                        {nextProject?.subtitle ?? '\u00A0'}
+                      </p>
+                    </div>
+                  </div>
 
-              <div className="works-detail-stage__projects">
-                {WORKS_DETAIL_STAGE_PROJECTS.map((project) => (
+                  <div className="relative z-10 mt-auto flex flex-col gap-6">
+                    <div className="works-detail-stage__footer" aria-hidden="true">
+                      <div className="works-detail-stage__footer-left">
+                        <span className="works-detail-stage__footer-line" />
+                        <span className="works-detail-stage__brand">blacknegative</span>
+                      </div>
+                      <div className="works-detail-stage__footer-center">
+                        <div className="works-detail-stage__pager">
+                          {personalData.featuredWorks.map((work, index) => (
+                            <button
+                              key={work.id}
+                              type="button"
+                              className={`works-detail-stage__pager-tick ${index === activeProjectIndex ? 'works-detail-stage__pager-tick--active' : ''}`}
+                              data-gallery-animate="pager"
+                              aria-label={`Show ${work.title}`}
+                              onClick={() => {
+                                handleProjectSelection(index);
+                              }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      <div className="works-detail-stage__footer-right">
+                        <span className="works-detail-stage__socials">
+                          {WORKS_DETAIL_STAGE_SOCIALS.join(' | ')}
+                        </span>
+                        <span className="works-detail-stage__credits">CREDITS</span>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <section
+                  data-detail-scene-panel="contact"
+                  data-scene-active={detailScene === 'contact'}
+                  className="works-detail-contact__panel works-detail-scene"
+                >
                   <div
-                    key={project.title}
-                    className={project.positionClassName}
-                    data-project-state={project.state}
-                  >
-                    <p className="works-detail-stage__project-title">{project.title}</p>
-                    <p className="works-detail-stage__project-subtitle">{project.subtitle}</p>
-                  </div>
-                ))}
-              </div>
-
-              <div className="relative z-10 mt-auto flex flex-col gap-6">
-                <div className="works-detail-stage__footer" aria-hidden="true">
-                  <div className="works-detail-stage__footer-left">
-                    <span className="works-detail-stage__footer-line" />
-                    <span className="works-detail-stage__brand">blacknegative</span>
-                  </div>
-                  <div className="works-detail-stage__footer-center">
-                    <div className="works-detail-stage__pager">
-                      {Array.from({ length: 12 }, (_, index) => (
-                        <span
-                          key={index}
-                          className={`works-detail-stage__pager-tick ${index === WORKS_DETAIL_ACTIVE_PAGER_INDEX ? 'works-detail-stage__pager-tick--active' : ''}`}
-                        />
+                    className="works-detail-contact__background"
+                    data-contact-animate="background"
+                    style={{ backgroundImage: `url(${activeProject?.image ?? WORKS_DETAIL_REVEAL_IMAGE_SRC})` }}
+                  />
+                  <div className="works-detail-contact__overlay" />
+                  <div className="works-detail-contact__content" data-contact-animate="content">
+                    <span className="works-detail-contact__eyebrow">Say Hello</span>
+                    <h3 className="works-detail-contact__title">Get In Touch</h3>
+                    <p className="works-detail-contact__body">{personalData.about}</p>
+                    <a
+                      href={`mailto:${personalData.email}`}
+                      className="works-detail-contact__meta"
+                    >
+                      {personalData.email}
+                    </a>
+                    <div className="works-detail-contact__socials">
+                      {personalData.socials.map((social) => (
+                        <a
+                          key={social.name}
+                          href={social.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="works-detail-contact__social-link"
+                        >
+                          {social.name}
+                        </a>
                       ))}
                     </div>
                   </div>
-                  <div className="works-detail-stage__footer-right">
-                    <span className="works-detail-stage__socials">
-                      {WORKS_DETAIL_STAGE_SOCIALS.join(' | ')}
-                    </span>
-                    <span className="works-detail-stage__credits">CREDITS</span>
+
+                  <button
+                    type="button"
+                    className="works-detail-contact__cta"
+                    data-contact-animate="cta"
+                    onClick={() => {
+                      handleSceneJump('gallery');
+                    }}
+                  >
+                    <span className="works-detail-contact__cta-copy">See All Projects</span>
+                  </button>
+
+                  <div className="works-detail-contact__footer">
+                    <button
+                      type="button"
+                      className="works-detail-contact__menu"
+                      onClick={() => {
+                        handleSceneJump('manifesto');
+                      }}
+                    >
+                      MENU
+                    </button>
                   </div>
-                </div>
+                </section>
+
+                <section
+                  data-detail-scene-panel="manifesto"
+                  data-scene-active={detailScene === 'manifesto'}
+                  className="works-detail-manifesto__panel works-detail-scene"
+                >
+                  <div className="works-detail-manifesto__background" />
+                  <div
+                    className="works-detail-manifesto__label"
+                    data-manifesto-animate="label"
+                  >
+                    <span>WE TRY</span>
+                    <span>TO</span>
+                  </div>
+
+                  <div className="works-detail-manifesto__grid">
+                    {WORKS_DETAIL_MANIFESTO_LINES.map((line, lineIndex) => (
+                      <div key={lineIndex} className="works-detail-manifesto__line">
+                        {line.map((word) => (
+                          <span
+                            key={word}
+                            className={`works-detail-manifesto__word ${WORKS_DETAIL_HIGHLIGHT_WORDS.has(word) ? 'works-detail-manifesto__word--highlight' : ''}`}
+                            data-manifesto-animate="word"
+                          >
+                            {word}
+                          </span>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="works-detail-manifesto__thumb" data-manifesto-animate="thumb">
+                    <img
+                      src={activeProject?.image ?? WORKS_DETAIL_REVEAL_IMAGE_SRC}
+                      alt={activeProject?.title ?? 'Selected project'}
+                      className="works-detail-manifesto__thumb-image"
+                    />
+                    <p className="works-detail-manifesto__thumb-copy">
+                      {personalData.heroSpiralText.trim()}
+                    </p>
+                  </div>
+
+                  <div className="works-detail-manifesto__footer">
+                    <button
+                      type="button"
+                      className="works-detail-manifesto__menu"
+                      onClick={() => {
+                        handleSceneJump('gallery');
+                      }}
+                    >
+                      MENU
+                    </button>
+                  </div>
+                </section>
               </div>
             </div>
           ) : (
