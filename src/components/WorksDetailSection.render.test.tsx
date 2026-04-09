@@ -77,23 +77,31 @@ test('renders the in-page detail view with a close button when the left entry ha
   assert.doesNotMatch(markup, /data-works-detail-nav="rail"/);
 });
 
-test('detail markup includes the contact and manifesto follow-up scenes sourced from current portfolio content', () => {
+test('detail markup includes a fullscreen project scene with the active work image, title, and description', () => {
   const markup = renderToStaticMarkup(
     <WorksDetailSection initialPhase="settled" initialView="detail" initialTransitionProgress={1} />,
   );
 
-  assert.match(markup, /data-detail-scene-panel="contact"/);
-  assert.match(markup, /data-detail-scene-panel="manifesto"/);
-  assert.match(markup, />Say Hello</);
+  assert.match(markup, /data-detail-scene-panel="project"/);
+  assert.match(markup, /works-detail-project__panel/);
+  assert.match(markup, /works-detail-project__image/);
   assert.match(
     markup,
-    new RegExp(personalData.email.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
+    new RegExp(personalData.featuredWorks[3]!.eyebrow.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
   );
-  assert.match(markup, />See All Projects</);
-  assert.match(markup, />MENU</);
-  assert.match(markup, />PRECISION</);
-  assert.match(markup, />PASSION</);
-  assert.doesNotMatch(markup, /A BETTER PLACE/);
+  assert.match(
+    markup,
+    new RegExp(personalData.featuredWorks[3]!.title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
+  );
+  assert.match(
+    markup,
+    new RegExp(
+      personalData.featuredWorks[3]!.description.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+    ),
+  );
+  assert.doesNotMatch(markup, />Get In Touch</);
+  assert.doesNotMatch(markup, />Say Hello</);
+  assert.doesNotMatch(markup, />MENU</);
 });
 
 test('keeps the left entry button clickable once the reveal is visually complete', () => {
@@ -188,9 +196,9 @@ test('keeps the works gallery dashed SVG grid and socials styling aligned with t
     /\.works-detail-track__corridor--top,\s*\.works-detail-track__corridor--bottom\s*\{[\s\S]*border-top:\s*1\.5px dashed rgba\(200, 210, 220, 0\.25\);/,
   );
   assert.match(cssSource, /\.works-detail-stage__socials\s*\{[\s\S]*text-transform:\s*none;/);
-  assert.match(cssSource, /\.works-detail-contact__panel\s*\{/);
-  assert.match(cssSource, /\.works-detail-manifesto__panel\s*\{/);
-  assert.match(cssSource, /\.works-detail-manifesto__word--highlight\s*\{/);
+  assert.match(cssSource, /\.works-detail-project__panel\s*\{/);
+  assert.match(cssSource, /\.works-detail-project__media\s*\{/);
+  assert.match(cssSource, /\.works-detail-project__meta\s*\{/);
 });
 
 test('locks the gallery cards, corridor, and background grid to the same 45 degree diagonal system', () => {

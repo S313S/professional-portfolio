@@ -7,7 +7,7 @@ export const WORKS_DETAIL_INTERACTIVE_REVEAL_PROGRESS = 1 / 1.35;
 
 export type WorksDetailPhase = 'idle' | 'loading' | 'revealing' | 'settled';
 export type WorksDetailView = 'entry' | 'detail';
-export type WorksDetailScene = 'gallery' | 'contact' | 'manifesto';
+export type WorksDetailScene = 'gallery' | 'project';
 
 export interface WorksDetailActivationState {
   nextPhase: WorksDetailPhase;
@@ -328,55 +328,26 @@ export function getWorksDetailSceneNavigationState({
 
   if (scene === 'gallery') {
     if (direction === 'next') {
-      if (safeProjectIndex < lastProjectIndex) {
-        return {
-          nextScene: 'gallery',
-          nextProjectIndex: safeProjectIndex + 1,
-          shouldCloseDetail: false,
-        };
-      }
-
-      return {
-        nextScene: 'contact',
-        nextProjectIndex: safeProjectIndex,
-        shouldCloseDetail: false,
-      };
-    }
-
-    if (safeProjectIndex > 0) {
       return {
         nextScene: 'gallery',
-        nextProjectIndex: safeProjectIndex - 1,
+        nextProjectIndex: Math.min(safeProjectIndex + 1, lastProjectIndex),
         shouldCloseDetail: false,
       };
     }
 
     return {
       nextScene: 'gallery',
-      nextProjectIndex: 0,
-      shouldCloseDetail: false,
-    };
-  }
-
-  if (scene === 'contact') {
-    return {
-      nextScene: direction === 'next' ? 'manifesto' : 'gallery',
-      nextProjectIndex: safeProjectIndex,
-      shouldCloseDetail: false,
-    };
-  }
-
-  if (direction === 'previous') {
-    return {
-      nextScene: 'contact',
-      nextProjectIndex: safeProjectIndex,
+      nextProjectIndex: Math.max(safeProjectIndex - 1, 0),
       shouldCloseDetail: false,
     };
   }
 
   return {
-    nextScene: 'manifesto',
-    nextProjectIndex: safeProjectIndex,
+    nextScene: 'project',
+    nextProjectIndex:
+      direction === 'next'
+        ? Math.min(safeProjectIndex + 1, lastProjectIndex)
+        : Math.max(safeProjectIndex - 1, 0),
     shouldCloseDetail: false,
   };
 }

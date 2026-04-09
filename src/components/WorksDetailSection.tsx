@@ -37,14 +37,17 @@ const WORKS_DETAIL_CARD_LABEL_OFFSET = 4;
 const WORKS_DETAIL_VISIBLE_SLOT_COUNT = 5;
 const WORKS_DETAIL_ACTIVE_SLOT_INDEX = 3;
 const WORKS_DETAIL_DEFAULT_ACTIVE_INDEX = Math.max(personalData.featuredWorks.length - 2, 0);
-const WORKS_DETAIL_MANIFESTO_LINES = [
-  ['CRAFTING'],
-  ['DIGITAL', 'EXPERIENCES'],
-  ['WITH', 'PRECISION'],
-  ['AND', 'PASSION'],
-] as const;
-const WORKS_DETAIL_HIGHLIGHT_WORDS = new Set(['PRECISION', 'PASSION']);
 type WorksDetailCustomProperties = CSSProperties & Record<`--${string}`, string>;
+
+interface WorksDetailGallerySlotLayout {
+  x: string;
+  y: string;
+  scale: number;
+  opacity: number;
+  grayscale: number;
+  brightness: number;
+  boxShadow?: string;
+}
 
 // 图二位置参数总控区：
 // 1. `stage` 控制背景虚线网格原点偏移。
@@ -111,7 +114,12 @@ const WORKS_DETAIL_GALLERY_LAYOUT = {
       brightness: 0.42,
     },
   ],
-} as const;
+} as const satisfies {
+  stage: Record<string, string>;
+  track: Record<string, string>;
+  corridor: Record<string, string>;
+  slots: readonly WorksDetailGallerySlotLayout[];
+};
 
 // 图标按钮手调区：
 // 1. `iconSizeClassName` 控制图标本体大小。
@@ -182,7 +190,8 @@ function getGalleryStageStyle(): WorksDetailCustomProperties {
 }
 
 function getGallerySlotStyle(slotIndex: number, backgroundImage?: string): WorksDetailCustomProperties {
-  const slotLayout = WORKS_DETAIL_GALLERY_LAYOUT.slots[slotIndex] ?? WORKS_DETAIL_GALLERY_LAYOUT.slots[0];
+  const slotLayout: WorksDetailGallerySlotLayout =
+    WORKS_DETAIL_GALLERY_LAYOUT.slots[slotIndex] ?? WORKS_DETAIL_GALLERY_LAYOUT.slots[0];
   const slotStyle: WorksDetailCustomProperties = {
     '--works-detail-slot-x': slotLayout.x,
     '--works-detail-slot-y': slotLayout.y,
@@ -504,39 +513,16 @@ export default function WorksDetailSection({
         );
       }
 
-      if (detailScene === 'contact') {
+      if (detailScene === 'project') {
         gsap.fromTo(
-          '[data-contact-animate="background"]',
-          { autoAlpha: 0.7, scale: 1.08 },
-          { autoAlpha: 1, scale: 1, duration: 1.08, ease: 'power2.out' },
+          '[data-project-animate="media"]',
+          { autoAlpha: 0, scale: 0.92, y: 28 },
+          { autoAlpha: 1, scale: 1, y: 0, duration: 0.72, ease: 'power3.out' },
         );
         gsap.fromTo(
-          '[data-contact-animate="content"] > *',
-          { autoAlpha: 0, y: 24 },
+          '[data-project-animate="meta"] > *',
+          { autoAlpha: 0, y: 20 },
           { autoAlpha: 1, y: 0, duration: 0.62, ease: 'power3.out', stagger: 0.08 },
-        );
-        gsap.fromTo(
-          '[data-contact-animate="cta"]',
-          { autoAlpha: 0, scale: 0.84, rotate: 45 },
-          { autoAlpha: 1, scale: 1, rotate: 45, duration: 0.52, ease: 'power3.out' },
-        );
-      }
-
-      if (detailScene === 'manifesto') {
-        gsap.fromTo(
-          '[data-manifesto-animate="label"]',
-          { autoAlpha: 0, x: -24 },
-          { autoAlpha: 1, x: 0, duration: 0.44, ease: 'power3.out' },
-        );
-        gsap.fromTo(
-          '[data-manifesto-animate="word"]',
-          { autoAlpha: 0, y: 18 },
-          { autoAlpha: 1, y: 0, duration: 0.5, ease: 'power3.out', stagger: 0.018 },
-        );
-        gsap.fromTo(
-          '[data-manifesto-animate="thumb"]',
-          { autoAlpha: 0, y: 20, scale: 0.94 },
-          { autoAlpha: 1, y: 0, scale: 1, duration: 0.6, ease: 'power3.out' },
         );
       }
     }, stageRef);
@@ -734,6 +720,12 @@ export default function WorksDetailSection({
 
   const handleCloseDetailView = () => {
     wheelBufferRef.current = 0;
+
+    if (detailSceneRef.current === 'project') {
+      transitionDetailState('gallery', activeProjectIndexRef.current);
+      return;
+    }
+
     resetDetailState();
     setView((currentView) => closeWorksDetailView(currentView));
   };
@@ -752,12 +744,12 @@ export default function WorksDetailSection({
     transitionDetailState(selectionState.nextScene, selectionState.nextProjectIndex);
   };
 
-  const handleSceneJump = (nextScene: WorksDetailScene) => {
+  const handleProjectPreviewOpen = (nextProjectIndex: number) => {
     if (isTransitioningScene) {
       return;
     }
 
-    transitionDetailState(nextScene, activeProjectIndexRef.current);
+    transitionDetailState('project', clampProjectIndex(nextProjectIndex));
   };
 
   return (
@@ -864,7 +856,7 @@ export default function WorksDetailSection({
                             return;
                           }
 
-                          handleProjectSelection(slot.projectIndex);
+                          handleProjectPreviewOpen(slot.projectIndex);
                         }}
                         disabled={slot.project === null}
                       >
@@ -946,116 +938,41 @@ export default function WorksDetailSection({
                 </section>
 
                 <section
-                  data-detail-scene-panel="contact"
-                  data-scene-active={detailScene === 'contact'}
-                  className="works-detail-contact__panel works-detail-scene"
+                  data-detail-scene-panel="project"
+                  data-scene-active={detailScene === 'project'}
+                  className="works-detail-project__panel works-detail-scene"
                 >
-                  <div
-                    className="works-detail-contact__background"
-                    data-contact-animate="background"
-                    style={{ backgroundImage: `url(${activeProject?.image ?? WORKS_DETAIL_REVEAL_IMAGE_SRC})` }}
-                  />
-                  <div className="works-detail-contact__overlay" />
-                  <div className="works-detail-contact__content" data-contact-animate="content">
-                    <span className="works-detail-contact__eyebrow">Say Hello</span>
-                    <h3 className="works-detail-contact__title">Get In Touch</h3>
-                    <p className="works-detail-contact__body">{personalData.about}</p>
-                    <a
-                      href={`mailto:${personalData.email}`}
-                      className="works-detail-contact__meta"
-                    >
-                      {personalData.email}
-                    </a>
-                    <div className="works-detail-contact__socials">
-                      {personalData.socials.map((social) => (
-                        <a
-                          key={social.name}
-                          href={social.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="works-detail-contact__social-link"
-                        >
-                          {social.name}
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    className="works-detail-contact__cta"
-                    data-contact-animate="cta"
-                    onClick={() => {
-                      handleSceneJump('gallery');
-                    }}
-                  >
-                    <span className="works-detail-contact__cta-copy">See All Projects</span>
-                  </button>
-
-                  <div className="works-detail-contact__footer">
+                  <div className="relative z-10 flex items-start justify-between gap-4">
+                    <span className="works-detail-stage__tag">Work Detail</span>
                     <button
                       type="button"
-                      className="works-detail-contact__menu"
-                      onClick={() => {
-                        handleSceneJump('manifesto');
-                      }}
+                      aria-label="Close work detail"
+                      className="works-detail-stage__close"
+                      onClick={handleCloseDetailView}
                     >
-                      MENU
+                      <span aria-hidden="true">Close</span>
                     </button>
                   </div>
-                </section>
 
-                <section
-                  data-detail-scene-panel="manifesto"
-                  data-scene-active={detailScene === 'manifesto'}
-                  className="works-detail-manifesto__panel works-detail-scene"
-                >
-                  <div className="works-detail-manifesto__background" />
-                  <div
-                    className="works-detail-manifesto__label"
-                    data-manifesto-animate="label"
-                  >
-                    <span>WE TRY</span>
-                    <span>TO</span>
-                  </div>
-
-                  <div className="works-detail-manifesto__grid">
-                    {WORKS_DETAIL_MANIFESTO_LINES.map((line, lineIndex) => (
-                      <div key={lineIndex} className="works-detail-manifesto__line">
-                        {line.map((word) => (
-                          <span
-                            key={word}
-                            className={`works-detail-manifesto__word ${WORKS_DETAIL_HIGHLIGHT_WORDS.has(word) ? 'works-detail-manifesto__word--highlight' : ''}`}
-                            data-manifesto-animate="word"
-                          >
-                            {word}
-                          </span>
-                        ))}
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="works-detail-manifesto__thumb" data-manifesto-animate="thumb">
+                  <div className="works-detail-project__backdrop" />
+                  <div className="works-detail-project__media" data-project-animate="media">
                     <img
                       src={activeProject?.image ?? WORKS_DETAIL_REVEAL_IMAGE_SRC}
                       alt={activeProject?.title ?? 'Selected project'}
-                      className="works-detail-manifesto__thumb-image"
+                      className="works-detail-project__image"
                     />
-                    <p className="works-detail-manifesto__thumb-copy">
-                      {personalData.heroSpiralText.trim()}
-                    </p>
                   </div>
 
-                  <div className="works-detail-manifesto__footer">
-                    <button
-                      type="button"
-                      className="works-detail-manifesto__menu"
-                      onClick={() => {
-                        handleSceneJump('gallery');
-                      }}
-                    >
-                      MENU
-                    </button>
+                  <div className="works-detail-project__meta" data-project-animate="meta">
+                    <span className="works-detail-project__eyebrow">
+                      {activeProject?.eyebrow ?? 'Selected Work'}
+                    </span>
+                    <h3 className="works-detail-project__title">
+                      {activeProject?.title ?? '\u00A0'}
+                    </h3>
+                    <p className="works-detail-project__body">
+                      {activeProject?.description ?? '\u00A0'}
+                    </p>
                   </div>
                 </section>
               </div>

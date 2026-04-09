@@ -259,7 +259,7 @@ test('settled stage remains locked on downward scroll so the background can hold
   );
 });
 
-test('detail gallery navigation advances through projects before entering the contact scene', () => {
+test('detail gallery navigation advances through projects and clamps at the ends without entering a follow-up scene', () => {
   assert.deepEqual(
     getWorksDetailSceneNavigationState({
       scene: 'gallery',
@@ -282,23 +282,23 @@ test('detail gallery navigation advances through projects before entering the co
       projectCount: 5,
     }),
     {
-      nextScene: 'contact',
+      nextScene: 'gallery',
       nextProjectIndex: 4,
       shouldCloseDetail: false,
     },
   );
 });
 
-test('contact and manifesto scenes follow the approved forward and backward flow', () => {
+test('project scene keeps the fullscreen preview open while browsing previous and next works', () => {
   assert.deepEqual(
     getWorksDetailSceneNavigationState({
-      scene: 'contact',
+      scene: 'project',
       activeProjectIndex: 4,
       direction: 'next',
       projectCount: 5,
     }),
     {
-      nextScene: 'manifesto',
+      nextScene: 'project',
       nextProjectIndex: 4,
       shouldCloseDetail: false,
     },
@@ -306,28 +306,14 @@ test('contact and manifesto scenes follow the approved forward and backward flow
 
   assert.deepEqual(
     getWorksDetailSceneNavigationState({
-      scene: 'contact',
+      scene: 'project',
       activeProjectIndex: 4,
       direction: 'previous',
       projectCount: 5,
     }),
     {
-      nextScene: 'gallery',
-      nextProjectIndex: 4,
-      shouldCloseDetail: false,
-    },
-  );
-
-  assert.deepEqual(
-    getWorksDetailSceneNavigationState({
-      scene: 'manifesto',
-      activeProjectIndex: 4,
-      direction: 'previous',
-      projectCount: 5,
-    }),
-    {
-      nextScene: 'contact',
-      nextProjectIndex: 4,
+      nextScene: 'project',
+      nextProjectIndex: 3,
       shouldCloseDetail: false,
     },
   );

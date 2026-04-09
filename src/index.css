@@ -729,6 +729,71 @@
   color: rgba(238, 241, 245, 0.34);
 }
 
+.works-detail-project__panel {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
+.works-detail-project__backdrop {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(3, 5, 10, 0.3) 0%, rgba(3, 5, 10, 0.72) 100%),
+    radial-gradient(circle at center, rgba(10, 14, 22, 0.08) 0%, rgba(5, 8, 14, 0.42) 100%);
+}
+
+.works-detail-project__media {
+  position: absolute;
+  inset: 4.9rem 3rem 11.5rem;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.works-detail-project__image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 24px 68px rgba(0, 0, 0, 0.42));
+}
+
+.works-detail-project__meta {
+  position: absolute;
+  inset: auto 0 2.6rem 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0 2rem;
+  text-align: center;
+}
+
+.works-detail-project__eyebrow {
+  font-size: 0.72rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(243, 239, 230, 0.72);
+}
+
+.works-detail-project__title {
+  font-size: clamp(2rem, 3.5vw, 3.4rem);
+  line-height: 0.96;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(247, 247, 249, 0.96);
+}
+
+.works-detail-project__body {
+  max-width: 46rem;
+  font-size: 0.92rem;
+  line-height: 1.8;
+  letter-spacing: 0.06em;
+  color: rgba(236, 237, 240, 0.72);
+}
+
 .works-detail-contact__panel,
 .works-detail-manifesto__panel {
   overflow: hidden;
@@ -1059,6 +1124,26 @@
 }
 
 @media (max-width: 767px) {
+
+  .works-detail-project__media {
+    inset: 5.5rem 1.25rem 10.5rem;
+  }
+
+  .works-detail-project__meta {
+    bottom: 1.5rem;
+    gap: 0.7rem;
+    padding: 0 1.25rem;
+  }
+
+  .works-detail-project__title {
+    font-size: 1.5rem;
+    letter-spacing: 0.14em;
+  }
+
+  .works-detail-project__body {
+    font-size: 0.78rem;
+    line-height: 1.7;
+  }
 
   .works-detail-contact__panel,
   .works-detail-manifesto__panel {
