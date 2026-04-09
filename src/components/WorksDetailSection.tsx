@@ -57,8 +57,11 @@ const WORKS_DETAIL_GALLERY_LAYOUT = {
     '--works-detail-grid-offset-y': '-130px',
   },
   track: {
-    '--works-detail-track-top': '-12.5%',
+    '--works-detail-track-top': '-9.1%',
     '--works-detail-track-height': '34rem',
+  },
+  corridor: {
+    '--works-detail-corridor-center-y': '50%',
     '--works-detail-corridor-width': 'min(88rem, 170vw)',
     '--works-detail-corridor-band-height': '15.5rem',
     '--works-detail-corridor-rail-offset': '8.75rem',
@@ -166,6 +169,10 @@ function getGallerySlots(activeProjectIndex: number) {
 
 function getGalleryTrackStyle(): WorksDetailCustomProperties {
   return WORKS_DETAIL_GALLERY_LAYOUT.track as WorksDetailCustomProperties;
+}
+
+function getGalleryCorridorStyle(): WorksDetailCustomProperties {
+  return WORKS_DETAIL_GALLERY_LAYOUT.corridor as WorksDetailCustomProperties;
 }
 
 function getGalleryStageStyle(): WorksDetailCustomProperties {
@@ -829,10 +836,13 @@ export default function WorksDetailSection({
                     </button>
                   </div>
 
-                  <div ref={trackRef} className="works-detail-track" style={getGalleryTrackStyle()}>
+                  <div className="works-detail-track__corridor-layer" style={getGalleryCorridorStyle()}>
                     <div className="works-detail-track__corridor works-detail-track__corridor--band" />
                     <div className="works-detail-track__corridor works-detail-track__corridor--top" />
                     <div className="works-detail-track__corridor works-detail-track__corridor--bottom" />
+                  </div>
+
+                  <div ref={trackRef} className="works-detail-track" style={getGalleryTrackStyle()}>
                     {gallerySlots.map((slot) => (
                       <button
                         key={`${slot.slotIndex}-${slot.project?.id ?? 'empty'}-${activeProjectIndex}`}

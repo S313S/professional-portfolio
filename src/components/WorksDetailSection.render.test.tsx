@@ -162,10 +162,12 @@ test('matches the approved works gallery footer spacing, socials format, and fil
   assert.match(markup, /works-detail-track__corridor works-detail-track__corridor--band/);
   assert.match(markup, /works-detail-track__corridor works-detail-track__corridor--top/);
   assert.match(markup, /works-detail-track__corridor works-detail-track__corridor--bottom/);
+  assert.match(markup, /class="works-detail-track__corridor-layer"/);
   assert.match(markup, />f \| t \| ▶</);
   assert.match(componentSource, /const WORKS_DETAIL_STAGE_SOCIALS = \['f', 't', '▶'\] as const;/);
   assert.match(componentSource, /from 'gsap'/);
   assert.match(componentSource, /const WORKS_DETAIL_GALLERY_LAYOUT = \{/);
+  assert.match(componentSource, /'--works-detail-corridor-center-y'/);
   assert.match(componentSource, /'--works-detail-corridor-rail-offset'/);
   assert.match(componentSource, /'--works-detail-slot-x'/);
 });
@@ -207,11 +209,15 @@ test('locks the gallery cards, corridor, and background grid to the same 45 degr
   );
   assert.match(
     cssSource,
-    /\.works-detail-track__corridor--top\s*\{[\s\S]*top:\s*calc\(50% - var\(--works-detail-corridor-rail-offset\)\);/,
+    /\.works-detail-track__corridor\s*\{[\s\S]*top:\s*var\(--works-detail-corridor-center-y, 50%\);/,
   );
   assert.match(
     cssSource,
-    /\.works-detail-track__corridor--bottom\s*\{[\s\S]*top:\s*calc\(50% \+ var\(--works-detail-corridor-rail-offset\)\);/,
+    /\.works-detail-track__corridor--top\s*\{[\s\S]*top:\s*calc\(var\(--works-detail-corridor-center-y, 50%\) - var\(--works-detail-corridor-rail-offset\)\);/,
+  );
+  assert.match(
+    cssSource,
+    /\.works-detail-track__corridor--bottom\s*\{[\s\S]*top:\s*calc\(var\(--works-detail-corridor-center-y, 50%\) \+ var\(--works-detail-corridor-rail-offset\)\);/,
   );
   assert.match(
     cssSource,

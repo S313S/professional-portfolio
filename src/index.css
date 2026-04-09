@@ -380,10 +380,16 @@
   pointer-events: none;
 }
 
+.works-detail-track__corridor-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
 .works-detail-track__corridor {
   position: absolute;
   left: 50%;
-  top: 50%;
+  top: var(--works-detail-corridor-center-y, 50%);
   width: var(--works-detail-corridor-width, min(88rem, 170vw));
   pointer-events: none;
 }
@@ -406,11 +412,11 @@
 }
 
 .works-detail-track__corridor--top {
-  top: calc(50% - var(--works-detail-corridor-rail-offset));
+  top: calc(var(--works-detail-corridor-center-y, 50%) - var(--works-detail-corridor-rail-offset));
 }
 
 .works-detail-track__corridor--bottom {
-  top: calc(50% + var(--works-detail-corridor-rail-offset));
+  top: calc(var(--works-detail-corridor-center-y, 50%) + var(--works-detail-corridor-rail-offset));
 }
 
 .works-detail-track__item {
@@ -1106,11 +1112,11 @@
   }
 
   .works-detail-track__corridor--top {
-    top: calc(50% - 4rem);
+    top: calc(var(--works-detail-corridor-center-y, 50%) - 4rem);
   }
 
   .works-detail-track__corridor--bottom {
-    top: calc(50% + 4rem);
+    top: calc(var(--works-detail-corridor-center-y, 50%) + 4rem);
   }
 
   .works-detail-track__item {
