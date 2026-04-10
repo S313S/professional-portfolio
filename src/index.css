@@ -305,6 +305,7 @@
 .works-detail-scene-shell {
   position: relative;
   flex: 1;
+  min-height: 0;
 }
 
 .works-detail-scene {
@@ -808,7 +809,9 @@
 .works-detail-coding__panel {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1.4rem;
+  overflow-y: auto;
+  padding-bottom: 5.5rem;
 }
 
 .works-detail-coding__hero {
@@ -817,9 +820,9 @@
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(18rem, 0.9fr);
   align-items: center;
-  gap: 2.5rem;
-  min-height: 21rem;
-  padding-top: 2rem;
+  gap: 1.5rem;
+  min-height: 17rem;
+  padding-top: 1rem;
 }
 
 .works-detail-coding__stack-shell {

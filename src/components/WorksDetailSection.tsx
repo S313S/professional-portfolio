@@ -12,6 +12,7 @@ import {
   getWorksDetailSceneNavigationState,
   getWorksDetailVisualState,
   getWorksDetailWheelBufferState,
+  shouldCaptureWorksDetailWheel,
   getWorksDetailWheelState,
   isWorksDetailContentInteractive,
   openWorksDetailCodingView,
@@ -660,6 +661,7 @@ export default function WorksDetailSection({
     const handleWheel = (event: WheelEvent) => {
       const currentPhase = phaseRef.current;
       const currentView = viewRef.current;
+      const currentDetailMode = detailModeRef.current;
 
       if (
         !shouldLockWorksDetailScroll({
@@ -667,6 +669,17 @@ export default function WorksDetailSection({
           scrollY: window.scrollY,
           sectionTop: 0,
           sectionHeight: 1,
+        })
+      ) {
+        wheelBufferRef.current = 0;
+        return;
+      }
+
+      if (
+        !shouldCaptureWorksDetailWheel({
+          phase: currentPhase,
+          view: currentView,
+          detailMode: currentDetailMode,
         })
       ) {
         wheelBufferRef.current = 0;
@@ -681,11 +694,6 @@ export default function WorksDetailSection({
       }
 
       if (currentView === 'detail') {
-        if (detailModeRef.current === 'coding') {
-          wheelBufferRef.current = 0;
-          return;
-        }
-
         if (isMobile || isTransitioningScene) {
           return;
         }

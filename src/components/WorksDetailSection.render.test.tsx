@@ -241,6 +241,26 @@ test('keeps the works gallery dashed SVG grid and socials styling aligned with t
     cssSource,
     /\.works-detail-project__meta\s*\{[\s\S]*inset:\s*auto 0 0 0;[\s\S]*background:/,
   );
+  assert.match(
+    cssSource,
+    /\.works-detail-scene-shell\s*\{[\s\S]*min-height:\s*0;/,
+  );
+  assert.match(
+    cssSource,
+    /\.works-detail-coding__panel\s*\{[\s\S]*overflow-y:\s*auto;/,
+  );
+  assert.match(
+    cssSource,
+    /\.works-detail-coding__panel\s*\{[\s\S]*padding-bottom:\s*5\.5rem;/,
+  );
+  assert.match(
+    cssSource,
+    /\.works-detail-coding__hero\s*\{[\s\S]*gap:\s*1\.5rem;/,
+  );
+  assert.match(
+    cssSource,
+    /\.works-detail-coding__hero\s*\{[\s\S]*min-height:\s*17rem;/,
+  );
 });
 
 test('locks the gallery cards, corridor, and background grid to the same 45 degree diagonal system', () => {

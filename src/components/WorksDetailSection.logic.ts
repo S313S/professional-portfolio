@@ -78,6 +78,12 @@ export interface WorksDetailWheelState {
   shouldExitToLobby: boolean;
 }
 
+export interface WorksDetailWheelCaptureInput {
+  phase: WorksDetailPhase;
+  view: WorksDetailView;
+  detailMode: WorksDetailDetailMode;
+}
+
 export interface WorksDetailSceneNavigationInput {
   scene: WorksDetailScene;
   activeProjectIndex: number;
@@ -227,6 +233,22 @@ export function shouldLockWorksDetailScroll({
   sectionHeight,
 }: WorksDetailScrollLockInput) {
   if (phase === 'idle' || sectionHeight <= 0) {
+    return false;
+  }
+
+  return true;
+}
+
+export function shouldCaptureWorksDetailWheel({
+  phase,
+  view,
+  detailMode,
+}: WorksDetailWheelCaptureInput) {
+  if (phase === 'loading') {
+    return true;
+  }
+
+  if (view === 'detail' && detailMode === 'coding') {
     return false;
   }
 

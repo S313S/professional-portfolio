@@ -13,6 +13,7 @@ import {
   openWorksDetailCodingView,
   openWorksDetailDesignView,
   getWorksDetailPinnedScrollY,
+  shouldCaptureWorksDetailWheel,
   getWorksDetailVisualState,
   getWorksDetailWheelBufferState,
   getWorksDetailWheelState,
@@ -97,6 +98,26 @@ test('loading phase locks scroll while the viewport is inside the works detail s
       scrollY: 3168,
       sectionTop: 3200,
       sectionHeight: 1800,
+    }),
+    true,
+  );
+});
+
+test('coding detail mode releases wheel scrolling back to the panel instead of hijacking it globally', () => {
+  assert.equal(
+    shouldCaptureWorksDetailWheel({
+      phase: 'settled',
+      view: 'detail',
+      detailMode: 'coding',
+    }),
+    false,
+  );
+
+  assert.equal(
+    shouldCaptureWorksDetailWheel({
+      phase: 'settled',
+      view: 'detail',
+      detailMode: 'design',
     }),
     true,
   );
