@@ -6,10 +6,12 @@ import {
   getWorksDetailActivationState,
   getWorksDetailBackNavigationState,
   getWorksDetailCompletionState,
+  getWorksDetailDetailModeResetState,
   getWorksDetailProjectSelectionState,
   getWorksDetailSceneNavigationState,
   isWorksDetailContentInteractive,
-  openWorksDetailView,
+  openWorksDetailCodingView,
+  openWorksDetailDesignView,
   getWorksDetailPinnedScrollY,
   getWorksDetailVisualState,
   getWorksDetailWheelBufferState,
@@ -32,8 +34,21 @@ test('activating the works detail transition enters loading and advances the ifr
 });
 
 test('opening and closing the works detail subview switches between entry and detail', () => {
-  assert.equal(openWorksDetailView('entry'), 'detail');
+  assert.deepEqual(openWorksDetailDesignView('entry'), {
+    nextView: 'detail',
+    nextDetailMode: 'design',
+  });
+  assert.deepEqual(openWorksDetailCodingView('entry'), {
+    nextView: 'detail',
+    nextDetailMode: 'coding',
+  });
   assert.equal(closeWorksDetailView('detail'), 'entry');
+});
+
+test('closing the works detail detail page resets the detail mode back to design', () => {
+  assert.deepEqual(getWorksDetailDetailModeResetState('coding'), {
+    nextDetailMode: 'design',
+  });
 });
 
 test('detail view ignores upward back navigation and entry view remains the only scroll-exit state', () => {

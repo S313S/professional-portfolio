@@ -8,6 +8,7 @@ export const WORKS_DETAIL_INTERACTIVE_REVEAL_PROGRESS = 1 / 1.35;
 export type WorksDetailPhase = 'idle' | 'loading' | 'revealing' | 'settled';
 export type WorksDetailView = 'entry' | 'detail';
 export type WorksDetailScene = 'gallery' | 'project';
+export type WorksDetailDetailMode = 'design' | 'coding';
 
 export interface WorksDetailActivationState {
   nextPhase: WorksDetailPhase;
@@ -40,6 +41,15 @@ export interface WorksDetailVisualState {
 export interface WorksDetailBackNavigationState {
   nextView: WorksDetailView;
   shouldExitToLobby: boolean;
+}
+
+export interface WorksDetailOpenState {
+  nextView: WorksDetailView;
+  nextDetailMode: WorksDetailDetailMode;
+}
+
+export interface WorksDetailDetailModeResetState {
+  nextDetailMode: WorksDetailDetailMode;
 }
 
 export interface WorksDetailWheelInput {
@@ -102,12 +112,30 @@ function getClampedProjectIndex(activeProjectIndex: number, projectCount: number
   return clamp(activeProjectIndex, 0, projectCount - 1);
 }
 
-export function openWorksDetailView(_currentView: WorksDetailView): WorksDetailView {
-  return 'detail';
+export function openWorksDetailDesignView(_currentView: WorksDetailView): WorksDetailOpenState {
+  return {
+    nextView: 'detail',
+    nextDetailMode: 'design',
+  };
+}
+
+export function openWorksDetailCodingView(_currentView: WorksDetailView): WorksDetailOpenState {
+  return {
+    nextView: 'detail',
+    nextDetailMode: 'coding',
+  };
 }
 
 export function closeWorksDetailView(_currentView: WorksDetailView): WorksDetailView {
   return 'entry';
+}
+
+export function getWorksDetailDetailModeResetState(
+  _currentDetailMode: WorksDetailDetailMode,
+): WorksDetailDetailModeResetState {
+  return {
+    nextDetailMode: 'design',
+  };
 }
 
 export function getWorksDetailBackNavigationState(

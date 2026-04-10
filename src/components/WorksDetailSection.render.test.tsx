@@ -19,8 +19,8 @@ test('renders the works detail transition stage with loading iframe and hidden b
   assert.match(markup, />CODING</);
   assert.match(markup, />DESIGN</);
   assert.doesNotMatch(markup, />TRACK</);
-  assert.match(markup, /Workflows and prototypes built to make ideas actually run\./);
-  assert.match(markup, /Campaigns, shoots and other such promotional materials for fans/);
+  assert.match(markup, /Fusing concepts in mind with art and bringing them into life/);
+  assert.match(markup, /Workflows and prototypes built to make ideas actually run/);
   assert.match(markup, /\/images\/workDetail_left_icon\.png\.png/);
   assert.match(markup, /\/images\/workDetail_rigtht_icon\.png/);
   assert.match(markup, /aria-label="Open On Track collection"/);
@@ -65,7 +65,7 @@ test('renders the in-page detail view with a close button when the left entry ha
     ),
   );
   assert.doesNotMatch(markup, />SANOFI</);
-  assert.match(markup, />blacknegative</);
+  assert.match(markup, />VisualMemory</);
   assert.match(
     markup,
     /data-works-detail-layer="content" class="absolute inset-0 flex items-center justify-center"/,
@@ -139,13 +139,39 @@ test('keeps the current text blocks edge-aligned with equalized description heig
   );
   assert.match(
     markup,
-    /Workflows, systems and prototypes built to make ideas actually run\.<\/p>/,
+    /Workflows and prototypes built to make ideas actually run<\/p>/,
   );
-  assert.match(
-    markup,
-    /Campaigns, shoots and other such promotional materials for fans<\/p>/,
-  );
+  assert.match(markup, /Fusing concepts in mind with art and bringing them into life<\/p>/);
   assert.equal(minHeightMatches.length, 2);
+});
+
+test('renders the coding detail mode with a new background, draggable category cards, and a six-card project grid', () => {
+  const markup = renderToStaticMarkup(
+    <WorksDetailSection
+      initialPhase="settled"
+      initialView="detail"
+      initialTransitionProgress={1}
+      initialDetailMode="coding"
+    />,
+  );
+
+  assert.match(markup, /data-works-detail-detail-mode="coding"/);
+  assert.match(markup, /data-detail-scene-panel="coding"/);
+  assert.match(markup, /data-scene-active="true"/);
+  assert.match(markup, /\/images\/careerDetail_bg\.png/);
+  assert.doesNotMatch(markup, /\/images\/workDetail_bg\.jpeg/);
+  assert.match(markup, /workflow/i);
+  assert.match(markup, /vibecoding/i);
+  assert.match(markup, /AI product/i);
+  assert.match(markup, /data-coding-card-drag-hint="true"/);
+  assert.match(markup, /data-coding-category-card="workflow"/);
+  assert.match(markup, /data-coding-category-card="vibecoding"/);
+  assert.match(markup, /data-coding-category-card="ai-product"/);
+  assert.match(markup, /data-coding-project-grid="workflow"/);
+  assert.match(markup, /data-coding-project-card=/);
+  assert.match(markup, /target="_blank"/);
+  const codingCards = markup.match(/data-coding-project-card=/g) ?? [];
+  assert.equal(codingCards.length, 6);
 });
 
 test('exposes dedicated tuning hooks for each icon button size and vertical position', () => {
