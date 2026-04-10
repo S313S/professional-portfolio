@@ -64,6 +64,29 @@ export default function VideoScrollTransition() {
   const ctaHintLeftValue = getCtaHintLeftValue(CTA_HINT_LEFT_BASE_PERCENT, CTA_HINT_OFFSET_X_PX);
   const ctaHintLeftMdValue = getCtaHintLeftValue(CTA_HINT_LEFT_MD_PERCENT, CTA_HINT_OFFSET_X_PX);
 
+  const getNavigationType = (): VideoNavigationType => {
+    if (typeof performance === 'undefined') {
+      return 'navigate';
+    }
+
+    const navigationEntry = performance.getEntriesByType('navigation')[0];
+    if (!navigationEntry || !('type' in navigationEntry)) {
+      return 'navigate';
+    }
+
+    const navigationType = navigationEntry.type;
+    if (
+      navigationType === 'navigate' ||
+      navigationType === 'reload' ||
+      navigationType === 'back_forward' ||
+      navigationType === 'prerender'
+    ) {
+      return navigationType;
+    }
+
+    return 'navigate';
+  };
+
   const getSectionMetrics = () => {
     const container = containerRef.current;
     if (!container) {
@@ -332,6 +355,26 @@ export default function VideoScrollTransition() {
   useLayoutEffect(() => {
     previousScrollYRef.current = window.scrollY;
     resetToInitialState(false);
+
+    const metrics = getSectionMetrics();
+    const mountState = metrics
+      ? getVideoScrollMountState({
+          navigationType: getNavigationType(),
+          scrollY: window.scrollY,
+          sectionTop: metrics.sectionTop,
+          sectionHeight: metrics.sectionHeight,
+        })
+      : null;
+
+    if (mountState?.shouldDeferInitialSectionSync) {
+      const frame = requestAnimationFrame(() => {
+        previousScrollYRef.current = window.scrollY;
+        syncSectionInView();
+      });
+
+      return () => cancelAnimationFrame(frame);
+    }
+
     syncSectionInView();
   }, []);
 

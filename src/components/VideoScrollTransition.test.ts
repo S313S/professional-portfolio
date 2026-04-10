@@ -93,7 +93,7 @@ test('does not restart the curtain loop after the first visible entry', () => {
       },
       wasSectionInView: false,
       isSectionInView: true,
-      hasEnteredSectionBefore: false,
+      hasEnteredSectionBefore: true,
     }),
     false,
   );
@@ -154,6 +154,7 @@ test('does not preserve the video section position on reload', () => {
 
   assert.equal(mountState.shouldResetScroll, false);
   assert.equal(mountState.targetScrollY, null);
+  assert.equal(mountState.shouldDeferInitialSectionSync, true);
   assert.deepEqual(mountState.initialVideoState, {
     phase: 'loopPlaying',
     scrubProgress: 0,
@@ -170,6 +171,7 @@ test('keeps the restored scroll position when navigation is not a reload', () =>
 
   assert.equal(mountState.shouldResetScroll, false);
   assert.equal(mountState.targetScrollY, null);
+  assert.equal(mountState.shouldDeferInitialSectionSync, false);
   assert.deepEqual(mountState.initialVideoState, {
     phase: 'loopPlaying',
     scrubProgress: 0,
@@ -186,6 +188,7 @@ test('reload outside the video section still does not request an in-section rese
 
   assert.equal(mountState.shouldResetScroll, false);
   assert.equal(mountState.targetScrollY, null);
+  assert.equal(mountState.shouldDeferInitialSectionSync, false);
 });
 
 test('pins the section when the activation prompt appears while the user is still inside the video section', () => {

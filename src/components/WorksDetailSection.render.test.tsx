@@ -167,25 +167,60 @@ test('renders the coding detail mode with a new background, draggable category c
   assert.match(markup, /data-coding-category-card="workflow"/);
   assert.match(markup, /data-coding-category-card="vibecoding"/);
   assert.match(markup, /data-coding-category-card="ai-product"/);
+  assert.match(markup, /data-coding-category-card-draggable="true"/);
+  assert.match(markup, /data-coding-category-card-draggable="false"/);
   assert.match(markup, /data-coding-project-grid="workflow"/);
   assert.match(markup, /data-coding-project-card=/);
   assert.match(markup, /target="_blank"/);
+  assert.doesNotMatch(markup, /Design in action/i);
+  assert.doesNotMatch(markup, /Six selected builds from the/i);
   const codingCards = markup.match(/data-coding-project-card=/g) ?? [];
   assert.equal(codingCards.length, 6);
 });
 
-test('exposes dedicated tuning hooks for each icon button size and vertical position', () => {
-  const markup = renderToStaticMarkup(<WorksDetailSection />);
+test('keeps category switching clickable by limiting drag capture to the active coding card only', () => {
   const componentSource = readFileSync(new URL('./WorksDetailSection.tsx', import.meta.url), 'utf8');
 
-  assert.match(markup, /data-works-detail-icon-button="left"/);
-  assert.match(markup, /data-works-detail-icon-button="right"/);
+  assert.doesNotMatch(
+    componentSource,
+    /className="works-detail-coding__stack"[\s\S]*onPointerDown=\{handleCodingDragStart\}/,
+  );
+  assert.match(
+    componentSource,
+    /data-coding-category-card-draggable=\{[\s\S]*category\.id === activeCodingCategory\?\.id[\s\S]*'true' : 'false'[\s\S]*\}/,
+  );
+  assert.match(
+    componentSource,
+    /onPointerDown=\{[\s\S]*category\.id === activeCodingCategory\?\.id[\s\S]*handleCodingDragStart : undefined[\s\S]*\}/,
+  );
+});
+
+test('exposes dedicated tuning hooks for each icon button size and vertical position', () => {
+  const entryMarkup = renderToStaticMarkup(<WorksDetailSection />);
+  const codingMarkup = renderToStaticMarkup(
+    <WorksDetailSection
+      initialPhase="settled"
+      initialView="detail"
+      initialTransitionProgress={1}
+      initialDetailMode="coding"
+    />,
+  );
+  const componentSource = readFileSync(new URL('./WorksDetailSection.tsx', import.meta.url), 'utf8');
+
+  assert.match(entryMarkup, /data-works-detail-icon-button="left"/);
+  assert.match(entryMarkup, /data-works-detail-icon-button="right"/);
   assert.match(componentSource, /WORKS_DETAIL_BUTTON_LAYOUT/);
   assert.match(componentSource, /iconSizeClassName/);
   assert.match(componentSource, /buttonSpacingClassName/);
   assert.match(componentSource, /buttonOffsetClassName/);
   assert.match(componentSource, /WORKS_DETAIL_CODING_LAYOUT/);
   assert.match(componentSource, /--works-detail-coding-projects-offset-y/);
+  assert.match(componentSource, /--works-detail-coding-projects-max-width/);
+  assert.match(componentSource, /--works-detail-coding-projects-padding-inline/);
+  assert.match(componentSource, /--works-detail-coding-projects-gap/);
+  assert.match(codingMarkup, /--works-detail-coding-projects-max-width:/);
+  assert.match(codingMarkup, /--works-detail-coding-projects-padding-inline:/);
+  assert.match(codingMarkup, /--works-detail-coding-projects-gap:/);
 });
 
 test('matches the approved works gallery footer spacing, socials format, and film corridor structure', () => {
@@ -266,6 +301,15 @@ test('keeps the works gallery dashed SVG grid and socials styling aligned with t
   assert.match(
     cssSource,
     /\.works-detail-coding__hero\s*\{[\s\S]*min-height:\s*17rem;/,
+  );
+});
+
+test('hides inactive coding card body copy so back-stack text does not bleed through the active card', () => {
+  const cssSource = readFileSync(new URL('../index.css', import.meta.url), 'utf8');
+
+  assert.match(
+    cssSource,
+    /\.works-detail-coding__category-card\[data-active="false"\]\s+\.works-detail-coding__category-copy\s*\{[\s\S]*opacity:\s*0;/,
   );
 });
 

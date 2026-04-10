@@ -30,6 +30,7 @@ export interface VideoScrollMountState {
   shouldResetScroll: boolean;
   targetScrollY: number | null;
   initialVideoState: VideoScrollState;
+  shouldDeferInitialSectionSync: boolean;
 }
 
 export interface VideoPromptPinInput {
@@ -76,15 +77,18 @@ export function isScrollWithinVideoSection(scrollY: number, sectionTop: number, 
 }
 
 export function getVideoScrollMountState({
-  navigationType: _navigationType,
-  scrollY: _scrollY,
-  sectionTop: _sectionTop,
-  sectionHeight: _sectionHeight,
+  navigationType,
+  scrollY,
+  sectionTop,
+  sectionHeight,
 }: VideoScrollMountInput): VideoScrollMountState {
   return {
     shouldResetScroll: false,
     targetScrollY: null,
     initialVideoState: DEFAULT_VIDEO_SCROLL_INITIAL_STATE,
+    shouldDeferInitialSectionSync:
+      navigationType === 'reload' &&
+      isScrollWithinVideoSection(scrollY, sectionTop, sectionHeight),
   };
 }
 

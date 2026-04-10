@@ -160,11 +160,16 @@ const WORKS_DETAIL_BUTTON_LAYOUT = {
 
 // Coding 页手调区：
 // 1. `projects['--works-detail-coding-projects-offset-y']` 控制整组卡片详情区域的上下位置。
-// 2. 想整体下移就把数值调大，比如 `20px -> 40px`。
-// 3. 想整体上移就减小或改成负值，比如 `20px -> 0px` 或 `-12px`。
+// 2. `projects['--works-detail-coding-projects-max-width']` 控制这 6 张项目卡片区域的整体最大宽度。
+// 3. `projects['--works-detail-coding-projects-padding-inline']` 控制左右留白，数值越大越往中间收。
+// 4. `projects['--works-detail-coding-projects-gap']` 控制每张卡片之间的横向/纵向间距。
+// 5. 想整体下移就把 `offset-y` 数值调大，比如 `20px -> 40px`。
 const WORKS_DETAIL_CODING_LAYOUT = {
   projects: {
-    '--works-detail-coding-projects-offset-y': '150px',
+    '--works-detail-coding-projects-offset-y': '220px',
+    '--works-detail-coding-projects-max-width': '71rem',
+    '--works-detail-coding-projects-padding-inline': '1.25rem',
+    '--works-detail-coding-projects-gap': '1.25rem',
   },
 } as const satisfies {
   projects: Record<string, string>;
@@ -1046,16 +1051,15 @@ export default function WorksDetailSection({
                         <div
                           className="works-detail-coding__stack"
                           data-coding-animate="stack"
-                          onPointerDown={handleCodingDragStart}
-                          onPointerMove={handleCodingDragMove}
-                          onPointerUp={handleCodingDragEnd}
-                          onPointerCancel={handleCodingDragEnd}
                         >
                           {personalData.codingCategories.map((category) => (
                             <button
                               key={category.id}
                               type="button"
                               data-coding-category-card={category.id}
+                              data-coding-category-card-draggable={
+                                category.id === activeCodingCategory?.id ? 'true' : 'false'
+                              }
                               data-active={category.id === activeCodingCategory?.id}
                               className="works-detail-coding__category-card"
                               style={getCodingCategoryCardStyle(
@@ -1063,6 +1067,18 @@ export default function WorksDetailSection({
                                 activeCodingCategory?.id ?? WORKS_DETAIL_DEFAULT_CODING_CATEGORY_ID,
                                 category.accent,
                               )}
+                              onPointerDown={
+                                category.id === activeCodingCategory?.id ? handleCodingDragStart : undefined
+                              }
+                              onPointerMove={
+                                category.id === activeCodingCategory?.id ? handleCodingDragMove : undefined
+                              }
+                              onPointerUp={
+                                category.id === activeCodingCategory?.id ? handleCodingDragEnd : undefined
+                              }
+                              onPointerCancel={
+                                category.id === activeCodingCategory?.id ? handleCodingDragEnd : undefined
+                              }
                               onClick={() => {
                                 handleCodingCategorySelection(category.id);
                               }}
@@ -1092,13 +1108,6 @@ export default function WorksDetailSection({
                           {activeCodingCategory?.description ?? '\u00A0'}
                         </p>
                       </div>
-                    </div>
-
-                    <div className="works-detail-coding__projects-heading" data-coding-animate="copy">
-                      <span className="works-detail-coding__projects-kicker">Design in action</span>
-                      <p className="works-detail-coding__projects-summary">
-                        Six selected builds from the {activeCodingCategory?.title ?? 'workflow'} track.
-                      </p>
                     </div>
 
                     <div
