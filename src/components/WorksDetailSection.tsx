@@ -158,6 +158,18 @@ const WORKS_DETAIL_BUTTON_LAYOUT = {
   },
 } as const;
 
+// Coding 页手调区：
+// 1. `projects['--works-detail-coding-projects-offset-y']` 控制整组卡片详情区域的上下位置。
+// 2. 想整体下移就把数值调大，比如 `20px -> 40px`。
+// 3. 想整体上移就减小或改成负值，比如 `20px -> 0px` 或 `-12px`。
+const WORKS_DETAIL_CODING_LAYOUT = {
+  projects: {
+    '--works-detail-coding-projects-offset-y': '150px',
+  },
+} as const satisfies {
+  projects: Record<string, string>;
+};
+
 interface WorksDetailSectionProps {
   initialPhase?: WorksDetailPhase;
   initialTransitionProgress?: number;
@@ -246,6 +258,10 @@ function getGalleryCorridorStyle(): WorksDetailCustomProperties {
 
 function getGalleryStageStyle(): WorksDetailCustomProperties {
   return WORKS_DETAIL_GALLERY_LAYOUT.stage as WorksDetailCustomProperties;
+}
+
+function getCodingProjectsGridStyle(): WorksDetailCustomProperties {
+  return WORKS_DETAIL_CODING_LAYOUT.projects as WorksDetailCustomProperties;
 }
 
 function getGallerySlotStyle(slotIndex: number, backgroundImage?: string): WorksDetailCustomProperties {
@@ -1089,6 +1105,7 @@ export default function WorksDetailSection({
                       className="works-detail-coding__projects-grid"
                       data-coding-project-grid={activeCodingCategory?.id ?? WORKS_DETAIL_DEFAULT_CODING_CATEGORY_ID}
                       data-coding-animate="projects"
+                      style={getCodingProjectsGridStyle()}
                     >
                       {activeCodingProjects.map((project) => (
                         <a

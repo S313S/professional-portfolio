@@ -988,6 +988,7 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1.25rem;
+  margin-top: var(--works-detail-coding-projects-offset-y, 20px);
 }
 
 .works-detail-coding__project-card {

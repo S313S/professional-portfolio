@@ -184,6 +184,8 @@ test('exposes dedicated tuning hooks for each icon button size and vertical posi
   assert.match(componentSource, /iconSizeClassName/);
   assert.match(componentSource, /buttonSpacingClassName/);
   assert.match(componentSource, /buttonOffsetClassName/);
+  assert.match(componentSource, /WORKS_DETAIL_CODING_LAYOUT/);
+  assert.match(componentSource, /--works-detail-coding-projects-offset-y/);
 });
 
 test('matches the approved works gallery footer spacing, socials format, and film corridor structure', () => {
@@ -256,6 +258,10 @@ test('keeps the works gallery dashed SVG grid and socials styling aligned with t
   assert.match(
     cssSource,
     /\.works-detail-coding__hero\s*\{[\s\S]*gap:\s*1\.5rem;/,
+  );
+  assert.match(
+    cssSource,
+    /\.works-detail-coding__projects-grid\s*\{[\s\S]*margin-top:\s*var\(--works-detail-coding-projects-offset-y,\s*20px\);/,
   );
   assert.match(
     cssSource,

@@ -144,7 +144,7 @@ test('clicking the CTA arms the push-in animation at progress zero', () => {
   assert.equal(visualState.showCta, false);
 });
 
-test('resets to the video section start when reload restores scroll inside the section', () => {
+test('does not preserve the video section position on reload', () => {
   const mountState = getVideoScrollMountState({
     navigationType: 'reload',
     scrollY: 3240,
@@ -152,8 +152,8 @@ test('resets to the video section start when reload restores scroll inside the s
     sectionHeight: 5040,
   });
 
-  assert.equal(mountState.shouldResetScroll, true);
-  assert.equal(mountState.targetScrollY, 2800);
+  assert.equal(mountState.shouldResetScroll, false);
+  assert.equal(mountState.targetScrollY, null);
   assert.deepEqual(mountState.initialVideoState, {
     phase: 'loopPlaying',
     scrubProgress: 0,
@@ -176,7 +176,7 @@ test('keeps the restored scroll position when navigation is not a reload', () =>
   });
 });
 
-test('does not reset when reload happens outside the video section', () => {
+test('reload outside the video section still does not request an in-section reset', () => {
   const mountState = getVideoScrollMountState({
     navigationType: 'reload',
     scrollY: 1200,

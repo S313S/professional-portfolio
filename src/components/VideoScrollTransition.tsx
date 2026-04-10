@@ -27,7 +27,6 @@ import {
 } from './VideoScrollTransition.logic';
 
 const PUSH_VIDEO_END_FRAME_OFFSET = 1 / 60;
-const VIDEO_SECTION_RELOAD_MARKER = 'video-scroll-transition:pending-reset';
 const MOBILE_MEDIA_QUERY = '(max-width: 767px), (pointer: coarse)';
 
 export default function VideoScrollTransition() {
@@ -106,22 +105,6 @@ export default function VideoScrollTransition() {
     }
 
     return nextValue;
-  };
-
-  const getNavigationType = (): VideoNavigationType => {
-    const navigationEntry = performance.getEntriesByType('navigation')[0];
-    const navigationType = navigationEntry && 'type' in navigationEntry ? navigationEntry.type : 'navigate';
-
-    if (
-      navigationType === 'reload' ||
-      navigationType === 'navigate' ||
-      navigationType === 'back_forward' ||
-      navigationType === 'prerender'
-    ) {
-      return navigationType;
-    }
-
-    return 'navigate';
   };
 
   const commitVideoState = (nextState: VideoScrollState) => {
@@ -335,36 +318,6 @@ export default function VideoScrollTransition() {
     restartLoopVideo();
   };
 
-  const syncReloadMarker = () => {
-    const metrics = getSectionMetrics();
-    if (!metrics) {
-      return;
-    }
-
-    const isInsideVideoSection = isScrollWithinVideoSection(
-      window.scrollY,
-      metrics.sectionTop,
-      metrics.sectionHeight,
-    );
-
-    if (isInsideVideoSection) {
-      sessionStorage.setItem(VIDEO_SECTION_RELOAD_MARKER, '1');
-      window.history.scrollRestoration = 'manual';
-      return;
-    }
-
-    if (
-      getNavigationType() === 'reload' &&
-      sessionStorage.getItem(VIDEO_SECTION_RELOAD_MARKER) === '1'
-    ) {
-      window.history.scrollRestoration = 'manual';
-      return;
-    }
-
-    sessionStorage.removeItem(VIDEO_SECTION_RELOAD_MARKER);
-    window.history.scrollRestoration = 'auto';
-  };
-
   const resetToInitialState = (shouldRestartLoopVideo = true) => {
     queuedTimeRef.current = 0;
     setMobileAutoplay(false);
@@ -376,46 +329,9 @@ export default function VideoScrollTransition() {
     }
   };
 
-  const resetVideoSectionIfNeeded = () => {
-    const metrics = getSectionMetrics();
-    if (!metrics) {
-      return false;
-    }
-
-    const navigationType = getNavigationType();
-    const mountState = getVideoScrollMountState({
-      navigationType,
-      scrollY: window.scrollY,
-      sectionTop: metrics.sectionTop,
-      sectionHeight: metrics.sectionHeight,
-    });
-
-    const hasPendingReloadMarker =
-      navigationType === 'reload' && sessionStorage.getItem(VIDEO_SECTION_RELOAD_MARKER) === '1';
-    const targetScrollY = mountState.targetScrollY ?? metrics.sectionTop;
-
-    if (!mountState.shouldResetScroll && !hasPendingReloadMarker) {
-      return false;
-    }
-
-    resetToInitialState();
-    window.scrollTo(0, targetScrollY);
-
-    const didReachTarget = Math.abs(window.scrollY - targetScrollY) <= 2;
-    if (!didReachTarget) {
-      window.history.scrollRestoration = 'manual';
-      return false;
-    }
-
-    sessionStorage.removeItem(VIDEO_SECTION_RELOAD_MARKER);
-    window.history.scrollRestoration = 'auto';
-    return true;
-  };
-
   useLayoutEffect(() => {
     previousScrollYRef.current = window.scrollY;
     resetToInitialState(false);
-    resetVideoSectionIfNeeded();
     syncSectionInView();
   }, []);
 
@@ -479,7 +395,6 @@ export default function VideoScrollTransition() {
       ) {
         softPinSectionTop();
         previousScrollYRef.current = Math.max(scrollY - AWAITING_ACTIVATION_REPIN_TOLERANCE_PX, metrics.sectionTop);
-        syncReloadMarker();
         return;
       }
 
@@ -495,7 +410,6 @@ export default function VideoScrollTransition() {
       }
 
       previousScrollYRef.current = scrollY;
-      syncReloadMarker();
     };
 
     const handleWheel = (event: WheelEvent) => {
@@ -620,11 +534,7 @@ export default function VideoScrollTransition() {
     };
 
     const frame = requestAnimationFrame(() => {
-      const didReset = resetVideoSectionIfNeeded();
       syncSectionInView();
-      if (!didReset) {
-        syncReloadMarker();
-      }
     });
 
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -647,31 +557,6 @@ export default function VideoScrollTransition() {
       }
       if (awaitingActivationRepinFrameRef.current !== null) {
         cancelAnimationFrame(awaitingActivationRepinFrameRef.current);
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    let frame: number | null = null;
-    let attempts = 0;
-
-    const retryPendingReset = () => {
-      if (sessionStorage.getItem(VIDEO_SECTION_RELOAD_MARKER) !== '1') {
-        return;
-      }
-
-      attempts += 1;
-      const didReset = resetVideoSectionIfNeeded();
-      if (!didReset && attempts < 90) {
-        frame = requestAnimationFrame(retryPendingReset);
-      }
-    };
-
-    retryPendingReset();
-
-    return () => {
-      if (frame !== null) {
-        cancelAnimationFrame(frame);
       }
     };
   }, []);

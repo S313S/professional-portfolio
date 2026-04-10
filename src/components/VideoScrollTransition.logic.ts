@@ -76,17 +76,14 @@ export function isScrollWithinVideoSection(scrollY: number, sectionTop: number, 
 }
 
 export function getVideoScrollMountState({
-  navigationType,
-  scrollY,
-  sectionTop,
-  sectionHeight,
+  navigationType: _navigationType,
+  scrollY: _scrollY,
+  sectionTop: _sectionTop,
+  sectionHeight: _sectionHeight,
 }: VideoScrollMountInput): VideoScrollMountState {
-  const shouldResetScroll =
-    navigationType === 'reload' && isScrollWithinVideoSection(scrollY, sectionTop, sectionHeight);
-
   return {
-    shouldResetScroll,
-    targetScrollY: shouldResetScroll ? sectionTop : null,
+    shouldResetScroll: false,
+    targetScrollY: null,
     initialVideoState: DEFAULT_VIDEO_SCROLL_INITIAL_STATE,
   };
 }
