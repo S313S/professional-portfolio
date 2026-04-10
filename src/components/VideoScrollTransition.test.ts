@@ -13,6 +13,8 @@ import {
   getVideoStateAfterActivation,
   getVideoStateAfterMobilePlaybackEnd,
   getVideoStateAfterPrompt,
+  isVideoSectionReadyForPlayback,
+  shouldPinVideoSectionOnEntryScroll,
   shouldRestartLoopPlaybackOnSectionEnter,
   shouldPinVideoSectionOnPrompt,
   shouldPlayLoopVideoInSection,
@@ -63,6 +65,14 @@ test('allows the curtain loop only while loopPlaying and in view', () => {
   );
 });
 
+test('only treats the video section as ready for playback when it reaches its watch position', () => {
+  assert.equal(isVideoSectionReadyForPlayback(2800, 2800), true);
+  assert.equal(isVideoSectionReadyForPlayback(2802, 2800), true);
+  assert.equal(isVideoSectionReadyForPlayback(2798, 2800), true);
+  assert.equal(isVideoSectionReadyForPlayback(2740, 2800), false);
+  assert.equal(isVideoSectionReadyForPlayback(2860, 2800), false);
+});
+
 test('restarts the curtain loop when the section becomes visible for the first time', () => {
   assert.equal(
     shouldRestartLoopPlaybackOnSectionEnter({
@@ -72,6 +82,33 @@ test('restarts the curtain loop when the section becomes visible for the first t
       hasEnteredSectionBefore: false,
     }),
     true,
+  );
+});
+
+test('pins the video section as soon as downward scrolling crosses into it during loop playback', () => {
+  assert.equal(
+    shouldPinVideoSectionOnEntryScroll({
+      state: DEFAULT_VIDEO_SCROLL_INITIAL_STATE,
+      sectionTop: 2800,
+      previousScrollY: 2600,
+      scrollY: 2860,
+    }),
+    true,
+  );
+});
+
+test('does not pin the video section on entry after loop playback has already ended', () => {
+  assert.equal(
+    shouldPinVideoSectionOnEntryScroll({
+      state: {
+        phase: 'awaitingActivation',
+        scrubProgress: 0,
+      },
+      sectionTop: 2800,
+      previousScrollY: 2600,
+      scrollY: 2860,
+    }),
+    false,
   );
 });
 
@@ -113,7 +150,7 @@ test('shows the CTA when the curtain video finishes naturally', () => {
   assert.equal(visualState.shouldPlayLoopVideo, false);
 });
 
-test('first downward wheel step only reveals the CTA without starting the push-in video', () => {
+test('downward wheel input stays pinned during loop playback instead of revealing the CTA', () => {
   const wheelState = getVideoWheelState({
     state: DEFAULT_VIDEO_SCROLL_INITIAL_STATE,
     deltaY: 120,
@@ -121,10 +158,7 @@ test('first downward wheel step only reveals the CTA without starting the push-i
   });
 
   assert.equal(wheelState.shouldPreventScroll, true);
-  assert.deepEqual(wheelState.nextState, {
-    phase: 'awaitingActivation',
-    scrubProgress: 0,
-  });
+  assert.deepEqual(wheelState.nextState, DEFAULT_VIDEO_SCROLL_INITIAL_STATE);
 });
 
 test('clicking the CTA arms the push-in animation at progress zero', () => {
@@ -188,7 +222,7 @@ test('reload outside the video section still does not request an in-section rese
 
   assert.equal(mountState.shouldResetScroll, false);
   assert.equal(mountState.targetScrollY, null);
-  assert.equal(mountState.shouldDeferInitialSectionSync, false);
+  assert.equal(mountState.shouldDeferInitialSectionSync, true);
 });
 
 test('pins the section when the activation prompt appears while the user is still inside the video section', () => {

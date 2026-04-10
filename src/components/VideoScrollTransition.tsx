@@ -17,6 +17,8 @@ import {
   getVideoVisualState,
   getVideoWheelState,
   isScrollWithinVideoSection,
+  isVideoSectionReadyForPlayback,
+  shouldPinVideoSectionOnEntryScroll,
   shouldPlayLoopVideoInSection,
   shouldRestartLoopPlaybackOnSectionEnter,
   shouldPinVideoSectionOnPrompt,
@@ -103,7 +105,7 @@ export default function VideoScrollTransition() {
     const metrics = getSectionMetrics();
     const wasSectionInView = sectionInViewRef.current;
     const nextValue = metrics
-      ? isScrollWithinVideoSection(scrollY, metrics.sectionTop, metrics.sectionHeight)
+      ? isVideoSectionReadyForPlayback(scrollY, metrics.sectionTop)
       : false;
 
     if (
@@ -120,6 +122,16 @@ export default function VideoScrollTransition() {
         loopVideo.currentTime = 0;
       }
       hasEnteredSectionBeforeRef.current = true;
+
+      if (
+        nextValue &&
+        shouldPlayLoopVideoInSection({
+          state: stateRef.current,
+          isSectionInView: true,
+        })
+      ) {
+        ensureLoopVideoPlaying();
+      }
     }
 
     if (wasSectionInView !== nextValue) {
@@ -367,12 +379,9 @@ export default function VideoScrollTransition() {
       : null;
 
     if (mountState?.shouldDeferInitialSectionSync) {
-      const frame = requestAnimationFrame(() => {
-        previousScrollYRef.current = window.scrollY;
-        syncSectionInView();
-      });
-
-      return () => cancelAnimationFrame(frame);
+      sectionInViewRef.current = false;
+      setIsSectionInView(false);
+      return;
     }
 
     syncSectionInView();
@@ -428,6 +437,21 @@ export default function VideoScrollTransition() {
 
       if (
         metrics &&
+        shouldPinVideoSectionOnEntryScroll({
+          state: stateRef.current,
+          sectionTop: metrics.sectionTop,
+          previousScrollY: previousScrollYRef.current,
+          scrollY,
+        })
+      ) {
+        pinSectionTop();
+        syncSectionInView(metrics.sectionTop);
+        previousScrollYRef.current = metrics.sectionTop;
+        return;
+      }
+
+      if (
+        metrics &&
         shouldRepinAwaitingActivationOnScroll({
           state: stateRef.current,
           sectionTop: metrics.sectionTop,
@@ -477,7 +501,10 @@ export default function VideoScrollTransition() {
         return;
       }
 
-      const isPinnedAtSectionTop = Math.abs(window.scrollY - metrics.sectionTop) <= 2;
+      const isPinnedAtSectionTop = isVideoSectionReadyForPlayback(
+        window.scrollY,
+        metrics.sectionTop,
+      );
       if (!isPinnedAtSectionTop) {
         return;
       }
@@ -537,7 +564,10 @@ export default function VideoScrollTransition() {
         return;
       }
 
-      const isPinnedAtSectionTop = Math.abs(window.scrollY - metrics.sectionTop) <= 2;
+      const isPinnedAtSectionTop = isVideoSectionReadyForPlayback(
+        window.scrollY,
+        metrics.sectionTop,
+      );
       if (!isPinnedAtSectionTop) {
         return;
       }

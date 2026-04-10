@@ -313,6 +313,27 @@ test('hides inactive coding card body copy so back-stack text does not bleed thr
   );
 });
 
+test('uses a warm cream background palette for the coding detail stage', () => {
+  const cssSource = readFileSync(new URL('../index.css', import.meta.url), 'utf8');
+
+  assert.match(
+    cssSource,
+    /\.works-detail-stage--coding\s*\{[\s\S]*linear-gradient\(180deg,\s*#f6efdc 0%,\s*#f0e8d2 52%,\s*#f7f1df 100%\);/,
+  );
+  assert.match(
+    cssSource,
+    /\.works-detail-stage__overlay--coding\s*\{[\s\S]*rgba\(255,\s*252,\s*244,\s*0\.18\)[\s\S]*rgba\(233,\s*223,\s*200,\s*0\.32\)/,
+  );
+  assert.match(
+    cssSource,
+    /\.works-detail-coding__intro-title\s*\{[\s\S]*color:\s*#2d241c;/,
+  );
+  assert.match(
+    cssSource,
+    /\.works-detail-coding__intro-body[\s\S]*color:\s*rgba\(73,\s*58,\s*45,\s*0\.82\);/,
+  );
+});
+
 test('locks the gallery cards, corridor, and background grid to the same 45 degree diagonal system', () => {
   const cssSource = readFileSync(new URL('../index.css', import.meta.url), 'utf8');
   const componentSource = readFileSync(new URL('./WorksDetailSection.tsx', import.meta.url), 'utf8');

@@ -796,14 +796,14 @@
 
 .works-detail-stage--coding {
   background:
-    radial-gradient(circle at top right, rgba(112, 162, 255, 0.16), transparent 34%),
-    radial-gradient(circle at bottom left, rgba(91, 199, 145, 0.18), transparent 28%),
-    linear-gradient(180deg, #061018 0%, #091620 52%, #081119 100%);
+    radial-gradient(circle at top right, rgba(236, 210, 164, 0.24), transparent 34%),
+    radial-gradient(circle at bottom left, rgba(214, 185, 138, 0.18), transparent 30%),
+    linear-gradient(180deg, #f6efdc 0%, #f0e8d2 52%, #f7f1df 100%);
 }
 
 .works-detail-stage__overlay--coding {
   background:
-    linear-gradient(180deg, rgba(4, 11, 18, 0.4) 0%, rgba(4, 11, 18, 0.58) 34%, rgba(4, 11, 18, 0.84) 100%);
+    linear-gradient(180deg, rgba(255, 252, 244, 0.18) 0%, rgba(244, 236, 216, 0.24) 34%, rgba(233, 223, 200, 0.32) 100%);
 }
 
 .works-detail-coding__panel {
@@ -947,12 +947,12 @@
 }
 
 .works-detail-coding__drag-pill {
-  border: 1px solid rgba(240, 245, 248, 0.16);
+  border: 1px solid rgba(120, 129, 146, 0.22);
   border-radius: 999px;
   padding: 0.42rem 0.92rem;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(124, 138, 166, 0.12);
   font-size: 0.82rem;
-  color: rgba(236, 242, 246, 0.72);
+  color: rgba(72, 79, 93, 0.76);
 }
 
 .works-detail-coding__intro {
@@ -967,21 +967,40 @@
   font-size: 0.72rem;
   letter-spacing: 0.28em;
   text-transform: uppercase;
-  color: rgba(219, 228, 233, 0.72);
+  color: rgba(120, 130, 150, 0.86);
 }
 
 .works-detail-coding__intro-title {
   font-size: clamp(2.5rem, 4vw, 4.4rem);
   line-height: 0.92;
   letter-spacing: -0.06em;
-  color: rgba(244, 247, 250, 0.96);
+  color: #2d241c;
 }
 
 .works-detail-coding__intro-body,
 .works-detail-coding__projects-summary {
   font-size: 1rem;
   line-height: 1.8;
-  color: rgba(226, 235, 240, 0.76);
+  color: rgba(73, 58, 45, 0.82);
+}
+
+.works-detail-stage--coding .works-detail-stage__tag {
+  border-color: rgba(140, 146, 156, 0.28);
+  background: rgba(255, 252, 244, 0.32);
+  color: rgba(84, 74, 60, 0.78);
+}
+
+.works-detail-stage--coding .works-detail-stage__close {
+  border-color: rgba(140, 146, 156, 0.38);
+  background: rgba(255, 252, 244, 0.42);
+  color: rgba(74, 66, 55, 0.84);
+}
+
+.works-detail-stage--coding .works-detail-stage__close:hover,
+.works-detail-stage--coding .works-detail-stage__close:focus-visible {
+  background: rgba(255, 252, 244, 0.64);
+  border-color: rgba(123, 129, 140, 0.54);
+  color: rgba(52, 45, 37, 0.96);
 }
 
 .works-detail-coding__projects-heading {

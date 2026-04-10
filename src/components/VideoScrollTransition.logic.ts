@@ -45,6 +45,7 @@ export const AWAITING_ACTIVATION_REPIN_DURATION_MS = 520;
 export const CTA_HINT_OFFSET_X_PX = 80;
 export const CTA_HINT_LEFT_BASE_PERCENT = 27.8;
 export const CTA_HINT_LEFT_MD_PERCENT = 27.6;
+export const VIDEO_SECTION_PLAYBACK_START_TOLERANCE_PX = 2;
 
 export const DEFAULT_VIDEO_SCROLL_INITIAL_STATE: VideoScrollState = {
   phase: 'loopPlaying',
@@ -76,19 +77,25 @@ export function isScrollWithinVideoSection(scrollY: number, sectionTop: number, 
   return scrollY >= sectionTop && scrollY < sectionBottom;
 }
 
+export function isVideoSectionReadyForPlayback(
+  scrollY: number,
+  sectionTop: number,
+  tolerancePx = VIDEO_SECTION_PLAYBACK_START_TOLERANCE_PX,
+) {
+  return Math.abs(scrollY - sectionTop) <= tolerancePx;
+}
+
 export function getVideoScrollMountState({
   navigationType,
-  scrollY,
-  sectionTop,
-  sectionHeight,
+  scrollY: _scrollY,
+  sectionTop: _sectionTop,
+  sectionHeight: _sectionHeight,
 }: VideoScrollMountInput): VideoScrollMountState {
   return {
     shouldResetScroll: false,
     targetScrollY: null,
     initialVideoState: DEFAULT_VIDEO_SCROLL_INITIAL_STATE,
-    shouldDeferInitialSectionSync:
-      navigationType === 'reload' &&
-      isScrollWithinVideoSection(scrollY, sectionTop, sectionHeight),
+    shouldDeferInitialSectionSync: navigationType === 'reload',
   };
 }
 
@@ -170,12 +177,33 @@ export interface AwaitingActivationRepinInput {
   scrollY: number;
 }
 
+export interface VideoEntryPinInput {
+  state: VideoScrollState;
+  sectionTop: number;
+  previousScrollY: number;
+  scrollY: number;
+}
+
 export function shouldResetCompletedVideoOnScroll({
   state,
   previousScrollY,
   scrollY,
 }: CompletedScrollResetInput): boolean {
   return state.phase === 'completed' && scrollY < previousScrollY;
+}
+
+export function shouldPinVideoSectionOnEntryScroll({
+  state,
+  sectionTop,
+  previousScrollY,
+  scrollY,
+}: VideoEntryPinInput): boolean {
+  return (
+    state.phase === 'loopPlaying' &&
+    previousScrollY < sectionTop &&
+    scrollY >= sectionTop &&
+    scrollY > previousScrollY
+  );
 }
 
 export function shouldRepinAwaitingActivationOnScroll({
@@ -212,7 +240,7 @@ export function getVideoWheelState({ state, deltaY, step }: VideoWheelInput): Vi
     }
 
     return {
-      nextState: getVideoStateAfterPrompt(state),
+      nextState: state,
       shouldPreventScroll: true,
     };
   }
