@@ -12,6 +12,16 @@ export interface ExperienceHeroSnapState {
   shouldResetLatch: boolean;
 }
 
+export interface ExperienceHeroLockInput {
+  scrollY: number;
+  lastScrollY: number;
+  sectionTop: number;
+  sectionHeight: number;
+  viewportHeight: number;
+  hasSnappedOnCurrentEntry: boolean;
+  transitionArmed: boolean;
+}
+
 const EXPERIENCE_HERO_SNAP_TOP_OFFSET_PX = 24;
 const SNAP_ENTRY_MAX_RATIO = 0.28;
 const SNAP_ENTRY_MIN_RATIO = -0.12;
@@ -57,4 +67,29 @@ export function getExperienceHeroSnapState({
     shouldSnap,
     shouldResetLatch,
   };
+}
+
+export function shouldLockExperienceHeroOnScroll({
+  scrollY,
+  lastScrollY,
+  sectionTop,
+  sectionHeight,
+  viewportHeight,
+  hasSnappedOnCurrentEntry,
+  transitionArmed,
+}: ExperienceHeroLockInput) {
+  if (
+    viewportHeight <= 0 ||
+    sectionHeight <= 0 ||
+    !hasSnappedOnCurrentEntry ||
+    transitionArmed ||
+    scrollY <= lastScrollY
+  ) {
+    return false;
+  }
+
+  const snapTargetY = getExperienceHeroSnapTargetY(sectionTop);
+  const sectionBottom = sectionTop + sectionHeight;
+
+  return scrollY > snapTargetY && scrollY < sectionBottom;
 }

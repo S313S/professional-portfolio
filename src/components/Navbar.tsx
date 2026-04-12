@@ -4,6 +4,8 @@ import { Menu, X } from 'lucide-react';
 
 import { shouldHideNavbar } from './Navbar.logic';
 
+const TOP_SECTION_IDS = ['home', 'about'] as const;
+
 const IMMERSIVE_SECTION_IDS = [
   'career-journey-section',
   'career-detail-section',
@@ -18,6 +20,9 @@ export default function Navbar() {
 
   useEffect(() => {
     const syncNavbarVisibility = () => {
+      const topSectionRects = TOP_SECTION_IDS.map((sectionId) =>
+        document.getElementById(sectionId)?.getBoundingClientRect(),
+      ).filter((sectionRect): sectionRect is DOMRect => Boolean(sectionRect));
       const immersiveSectionRects = IMMERSIVE_SECTION_IDS.map((sectionId) =>
         document.getElementById(sectionId)?.getBoundingClientRect(),
       ).filter((sectionRect): sectionRect is DOMRect => Boolean(sectionRect));
@@ -28,6 +33,7 @@ export default function Navbar() {
           latestScrollY,
           previousScrollY: previousScrollYRef.current,
           isOpen,
+          topSectionRects,
           immersiveSectionRects,
           viewportHeight: window.innerHeight,
         }),

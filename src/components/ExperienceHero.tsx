@@ -1,7 +1,12 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { motion, useTransform, MotionValue } from 'motion/react';
 
-import { getExperienceHeroSnapState, getExperienceHeroSnapTargetY } from './ExperienceHero.logic';
+import {
+  getExperienceHeroSnapState,
+  getExperienceHeroSnapTargetY,
+  shouldLockExperienceHeroOnScroll,
+} from './ExperienceHero.logic';
+import { VIDEO_SCROLL_TRANSITION_SECTION_ID } from './VideoScrollTransition.logic';
 
 const EXPERIENCE_MASK_RADIUS_PX = 260;
 const EXPERIENCE_FLOW_SPEED = 1.75;
@@ -17,6 +22,7 @@ const EXPERIENCE_DISPLACEMENT_IDLE = 52;
 const EXPERIENCE_DISPLACEMENT_HOVER = 72;
 const EXPERIENCE_DISPLACEMENT_WAVE = 14;
 const EXPERIENCE_DISPLACEMENT_SPEED = 2.05;
+const EXPERIENCE_DESKTOP_INTERACTION_QUERY = '(max-width: 767px), (pointer: coarse)';
 
 const buildSpotlightMask = (radiusPx: number) =>
   `radial-gradient(circle ${radiusPx}px at var(--mx, 50%) var(--my, 50%), rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.85) 35%, rgba(0,0,0,0.25) 60%, rgba(0,0,0,0) 82%)`;
@@ -100,6 +106,8 @@ export default function ExperienceHero() {
   const containerRef = useRef<HTMLDivElement>(null);
   const hasSnappedOnCurrentEntryRef = useRef(false);
   const lastScrollYRef = useRef(0);
+  const transitionArmedRef = useRef(false);
+  const allowDesktopInteractionsRef = useRef(true);
 
   // Custom pointer tracking state to bridge vanilla JS and React
   const pointerStateRef = useRef({ x: 0.5, y: 0.5, hover: false });
@@ -177,6 +185,20 @@ export default function ExperienceHero() {
   }, []);
 
   useEffect(() => {
+    const mediaQuery = window.matchMedia(EXPERIENCE_DESKTOP_INTERACTION_QUERY);
+    const updateDesktopInteractionMode = () => {
+      allowDesktopInteractionsRef.current = !mediaQuery.matches;
+    };
+
+    updateDesktopInteractionMode();
+    mediaQuery.addEventListener('change', updateDesktopInteractionMode);
+
+    return () => {
+      mediaQuery.removeEventListener('change', updateDesktopInteractionMode);
+    };
+  }, []);
+
+  useEffect(() => {
     const section = containerRef.current;
     if (!section) {
       return;
@@ -199,6 +221,7 @@ export default function ExperienceHero() {
 
       if (snapState.shouldResetLatch) {
         hasSnappedOnCurrentEntryRef.current = false;
+        transitionArmedRef.current = false;
       }
 
       if (snapState.shouldSnap) {
@@ -207,6 +230,24 @@ export default function ExperienceHero() {
           top: getExperienceHeroSnapTargetY(sectionTop),
           behavior: 'smooth',
         });
+      }
+
+      if (
+        allowDesktopInteractionsRef.current &&
+        shouldLockExperienceHeroOnScroll({
+          scrollY,
+          lastScrollY: lastScrollYRef.current,
+          sectionTop,
+          sectionHeight,
+          viewportHeight: window.innerHeight,
+          hasSnappedOnCurrentEntry: hasSnappedOnCurrentEntryRef.current,
+          transitionArmed: transitionArmedRef.current,
+        })
+      ) {
+        const snapTargetY = getExperienceHeroSnapTargetY(sectionTop);
+        window.scrollTo(0, snapTargetY);
+        lastScrollYRef.current = snapTargetY;
+        return;
       }
 
       lastScrollYRef.current = scrollY;
@@ -219,8 +260,63 @@ export default function ExperienceHero() {
     };
   }, []);
 
+  useEffect(() => {
+    const handleWheel = (event: WheelEvent) => {
+      if (!allowDesktopInteractionsRef.current || transitionArmedRef.current || event.deltaY <= 0) {
+        return;
+      }
+
+      const section = containerRef.current;
+      if (!section || !hasSnappedOnCurrentEntryRef.current) {
+        return;
+      }
+
+      const sectionTop = section.getBoundingClientRect().top + window.scrollY;
+      const sectionHeight = section.offsetHeight;
+      const snapTargetY = getExperienceHeroSnapTargetY(sectionTop);
+      const sectionBottom = sectionTop + sectionHeight;
+      const isWithinHeroLockBand =
+        window.scrollY >= snapTargetY && window.scrollY < sectionBottom;
+
+      if (!isWithinHeroLockBand) {
+        return;
+      }
+
+      event.preventDefault();
+      window.scrollTo(0, snapTargetY);
+      lastScrollYRef.current = snapTargetY;
+    };
+
+    window.addEventListener('wheel', handleWheel, { passive: false });
+
+    return () => {
+      window.removeEventListener('wheel', handleWheel);
+    };
+  }, []);
+
+  const handleDoubleClick = () => {
+    if (!allowDesktopInteractionsRef.current) {
+      return;
+    }
+
+    const nextSection = document.getElementById(VIDEO_SCROLL_TRANSITION_SECTION_ID);
+    if (!nextSection) {
+      return;
+    }
+
+    transitionArmedRef.current = true;
+    const targetScrollY = nextSection.getBoundingClientRect().top + window.scrollY;
+    lastScrollYRef.current = targetScrollY;
+    window.scrollTo(0, targetScrollY);
+  };
+
   return (
-    <div id="experience" ref={containerRef} className="relative w-full h-[100dvh] bg-[#FDFCF8]">
+    <div
+      id="experience"
+      ref={containerRef}
+      className="relative w-full h-[100dvh] bg-[#FDFCF8]"
+      onDoubleClick={handleDoubleClick}
+    >
       <motion.div
         className="sticky top-0 w-full overflow-hidden bg-[#FDFCF8] flex items-center justify-center"
         style={{
@@ -330,7 +426,7 @@ export default function ExperienceHero() {
           </div>
 
           <div className="pointer-events-auto absolute bottom-10 left-1/2 -translate-x-1/2">
-            <p className="animate-bounce text-center text-sm text-white/70">Scroll gently to explore</p>
+            <p className="animate-bounce text-center text-sm text-white/70">Double click to explore</p>
           </div>
         </motion.div>
 

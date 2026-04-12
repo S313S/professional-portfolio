@@ -50,6 +50,7 @@ test('keeps the navbar hidden whenever an immersive section intersects the viewp
       latestScrollY: 4500,
       previousScrollY: 4380,
       isOpen: false,
+      topSectionRects: [{ top: -1800, bottom: -900 }],
       immersiveSectionRects: [{ top: 0, bottom: 900 }],
       viewportHeight: 900,
     }),
@@ -61,6 +62,7 @@ test('keeps the navbar hidden whenever an immersive section intersects the viewp
       latestScrollY: 4500,
       previousScrollY: 4620,
       isOpen: false,
+      topSectionRects: [{ top: -1800, bottom: -900 }],
       immersiveSectionRects: [{ top: 0, bottom: 900 }],
       viewportHeight: 900,
     }),
@@ -68,23 +70,44 @@ test('keeps the navbar hidden whenever an immersive section intersects the viewp
   );
 });
 
-test('falls back to scroll-direction hiding when no immersive section is active', () => {
+test('keeps the navbar visible while a top section intersects the viewport', () => {
   assert.equal(
     shouldHideNavbar({
       latestScrollY: 220,
       previousScrollY: 120,
       isOpen: false,
+      topSectionRects: [{ top: 0, bottom: 900 }],
+      immersiveSectionRects: [{ top: 920, bottom: 1820 }],
+      viewportHeight: 900,
+    }),
+    false,
+  );
+});
+
+test('keeps the navbar hidden after the top sections are fully above the viewport', () => {
+  assert.equal(
+    shouldHideNavbar({
+      latestScrollY: 2200,
+      previousScrollY: 2320,
+      isOpen: false,
+      topSectionRects: [
+        { top: -1800, bottom: -900 },
+        { top: -900, bottom: -20 },
+      ],
       immersiveSectionRects: [{ top: 920, bottom: 1820 }],
       viewportHeight: 900,
     }),
     true,
   );
+});
 
+test('falls back to scroll-direction hiding before the top sections are passed', () => {
   assert.equal(
     shouldHideNavbar({
       latestScrollY: 220,
       previousScrollY: 260,
       isOpen: false,
+      topSectionRects: [{ top: 920, bottom: 1820 }],
       immersiveSectionRects: [{ top: 920, bottom: 1820 }],
       viewportHeight: 900,
     }),

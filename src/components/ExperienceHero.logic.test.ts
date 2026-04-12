@@ -1,7 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { getExperienceHeroSnapState, getExperienceHeroSnapTargetY } from './ExperienceHero.logic.ts';
+import {
+  getExperienceHeroSnapState,
+  getExperienceHeroSnapTargetY,
+  shouldLockExperienceHeroOnScroll,
+} from './ExperienceHero.logic.ts';
 
 test('requests a snap when scrolling down into the activation zone', () => {
   const result = getExperienceHeroSnapState({
@@ -105,4 +109,49 @@ test('snap target shifts upward slightly so the next section does not peek throu
 
 test('snap target does not scroll above the top of the document', () => {
   assert.equal(getExperienceHeroSnapTargetY(12), 0);
+});
+
+test('locks the hero in place when scrolling downward after it has snapped', () => {
+  assert.equal(
+    shouldLockExperienceHeroOnScroll({
+      scrollY: 2040,
+      lastScrollY: 1976,
+      sectionTop: 2000,
+      sectionHeight: 1000,
+      viewportHeight: 1000,
+      hasSnappedOnCurrentEntry: true,
+      transitionArmed: false,
+    }),
+    true,
+  );
+});
+
+test('does not lock the hero when the user scrolls upward toward the previous section', () => {
+  assert.equal(
+    shouldLockExperienceHeroOnScroll({
+      scrollY: 1940,
+      lastScrollY: 1976,
+      sectionTop: 2000,
+      sectionHeight: 1000,
+      viewportHeight: 1000,
+      hasSnappedOnCurrentEntry: true,
+      transitionArmed: false,
+    }),
+    false,
+  );
+});
+
+test('does not lock the hero after the double-click transition has been armed', () => {
+  assert.equal(
+    shouldLockExperienceHeroOnScroll({
+      scrollY: 2040,
+      lastScrollY: 1976,
+      sectionTop: 2000,
+      sectionHeight: 1000,
+      viewportHeight: 1000,
+      hasSnappedOnCurrentEntry: true,
+      transitionArmed: true,
+    }),
+    false,
+  );
 });

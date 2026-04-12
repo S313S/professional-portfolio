@@ -24,6 +24,7 @@ import {
   shouldPinVideoSectionOnPrompt,
   shouldRepinAwaitingActivationOnScroll,
   shouldResetCompletedVideoOnScroll,
+  VIDEO_SCROLL_TRANSITION_SECTION_ID,
   type VideoNavigationType,
   type VideoScrollState,
 } from './VideoScrollTransition.logic';
@@ -700,6 +701,7 @@ export default function VideoScrollTransition() {
 
   return (
     <section
+      id={VIDEO_SCROLL_TRANSITION_SECTION_ID}
       ref={containerRef}
       data-phase={videoState.phase}
       className="relative z-40 h-screen w-full overflow-hidden bg-[#FDFCF8]"

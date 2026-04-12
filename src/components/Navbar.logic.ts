@@ -23,6 +23,7 @@ type ShouldHideNavbarArgs = {
   latestScrollY: number;
   previousScrollY: number;
   isOpen: boolean;
+  topSectionRects: Array<{ top: number; bottom: number }>;
   immersiveSectionRects: Array<{ top: number; bottom: number }>;
   viewportHeight: number;
 };
@@ -31,10 +32,23 @@ export function shouldHideNavbar({
   latestScrollY,
   previousScrollY,
   isOpen,
+  topSectionRects,
   immersiveSectionRects,
   viewportHeight,
 }: ShouldHideNavbarArgs) {
+  if (shouldHideNavbarForSectionRects(topSectionRects, viewportHeight)) {
+    return false;
+  }
+
   if (shouldHideNavbarForSectionRects(immersiveSectionRects, viewportHeight)) {
+    return true;
+  }
+
+  const hasPassedTopSections =
+    topSectionRects.length > 0 &&
+    topSectionRects.every((sectionRect) => sectionRect.bottom <= 0);
+
+  if (hasPassedTopSections) {
     return true;
   }
 

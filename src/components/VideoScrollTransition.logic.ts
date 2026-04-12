@@ -46,6 +46,7 @@ export const CTA_HINT_OFFSET_X_PX = 80;
 export const CTA_HINT_LEFT_BASE_PERCENT = 27.8;
 export const CTA_HINT_LEFT_MD_PERCENT = 27.6;
 export const VIDEO_SECTION_PLAYBACK_START_TOLERANCE_PX = 2;
+export const VIDEO_SCROLL_TRANSITION_SECTION_ID = 'video-scroll-transition';
 
 export const DEFAULT_VIDEO_SCROLL_INITIAL_STATE: VideoScrollState = {
   phase: 'loopPlaying',
