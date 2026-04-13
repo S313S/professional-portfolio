@@ -103,12 +103,12 @@ test('requests a latch reset after the user leaves the section below', () => {
   });
 });
 
-test('snap target shifts upward slightly so the next section does not peek through at the bottom', () => {
-  assert.equal(getExperienceHeroSnapTargetY(2000), 1976);
+test('snap target aligns the experience hero flush with the top of the viewport', () => {
+  assert.equal(getExperienceHeroSnapTargetY(2000), 2000);
 });
 
-test('snap target does not scroll above the top of the document', () => {
-  assert.equal(getExperienceHeroSnapTargetY(12), 0);
+test('snap target preserves the section top when it is already near the top of the document', () => {
+  assert.equal(getExperienceHeroSnapTargetY(12), 12);
 });
 
 test('locks the hero in place when scrolling downward after it has snapped', () => {

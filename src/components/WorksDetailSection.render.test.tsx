@@ -326,6 +326,14 @@ test('uses a night-sky palette with star field styling for the coding detail sta
   );
   assert.match(
     cssSource,
+    /\.works-detail-stage--coding\s*\{[\s\S]*radial-gradient\(circle at 32% 62%,\s*rgba\(255,\s*255,\s*255,\s*0\.72\)\s*0 1px,\s*transparent 1\.65px\)/,
+  );
+  assert.match(
+    cssSource,
+    /\.works-detail-stage--coding\s*\{[\s\S]*radial-gradient\(circle at 88% 74%,\s*rgba\(199,\s*220,\s*255,\s*0\.55\)\s*0 0\.9px,\s*transparent 1\.5px\)/,
+  );
+  assert.match(
+    cssSource,
     /\.works-detail-stage__overlay--coding\s*\{[\s\S]*rgba\(5,\s*10,\s*22,\s*0\.3\)[\s\S]*rgba\(52,\s*78,\s*128,\s*0\.26\)[\s\S]*rgba\(3,\s*8,\s*20,\s*0\.58\)/,
   );
   assert.match(
@@ -335,6 +343,18 @@ test('uses a night-sky palette with star field styling for the coding detail sta
   assert.match(
     cssSource,
     /\.works-detail-coding__intro-body[\s\S]*color:\s*rgba\(210,\s*222,\s*245,\s*0\.78\);/,
+  );
+  assert.match(
+    cssSource,
+    /\.works-detail-coding__project-card\s*\{[\s\S]*border:\s*1px solid rgba\(171,\s*194,\s*238,\s*0\.16\);[\s\S]*background:\s*linear-gradient\(180deg,\s*rgba\(9,\s*18,\s*35,\s*0\.88\)\s*0%,\s*rgba\(6,\s*12,\s*24,\s*0\.92\)\s*100%\);[\s\S]*box-shadow:\s*0 18px 44px rgba\(0,\s*0,\s*0,\s*0\.28\),\s*inset 0 1px 0 rgba\(198,\s*216,\s*255,\s*0\.08\);/,
+  );
+  assert.match(
+    cssSource,
+    /\.works-detail-coding__project-card:hover,\s*\.works-detail-coding__project-card:focus-visible\s*\{[\s\S]*border-color:\s*rgba\(214,\s*229,\s*255,\s*0\.34\);[\s\S]*box-shadow:\s*0 26px 54px rgba\(0,\s*0,\s*0,\s*0\.34\),\s*0 0 26px rgba\(114,\s*149,\s*221,\s*0\.12\);/,
+  );
+  assert.match(
+    cssSource,
+    /\.works-detail-coding__project-tag\s*\{[\s\S]*background:\s*rgba\(151,\s*178,\s*227,\s*0\.14\);[\s\S]*color:\s*rgba\(224,\s*234,\s*250,\s*0\.86\);/,
   );
 });
 

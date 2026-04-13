@@ -22,13 +22,12 @@ export interface ExperienceHeroLockInput {
   transitionArmed: boolean;
 }
 
-const EXPERIENCE_HERO_SNAP_TOP_OFFSET_PX = 24;
 const SNAP_ENTRY_MAX_RATIO = 0.28;
 const SNAP_ENTRY_MIN_RATIO = -0.12;
 const SNAP_RESET_ABOVE_RATIO = 0.6;
 
 export function getExperienceHeroSnapTargetY(sectionTop: number) {
-  return Math.max(Math.round(sectionTop - EXPERIENCE_HERO_SNAP_TOP_OFFSET_PX), 0);
+  return Math.max(Math.round(sectionTop), 0);
 }
 
 export function getExperienceHeroSnapState({

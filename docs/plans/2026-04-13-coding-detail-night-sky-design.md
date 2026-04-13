@@ -4,6 +4,11 @@
 
 Turn the `coding detail` page background from the current warm cream atmosphere into a star-filled night sky while preserving the existing layout, card stack interaction, and project grid structure.
 
+## Approved Refinement
+
+- Keep the night-sky direction, but make the stars slightly more visible.
+- Give the project cards a more unified night-scene "display case" treatment through darker glassy surfaces, cooler borders, and restrained hover glow.
+
 ## Scope
 
 - Update only the `coding detail` stage.

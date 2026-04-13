@@ -2,7 +2,7 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Change the `coding detail` page from a warm cream visual treatment to a star-filled night-sky theme without altering the page's layout or interactions.
+**Goal:** Change the `coding detail` page from a warm cream visual treatment to a star-filled night-sky theme, then refine the project cards so they feel like part of the same night scene without altering layout or interaction behavior.
 
 **Architecture:** The change stays inside the existing coding-detail stage pipeline. The implementation updates CSS theme layers for the coding stage, keeps the current React structure intact, and rewrites the palette-focused render assertions so the new visual contract is test-backed.
 
@@ -54,7 +54,13 @@ Expected: PASS for the updated palette assertions.
 - Recolor intro eyebrow, title, body, stage tag, and close button.
 - Preserve readability and hierarchy.
 
-**Step 3: Keep layout behavior unchanged**
+**Step 3: Refine project cards to match the night scene**
+
+- Deepen the project-card surface into a darker glassy panel.
+- Use cooler border and tag colors.
+- Keep hover feedback restrained and aligned with the night palette.
+
+**Step 4: Keep layout behavior unchanged**
 
 - Do not change coding hero/grid spacing, drag behavior, or card stack transforms.
 
