@@ -313,24 +313,28 @@ test('hides inactive coding card body copy so back-stack text does not bleed thr
   );
 });
 
-test('uses a warm cream background palette for the coding detail stage', () => {
+test('uses a night-sky palette with star field styling for the coding detail stage', () => {
   const cssSource = readFileSync(new URL('../index.css', import.meta.url), 'utf8');
 
   assert.match(
     cssSource,
-    /\.works-detail-stage--coding\s*\{[\s\S]*linear-gradient\(180deg,\s*#f6efdc 0%,\s*#f0e8d2 52%,\s*#f7f1df 100%\);/,
+    /\.works-detail-stage--coding\s*\{[\s\S]*linear-gradient\(180deg,\s*#02030a 0%,\s*#07111f 48%,\s*#03050b 100%\);/,
   );
   assert.match(
     cssSource,
-    /\.works-detail-stage__overlay--coding\s*\{[\s\S]*rgba\(255,\s*252,\s*244,\s*0\.18\)[\s\S]*rgba\(233,\s*223,\s*200,\s*0\.32\)/,
+    /\.works-detail-stage--coding\s*\{[\s\S]*radial-gradient\(circle at 18% 24%,\s*rgba\(255,\s*255,\s*255,\s*0\.9\)\s*0 1\.2px,\s*transparent 1\.8px\)/,
   );
   assert.match(
     cssSource,
-    /\.works-detail-coding__intro-title\s*\{[\s\S]*color:\s*#2d241c;/,
+    /\.works-detail-stage__overlay--coding\s*\{[\s\S]*rgba\(5,\s*10,\s*22,\s*0\.3\)[\s\S]*rgba\(52,\s*78,\s*128,\s*0\.26\)[\s\S]*rgba\(3,\s*8,\s*20,\s*0\.58\)/,
   );
   assert.match(
     cssSource,
-    /\.works-detail-coding__intro-body[\s\S]*color:\s*rgba\(73,\s*58,\s*45,\s*0\.82\);/,
+    /\.works-detail-coding__intro-title\s*\{[\s\S]*color:\s*#eef4ff;/,
+  );
+  assert.match(
+    cssSource,
+    /\.works-detail-coding__intro-body[\s\S]*color:\s*rgba\(210,\s*222,\s*245,\s*0\.78\);/,
   );
 });
 
