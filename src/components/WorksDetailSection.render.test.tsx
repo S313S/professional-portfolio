@@ -334,6 +334,22 @@ test('uses a night-sky palette with star field styling for the coding detail sta
   );
   assert.match(
     cssSource,
+    /\.works-detail-stage--coding\s*\{[\s\S]*radial-gradient\(circle at 44% 12%,\s*rgba\(226,\s*236,\s*255,\s*0\.7\)\s*0 0\.95px,\s*transparent 1\.55px\)/,
+  );
+  assert.match(
+    cssSource,
+    /\.works-detail-stage--coding\s*\{[\s\S]*radial-gradient\(circle at 12% 78%,\s*rgba\(203,\s*221,\s*255,\s*0\.6\)\s*0 0\.9px,\s*transparent 1\.5px\)/,
+  );
+  assert.match(
+    cssSource,
+    /\.works-detail-stage--coding\s*\{[\s\S]*radial-gradient\(circle at 67% 9%,\s*rgba\(237,\s*244,\s*255,\s*0\.74\)\s*0 0\.9px,\s*transparent 1\.45px\)/,
+  );
+  assert.match(
+    cssSource,
+    /\.works-detail-stage--coding\s*\{[\s\S]*radial-gradient\(circle at 24% 84%,\s*rgba\(226,\s*238,\s*255,\s*0\.58\)\s*0 0\.85px,\s*transparent 1\.4px\)/,
+  );
+  assert.match(
+    cssSource,
     /\.works-detail-stage__overlay--coding\s*\{[\s\S]*rgba\(5,\s*10,\s*22,\s*0\.3\)[\s\S]*rgba\(52,\s*78,\s*128,\s*0\.26\)[\s\S]*rgba\(3,\s*8,\s*20,\s*0\.58\)/,
   );
   assert.match(

@@ -802,8 +802,10 @@
     radial-gradient(circle at 32% 62%, rgba(255, 255, 255, 0.72) 0 1px, transparent 1.65px),
     radial-gradient(circle at 58% 18%, rgba(255, 255, 255, 0.8) 0 1.1px, transparent 1.7px),
     radial-gradient(circle at 44% 12%, rgba(226, 236, 255, 0.7) 0 0.95px, transparent 1.55px),
+    radial-gradient(circle at 67% 9%, rgba(237, 244, 255, 0.74) 0 0.9px, transparent 1.45px),
     radial-gradient(circle at 76% 58%, rgba(255, 255, 255, 0.64) 0 0.95px, transparent 1.55px),
     radial-gradient(circle at 12% 78%, rgba(203, 221, 255, 0.6) 0 0.9px, transparent 1.5px),
+    radial-gradient(circle at 24% 84%, rgba(226, 238, 255, 0.58) 0 0.85px, transparent 1.4px),
     radial-gradient(circle at 88% 74%, rgba(199, 220, 255, 0.55) 0 0.9px, transparent 1.5px),
     linear-gradient(180deg, #02030a 0%, #07111f 48%, #03050b 100%);
 }
