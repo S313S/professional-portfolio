@@ -84,6 +84,20 @@ test('keeps the navbar visible while a top section intersects the viewport', () 
   );
 });
 
+test('hides the navbar when an immersive section intersects even if a top section still overlaps', () => {
+  assert.equal(
+    shouldHideNavbar({
+      latestScrollY: 980,
+      previousScrollY: 920,
+      isOpen: false,
+      topSectionRects: [{ top: -120, bottom: 24 }],
+      immersiveSectionRects: [{ top: 0, bottom: 900 }],
+      viewportHeight: 900,
+    }),
+    true,
+  );
+});
+
 test('keeps the navbar hidden after the top sections are fully above the viewport', () => {
   assert.equal(
     shouldHideNavbar({

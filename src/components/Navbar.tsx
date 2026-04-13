@@ -3,10 +3,13 @@ import { motion } from 'motion/react';
 import { Menu, X } from 'lucide-react';
 
 import { shouldHideNavbar } from './Navbar.logic';
+import { VIDEO_SCROLL_TRANSITION_SECTION_ID } from './VideoScrollTransition.logic';
 
 const TOP_SECTION_IDS = ['home', 'about'] as const;
 
 const IMMERSIVE_SECTION_IDS = [
+  'experience',
+  VIDEO_SCROLL_TRANSITION_SECTION_ID,
   'career-journey-section',
   'career-detail-section',
   'works-lobby-section',

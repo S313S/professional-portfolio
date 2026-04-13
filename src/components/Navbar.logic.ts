@@ -36,12 +36,12 @@ export function shouldHideNavbar({
   immersiveSectionRects,
   viewportHeight,
 }: ShouldHideNavbarArgs) {
-  if (shouldHideNavbarForSectionRects(topSectionRects, viewportHeight)) {
-    return false;
-  }
-
   if (shouldHideNavbarForSectionRects(immersiveSectionRects, viewportHeight)) {
     return true;
+  }
+
+  if (shouldHideNavbarForSectionRects(topSectionRects, viewportHeight)) {
+    return false;
   }
 
   const hasPassedTopSections =

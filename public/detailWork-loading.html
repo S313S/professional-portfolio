@@ -6,7 +6,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CODM Loading Animation</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
   <style>
+    :root {
+      --cn-text-offset-x: 40px;
+    }
+
     *,
     *::before,
     *::after {
@@ -340,8 +345,15 @@
     }
 
     .hex-inner-shape {
-      fill: #FFF;
       opacity: 0;
+    }
+
+    .hex-inner-white {
+      fill: #FFF;
+    }
+
+    .hex-inner-red {
+      fill: #D00000;
     }
 
     .hex-bar-left,
@@ -490,18 +502,52 @@
       opacity: 0;
     }
 
-    /* ── Chinese text ── */
+    /* ── Center text ── */
     .cn-text {
       position: absolute;
-      bottom: 12%;
+      bottom: 14%;
       left: 50%;
-      transform: translateX(-50%);
+      transform: translateX(calc(-50% + var(--cn-text-offset-x)));
       color: #FFF;
-      font-family: 'PingFang SC', 'Microsoft YaHei', 'SimHei', sans-serif;
-      font-size: 14px;
-      letter-spacing: 8px;
+      font-family: 'Arial Black', 'Impact', 'Helvetica Neue', sans-serif;
+      font-size: 16px;
+      letter-spacing: 6px;
+      text-transform: uppercase;
+      white-space: nowrap;
       opacity: 0;
       z-index: 30;
+    }
+
+    .scroll-hint {
+      position: absolute;
+      bottom: 6%;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255, 255, 255, 0.45);
+      font-family: 'PingFang SC', 'Microsoft YaHei', 'SimHei', sans-serif;
+      font-size: 12px;
+      letter-spacing: 2px;
+      white-space: nowrap;
+      opacity: 0;
+      z-index: 30;
+    }
+
+    .scroll-hint .arrow-down {
+      display: inline-block;
+      animation: bounceDown 1.5s infinite ease-in-out;
+      margin-left: 4px;
+    }
+
+    @keyframes bounceDown {
+
+      0%,
+      100% {
+        transform: translateY(0);
+      }
+
+      50% {
+        transform: translateY(5px);
+      }
     }
 
     /* ── Sci-fi digital earth (bottom-left) ── */
@@ -613,11 +659,19 @@
           <rect class="hex-bar-left" x="42" y="55" width="18" height="75" rx="1" />
           <rect class="hex-bar-right" x="100" y="55" width="18" height="75" rx="1" />
           <polygon class="hex-diamond" points="80,52 98,82 80,112 62,82" />
-          <g class="hex-inner-shape">
-            <rect x="42" y="52" width="16" height="80" />
-            <rect x="102" y="52" width="16" height="80" />
-            <polygon points="66,52 80,78 94,52 102,52 80,92 58,52" />
-            <rect x="73" y="82" width="14" height="50" />
+          <!-- M letter: white outer layer -->
+          <g class="hex-inner-shape hex-inner-white">
+            <rect x="32" y="42" width="36" height="96" rx="1" />
+            <rect x="92" y="42" width="36" height="96" rx="1" />
+            <polygon points="53,42 80,86 107,42 120,42 80,106 40,42" />
+            <rect x="65" y="74" width="30" height="62" rx="1" />
+          </g>
+          <!-- M letter: red inner layer -->
+          <g class="hex-inner-shape hex-inner-red">
+            <rect x="44" y="54" width="12" height="72" />
+            <rect x="104" y="54" width="12" height="72" />
+            <polygon points="67,54 80,74 93,54 100,54 80,84 60,54" />
+            <rect x="74" y="78" width="12" height="48" />
           </g>
         </svg>
       </div>
@@ -689,7 +743,12 @@
         <polygon class="tri-cell tc-15" points="130,180 195,120 260,180" fill="#333" opacity="0.3" />
       </svg>
     </div>
-    <div class="cn-text">我 的 作 品 展 示</div>
+    <div class="cn-text">Capital to become CEO and Chairman in the future</div>
+    <!--
+      已临时隐藏“Scroll down to see related works”提示。
+      恢复方式：删除本段注释最上方和最下方的注释起止符号，即可恢复显示。
+    <div class="scroll-hint">Scroll down to see related works <span class="arrow-down">↓</span></div>
+    -->
 
     <!-- Sci-fi digital earth (canvas) -->
     <div class="globe-wrap">
@@ -704,6 +763,12 @@
   <script>
     const searchParams = new URLSearchParams(window.location.search);
     const isPortfolioEmbed = searchParams.get('embed') === 'portfolio';
+    const cnTextOffsetXParam = searchParams.get('cnTextOffsetX');
+    const cnTextOffsetX = cnTextOffsetXParam === null ? null : Number(cnTextOffsetXParam);
+
+    if (cnTextOffsetX !== null && Number.isFinite(cnTextOffsetX)) {
+      document.documentElement.style.setProperty('--cn-text-offset-x', `${cnTextOffsetX}px`);
+    }
 
     function notifyParent(type) {
       if (!isPortfolioEmbed || window.parent === window) {
@@ -724,7 +789,7 @@
         ".hex-wrap", ".hex-outline", ".hex-fill-bg",
         ".hex-bar-left", ".hex-bar-right", ".hex-diamond", ".hex-inner-shape",
         ".panel-tr", ".panel-tl", ".accent-dark", ".slash-dark", ".accent-br",
-        ".tri-grid", ".tri-cell", ".cn-text", ".globe-wrap", ".flash", ".replay-btn"
+        ".tri-grid", ".tri-cell", ".cn-text", ".scroll-hint", ".globe-wrap", ".flash", ".replay-btn"
       ], { clearProps: "all" });
 
       const tl = gsap.timeline();
@@ -797,9 +862,11 @@
         .to(".globe-wrap", { opacity: 1, duration: 0.6, ease: "power2.out" }, 8.0)
         .from(".globe-wrap", { scale: 0.3, duration: 0.8, ease: "back.out(1.4)" }, 8.0)
 
-        /* ── STAGE 8: Chinese text ── */
+        /* ── STAGE 8: Center text + scroll hint ── */
         .to(".cn-text", { opacity: 0.7, duration: 0.5, ease: "power1.out" }, 9.0)
         .from(".cn-text", { y: 12, duration: 0.4, ease: "power2.out" }, 9.0)
+        .to(".scroll-hint", { opacity: 1, duration: 0.6, ease: "power1.out" }, 9.5)
+        .from(".scroll-hint", { y: 10, duration: 0.5, ease: "power2.out" }, 9.5)
 
         .to(".replay-btn", { opacity: isPortfolioEmbed ? 0 : 1, duration: 0.3 }, 10.0);
 
@@ -823,8 +890,7 @@
     });
 
     /* ============================================================
-       DIGITAL EARTH — Canvas wireframe globe with lat/lon grid,
-       dot matrix land masses, orbit rings, glow effects
+       SOLID EARTH — Real GeoJSON land data from Natural Earth
     ============================================================ */
     (function () {
       const canvas = document.getElementById('globe-canvas');
@@ -833,225 +899,191 @@
       const W = canvas.width, H = canvas.height;
       const cx = W / 2, cy = H / 2, R = 220;
       let rotation = 0;
-      const tilt = 0.4; // axis tilt in radians
+      const tilt = 0.41;
+      let landPolygons = []; // will hold arrays of [lon, lat] rings
 
-      // Simplified continent data: arrays of [lon, lat] points for dot placement
-      // These approximate major land masses
-      const continents = [];
-      // Generate continent-like dot clusters
-      function initContinents() {
-        // North America
-        for (let i = 0; i < 120; i++) {
-          continents.push([
-            -100 + Math.random() * 60,
-            25 + Math.random() * 40
-          ]);
-        }
-        // South America
-        for (let i = 0; i < 80; i++) {
-          continents.push([
-            -70 + Math.random() * 30,
-            -35 + Math.random() * 45
-          ]);
-        }
-        // Europe
-        for (let i = 0; i < 70; i++) {
-          continents.push([
-            -10 + Math.random() * 40,
-            40 + Math.random() * 25
-          ]);
-        }
-        // Africa
-        for (let i = 0; i < 100; i++) {
-          continents.push([
-            -15 + Math.random() * 55,
-            -30 + Math.random() * 60
-          ]);
-        }
-        // Asia
-        for (let i = 0; i < 150; i++) {
-          continents.push([
-            60 + Math.random() * 80,
-            10 + Math.random() * 55
-          ]);
-        }
-        // Australia
-        for (let i = 0; i < 40; i++) {
-          continents.push([
-            115 + Math.random() * 30,
-            -35 + Math.random() * 20
-          ]);
-        }
-      }
-      initContinents();
+      // Load real world land data (Natural Earth 110m)
+      fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/land-110m.json')
+        .then(r => r.json())
+        .then(topology => {
+          const land = topojson.feature(topology, topology.objects.land);
+          // Extract all polygon rings
+          for (const feature of land.type === 'FeatureCollection' ? land.features : [land]) {
+            const geom = feature.geometry || feature;
+            if (geom.type === 'Polygon') {
+              for (const ring of geom.coordinates) {
+                landPolygons.push(ring);
+              }
+            } else if (geom.type === 'MultiPolygon') {
+              for (const polygon of geom.coordinates) {
+                for (const ring of polygon) {
+                  landPolygons.push(ring);
+                }
+              }
+            }
+          }
+        });
 
-      // Project a 3D point on sphere to 2D
       function project(lon, lat) {
         const phi = (90 - lat) * Math.PI / 180;
         const theta = (lon + rotation) * Math.PI / 180;
-        // 3D coordinates
         let x = R * Math.sin(phi) * Math.cos(theta);
         let y = R * Math.cos(phi);
         let z = R * Math.sin(phi) * Math.sin(theta);
-        // Apply tilt
         const y2 = y * Math.cos(tilt) - z * Math.sin(tilt);
         const z2 = y * Math.sin(tilt) + z * Math.cos(tilt);
         return { x: cx + x, y: cy - y2, z: z2 };
       }
 
+      // Clip polygon to front hemisphere (z >= 0) with edge interpolation.
+      // Returns array of points, each tagged with .boundary = true if on silhouette.
+      function clipToFrontFace(projected) {
+        const clipped = [];
+        const n = projected.length;
+        for (let i = 0; i < n; i++) {
+          const curr = projected[i];
+          const next = projected[(i + 1) % n];
+          if (curr.z >= 0) clipped.push({ x: curr.x, y: curr.y, z: curr.z, boundary: false });
+          if ((curr.z >= 0) !== (next.z >= 0)) {
+            const t = curr.z / (curr.z - next.z);
+            clipped.push({
+              x: curr.x + (next.x - curr.x) * t,
+              y: curr.y + (next.y - curr.y) * t,
+              z: 0,
+              boundary: true
+            });
+          }
+        }
+        return clipped;
+      }
+
+      // Insert arc points along the sphere's circular silhouette between
+      // consecutive boundary points so the clipped polygon follows the edge.
+      function insertSilhouetteArcs(clipped) {
+        if (clipped.length < 3) return clipped;
+        const result = [];
+        for (let i = 0; i < clipped.length; i++) {
+          const curr = clipped[i];
+          const next = clipped[(i + 1) % clipped.length];
+          result.push(curr);
+          // If both current and next are boundary points, insert arc along sphere edge
+          if (curr.boundary && next.boundary) {
+            const a1 = Math.atan2(curr.y - cy, curr.x - cx);
+            let a2 = Math.atan2(next.y - cy, next.x - cx);
+            // Choose shorter arc direction
+            let diff = a2 - a1;
+            if (diff > Math.PI) diff -= 2 * Math.PI;
+            if (diff < -Math.PI) diff += 2 * Math.PI;
+            const steps = Math.max(2, Math.ceil(Math.abs(diff) / 0.15));
+            for (let s = 1; s < steps; s++) {
+              const t = s / steps;
+              const a = a1 + diff * t;
+              result.push({
+                x: cx + R * Math.cos(a),
+                y: cy + R * Math.sin(a),
+                z: 0,
+                boundary: true
+              });
+            }
+          }
+        }
+        return result;
+      }
+
       function drawFrame() {
         ctx.clearRect(0, 0, W, H);
 
-        // Outer glow
-        const glow = ctx.createRadialGradient(cx, cy, R * 0.9, cx, cy, R * 1.3);
-        glow.addColorStop(0, 'rgba(208,0,0,0.03)');
-        glow.addColorStop(0.5, 'rgba(208,0,0,0.015)');
-        glow.addColorStop(1, 'transparent');
-        ctx.fillStyle = glow;
+        // Subtle atmosphere glow
+        const atmo = ctx.createRadialGradient(cx - R * 0.25, cy - R * 0.25, R * 0.6, cx, cy, R * 1.15);
+        atmo.addColorStop(0, 'rgba(200,200,200,0.03)');
+        atmo.addColorStop(0.8, 'rgba(150,150,150,0.015)');
+        atmo.addColorStop(1, 'transparent');
+        ctx.fillStyle = atmo;
         ctx.fillRect(0, 0, W, H);
 
-        // Globe edge glow
+        // Globe base — solid dark sphere with 3D lighting
+        ctx.save();
         ctx.beginPath();
         ctx.arc(cx, cy, R, 0, Math.PI * 2);
-        ctx.strokeStyle = 'rgba(255,255,255,0.08)';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        // Atmosphere ring
-        ctx.beginPath();
-        ctx.arc(cx, cy, R + 4, 0, Math.PI * 2);
-        ctx.strokeStyle = 'rgba(208,0,0,0.12)';
-        ctx.lineWidth = 1;
-        ctx.stroke();
-
-        // Latitude lines
-        for (let lat = -75; lat <= 75; lat += 15) {
-          ctx.beginPath();
-          let started = false;
-          for (let lon = 0; lon <= 360; lon += 3) {
-            const p = project(lon, lat);
-            if (p.z > 0) { // front-face only
-              if (!started) { ctx.moveTo(p.x, p.y); started = true; }
-              else ctx.lineTo(p.x, p.y);
-            } else {
-              started = false;
-            }
-          }
-          ctx.strokeStyle = 'rgba(255,255,255,0.07)';
-          ctx.lineWidth = 0.5;
-          ctx.stroke();
-        }
-
-        // Longitude lines
-        for (let lon = 0; lon < 360; lon += 20) {
-          ctx.beginPath();
-          let started = false;
-          for (let lat = -90; lat <= 90; lat += 3) {
-            const p = project(lon, lat);
-            if (p.z > 0) {
-              if (!started) { ctx.moveTo(p.x, p.y); started = true; }
-              else ctx.lineTo(p.x, p.y);
-            } else {
-              started = false;
-            }
-          }
-          ctx.strokeStyle = 'rgba(255,255,255,0.07)';
-          ctx.lineWidth = 0.5;
-          ctx.stroke();
-        }
-
-        // Continent dots (land masses)
-        for (const [lon, lat] of continents) {
-          const p = project(lon, lat);
-          if (p.z > 0) {
-            const brightness = 0.3 + 0.7 * (p.z / R);
-            const size = 1.2 + 1.0 * (p.z / R);
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(208,80,80,${brightness * 0.6})`;
-            ctx.fill();
-            // Bright center dot
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, size * 0.5, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(255,150,150,${brightness * 0.4})`;
-            ctx.fill();
-          }
-        }
-
-        // Equator highlight
-        ctx.beginPath();
-        let eqStarted = false;
-        for (let lon = 0; lon <= 360; lon += 2) {
-          const p = project(lon, 0);
-          if (p.z > 0) {
-            if (!eqStarted) { ctx.moveTo(p.x, p.y); eqStarted = true; }
-            else ctx.lineTo(p.x, p.y);
-          } else {
-            eqStarted = false;
-          }
-        }
-        ctx.strokeStyle = 'rgba(208,0,0,0.25)';
-        ctx.lineWidth = 1;
-        ctx.stroke();
-
-        // Orbit ring (tilted ellipse)
-        ctx.save();
-        ctx.translate(cx, cy);
-        ctx.rotate(-0.3);
-        ctx.beginPath();
-        ctx.ellipse(0, 0, R + 30, R * 0.35 + 30, 0, 0, Math.PI * 2);
-        ctx.strokeStyle = 'rgba(255,255,255,0.1)';
-        ctx.lineWidth = 1;
-        ctx.stroke();
-        // Orbiting dot
-        const orbitAngle = Date.now() * 0.001;
-        const ox = (R + 30) * Math.cos(orbitAngle);
-        const oy = (R * 0.35 + 30) * Math.sin(orbitAngle);
-        ctx.beginPath();
-        ctx.arc(ox, oy, 3, 0, Math.PI * 2);
-        ctx.fillStyle = '#D00000';
-        ctx.shadowColor = '#D00000';
-        ctx.shadowBlur = 10;
+        const sphereGrad = ctx.createRadialGradient(
+          cx - R * 0.3, cy - R * 0.3, R * 0.05,
+          cx + R * 0.1, cy + R * 0.1, R * 1.05
+        );
+        sphereGrad.addColorStop(0, '#484848');
+        sphereGrad.addColorStop(0.3, '#383838');
+        sphereGrad.addColorStop(0.55, '#2a2a2a');
+        sphereGrad.addColorStop(0.8, '#1c1c1c');
+        sphereGrad.addColorStop(1, '#111');
+        ctx.fillStyle = sphereGrad;
         ctx.fill();
-        ctx.shadowBlur = 0;
+        ctx.clip();
+
+        // Draw land polygons
+        for (const ring of landPolygons) {
+          const projected = ring.map(([lon, lat]) => project(lon, lat));
+
+          // Quick front-face check
+          let frontCount = 0;
+          for (const p of projected) if (p.z > 0) frontCount++;
+          if (frontCount === 0) continue;
+
+          let clipped = clipToFrontFace(projected);
+          if (clipped.length < 3) continue;
+
+          // Insert arc along sphere edge between consecutive boundary points
+          clipped = insertSilhouetteArcs(clipped);
+
+          ctx.beginPath();
+          ctx.moveTo(clipped[0].x, clipped[0].y);
+          for (let i = 1; i < clipped.length; i++) {
+            ctx.lineTo(clipped[i].x, clipped[i].y);
+          }
+          ctx.closePath();
+
+          // Depth-based lighting
+          let avgZ = 0, count = 0;
+          for (const p of clipped) { if (!p.boundary) { avgZ += p.z; count++; } }
+          if (count === 0) { for (const p of clipped) { avgZ += p.z; count++; } }
+          avgZ /= count;
+          const light = Math.max(0, avgZ / R);
+
+          // Fill — light gray, brighter when facing camera
+          const val = Math.floor(95 + 85 * light);
+          ctx.fillStyle = `rgb(${val},${val},${val})`;
+          ctx.fill();
+
+          // Subtle continent outline
+          ctx.strokeStyle = `rgba(200,200,200,${0.05 + 0.15 * light})`;
+          ctx.lineWidth = 0.4;
+          ctx.stroke();
+        }
+
         ctx.restore();
 
-        // Second orbit ring
-        ctx.save();
-        ctx.translate(cx, cy);
-        ctx.rotate(0.8);
+        // Atmosphere edge
         ctx.beginPath();
-        ctx.ellipse(0, 0, R + 18, R * 0.25 + 18, 0, 0, Math.PI * 2);
+        ctx.arc(cx, cy, R + 1, 0, Math.PI * 2);
         ctx.strokeStyle = 'rgba(255,255,255,0.06)';
-        ctx.lineWidth = 0.5;
+        ctx.lineWidth = 1.5;
         ctx.stroke();
-        const ox2 = (R + 18) * Math.cos(orbitAngle * 0.7 + 2);
-        const oy2 = (R * 0.25 + 18) * Math.sin(orbitAngle * 0.7 + 2);
+
+        // Specular highlight (upper-left glossy shine)
+        ctx.save();
         ctx.beginPath();
-        ctx.arc(ox2, oy2, 2, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(255,255,255,0.5)';
-        ctx.fill();
+        ctx.arc(cx, cy, R, 0, Math.PI * 2);
+        ctx.clip();
+        const spec = ctx.createRadialGradient(
+          cx - R * 0.35, cy - R * 0.35, 0,
+          cx - R * 0.35, cy - R * 0.35, R * 0.65
+        );
+        spec.addColorStop(0, 'rgba(255,255,255,0.09)');
+        spec.addColorStop(0.4, 'rgba(255,255,255,0.025)');
+        spec.addColorStop(1, 'transparent');
+        ctx.fillStyle = spec;
+        ctx.fillRect(0, 0, W, H);
         ctx.restore();
 
-        // Scanning line (horizontal sweep)
-        const scanY = cy + R * Math.sin(Date.now() * 0.002);
-        if (Math.abs(scanY - cy) < R) {
-          const halfW = Math.sqrt(R * R - (scanY - cy) * (scanY - cy));
-          const grad = ctx.createLinearGradient(cx - halfW, scanY, cx + halfW, scanY);
-          grad.addColorStop(0, 'transparent');
-          grad.addColorStop(0.3, 'rgba(208,0,0,0.15)');
-          grad.addColorStop(0.5, 'rgba(208,0,0,0.25)');
-          grad.addColorStop(0.7, 'rgba(208,0,0,0.15)');
-          grad.addColorStop(1, 'transparent');
-          ctx.beginPath();
-          ctx.moveTo(cx - halfW, scanY);
-          ctx.lineTo(cx + halfW, scanY);
-          ctx.strokeStyle = grad;
-          ctx.lineWidth = 2;
-          ctx.stroke();
-        }
-
-        rotation += 0.15;
+        rotation += 0.12;
         requestAnimationFrame(drawFrame);
       }
 
