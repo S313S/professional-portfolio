@@ -32,21 +32,20 @@ export interface CodingProjectCard {
   link: string;
 }
 
-export interface FriendBookFinalPillar {
+export interface FriendBookFinalGameCard {
   id: string;
   title: string;
-  status: string;
   description: string;
+  ctaLabel: string;
 }
 
 export interface FriendBookFinalEntry {
   id: string;
   nickname: string;
-  resonance: string;
-  blessing: string;
-  source: string;
-  date: string;
   seal: string;
+  excerpt: string;
+  note: string;
+  date: string;
 }
 
 const featuredWorks: FeaturedWork[] = [
@@ -327,93 +326,76 @@ const codingProjects: Record<CodingCategoryId, CodingProjectCard[]> = {
 };
 
 export const friendBookFinalSectionData = {
-  overline: 'Next Chapter / 友人帐',
-  title: 'A softer public site for work, play, and remembrance.',
+  overline: 'Friend Book / Play',
+  title: 'Where would you like to begin tonight?',
   description:
-    'Friend Book is framed here as a quieter public chapter: visitors can arrive through a work, a tiny game, or a passing feeling, then leave a name that is less about identity and more about memory.',
+    'A few short interactions. When they end, you can decide whether to leave an echo in the Friend Book.',
   ctaLinks: [
     {
-      id: 'friend-book-pillars-link',
-      label: 'Read the structure',
-      href: '#friend-book-pillars',
+      id: 'friend-book-start-link',
+      label: 'Start Playing',
+      href: '#friend-book-game-grid',
     },
     {
-      id: 'friend-book-thesis-link',
-      label: 'Why leave a name',
-      href: '#leave-name-band',
-    },
-    {
-      id: 'friend-book-preview-link',
-      label: 'Preview the entries',
+      id: 'friend-book-open-link',
+      label: 'Open Friend Book',
       href: '#friend-book-preview',
     },
   ],
-  pillars: [
+  gameCards: [
     {
-      id: 'works',
-      title: 'Works',
-      status: 'MVP',
+      id: 'between-two-pages',
+      title: 'Between Two Pages',
       description:
-        'A slower gallery of selected pieces, each one treated as an invitation rather than a portfolio checkpoint.',
+        'Find a few small differences before the page closes for the night.',
+      ctaLabel: 'Begin',
     },
     {
-      id: 'play',
-      title: 'Play',
-      status: 'MVP',
+      id: 'moon-run',
+      title: 'Moon Run',
       description:
-        'Short interactive scenes designed to create a mood shift in under a minute, not a competitive game layer.',
+        'A short night run where timing matters more than speed.',
+      ctaLabel: 'Begin',
     },
     {
-      id: 'leave-a-name',
-      title: 'Leave a Name',
-      status: 'MVP',
+      id: 'one-stroke-mark',
+      title: 'One Stroke Mark',
       description:
-        'A gentle writing moment where visitors choose how they would like to be remembered after reading or playing.',
+        'Leave a single drawn trace before you decide whether to be remembered.',
+      ctaLabel: 'Begin',
     },
-    {
-      id: 'friend-book',
-      title: 'Friend Book',
-      status: 'MVP',
-      description:
-        'A browsable set of public traces that feels closer to a shared keepsake shelf than a comment thread.',
-    },
-  ] satisfies FriendBookFinalPillar[],
-  thesis:
-    'Not your identity. The name you’d like me to remember.',
-  thesisDescription:
-    'The friend-book idea is meant to hold echoes, blessings, and brief emotional traces. It is not a profile system, not a review box, and not a demand for real-world credentials.',
+  ] satisfies FriendBookFinalGameCard[],
+  previewEyebrow: 'Friend Book Preview',
+  previewTitle: 'Soft Archive of Tonight',
+  previewDescription:
+    'Three recent echoes, kept brief and quiet.',
   entries: [
     {
-      id: 'moonlit-echo',
-      nickname: 'Moonlit Echo',
-      resonance:
-        'I stayed for the pacing. It felt like reading a quiet interface instead of scanning one.',
-      blessing: 'May your next chapter keep the same soft confidence.',
-      source: 'Late-night prototype',
-      date: 'Apr 13, 2026',
+      id: 'window-lamp',
+      nickname: 'Window Lamp',
       seal: 'Moon Seal',
+      excerpt: 'Stayed for one round, then lingered for the mood.',
+      note: 'The quiet pacing made the page feel warmer.',
+      date: 'Apr 13, 2026',
     },
     {
       id: 'paper-trail',
       nickname: 'Paper Trail',
-      resonance:
-        'The playful detour made the work feel easier to approach, like someone leaving the lamp on for me.',
-      blessing: 'Hope the small interactions keep leading people to the bigger story.',
-      source: 'Game ending',
-      date: 'Apr 10, 2026',
       seal: 'Wind Mark',
+      excerpt: 'A small interaction, then a note left behind.',
+      note: 'It felt easy to enter without needing to explain too much.',
+      date: 'Apr 10, 2026',
     },
     {
-      id: 'night-keepsake',
-      nickname: 'Night Keepsake',
-      resonance:
-        'The idea of a remembered name landed harder than a normal contact form ever could.',
-      blessing: 'May the archive keep growing without getting louder.',
-      source: 'Work page',
+      id: 'night-shift',
+      nickname: 'Night Shift',
+      seal: 'Paper Seal',
+      excerpt: 'Came for the game, stayed for the archive.',
+      note: 'The Friend Book preview feels calm instead of performative.',
       date: 'Apr 06, 2026',
-      seal: 'Paper Star',
     },
   ] satisfies FriendBookFinalEntry[],
+  footerLine: 'Start with a short play session, then decide what tonight should leave behind.',
 } as const;
 
 export const personalData = {
