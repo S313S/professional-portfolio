@@ -88,6 +88,7 @@ export interface WorksDetailNextSectionNavigationInput {
   phase: WorksDetailPhase;
   view: WorksDetailView;
   deltaY: number;
+  nextSectionTop: number | null;
 }
 
 export interface WorksDetailSceneNavigationInput {
@@ -265,8 +266,15 @@ export function shouldAdvanceWorksDetailToNextSection({
   phase,
   view,
   deltaY,
+  nextSectionTop,
 }: WorksDetailNextSectionNavigationInput) {
-  return phase === 'settled' && view === 'entry' && deltaY > 0;
+  return (
+    phase === 'settled' &&
+    view === 'entry' &&
+    deltaY > 0 &&
+    nextSectionTop !== null &&
+    nextSectionTop > 0
+  );
 }
 
 export function getWorksDetailWheelState({

@@ -130,6 +130,7 @@ test('settled entry view converts downward wheel input into next-section navigat
       phase: 'settled',
       view: 'entry',
       deltaY: 120,
+      nextSectionTop: 240,
     }),
     true,
   );
@@ -139,6 +140,7 @@ test('settled entry view converts downward wheel input into next-section navigat
       phase: 'settled',
       view: 'detail',
       deltaY: 120,
+      nextSectionTop: 240,
     }),
     false,
   );
@@ -148,6 +150,7 @@ test('settled entry view converts downward wheel input into next-section navigat
       phase: 'revealing',
       view: 'entry',
       deltaY: 120,
+      nextSectionTop: 240,
     }),
     false,
   );
@@ -157,6 +160,27 @@ test('settled entry view converts downward wheel input into next-section navigat
       phase: 'settled',
       view: 'entry',
       deltaY: -120,
+      nextSectionTop: 240,
+    }),
+    false,
+  );
+
+  assert.equal(
+    shouldAdvanceWorksDetailToNextSection({
+      phase: 'settled',
+      view: 'entry',
+      deltaY: 120,
+      nextSectionTop: 0,
+    }),
+    false,
+  );
+
+  assert.equal(
+    shouldAdvanceWorksDetailToNextSection({
+      phase: 'settled',
+      view: 'entry',
+      deltaY: 120,
+      nextSectionTop: null,
     }),
     false,
   );

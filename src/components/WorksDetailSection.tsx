@@ -507,6 +507,15 @@ export default function WorksDetailSection({
     });
   };
 
+  const getNextSectionTop = () => {
+    const nextSection = document.getElementById(WORKS_DETAIL_NEXT_SECTION_ID);
+    if (!nextSection) {
+      return null;
+    }
+
+    return nextSection.getBoundingClientRect().top;
+  };
+
   useEffect(() => {
     const handleStart = () => {
       restartLoading(false);
@@ -705,6 +714,7 @@ export default function WorksDetailSection({
           phase: currentPhase,
           view: currentView,
           deltaY: event.deltaY,
+          nextSectionTop: getNextSectionTop(),
         })
       ) {
         event.preventDefault();
@@ -823,6 +833,7 @@ export default function WorksDetailSection({
           phase: phaseRef.current,
           view: viewRef.current,
           deltaY: startY - currentY,
+          nextSectionTop: getNextSectionTop(),
         })
       ) {
         event.preventDefault();
