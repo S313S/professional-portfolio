@@ -13,6 +13,7 @@ import {
   getWorksDetailVisualState,
   getWorksDetailWheelBufferState,
   shouldCaptureWorksDetailWheel,
+  shouldAdvanceWorksDetailToNextSection,
   getWorksDetailWheelState,
   isWorksDetailContentInteractive,
   openWorksDetailCodingView,
@@ -33,6 +34,7 @@ const TOUCH_STEP_TOLERANCE_PX = 4;
 const WORKS_DETAIL_REVEAL_STEP = 0.18;
 const WORKS_DETAIL_WHEEL_THRESHOLD_PX = 30;
 const WORKS_DETAIL_WHEEL_UNIT_DELTA = 120;
+const WORKS_DETAIL_NEXT_SECTION_ID = 'friend-book-finale-section';
 const WORKS_DETAIL_LEFT_BUTTON_SRC = '/images/workDetail_left_icon.png.png';
 const WORKS_DETAIL_RIGHT_BUTTON_SRC = '/images/workDetail_rigtht_icon.png';
 const WORKS_DETAIL_STAGE_BACKGROUND_SRC = '';
@@ -432,6 +434,7 @@ export default function WorksDetailSection({
   const contentOpacity =
     phase === 'settled' ? 1 : phase === 'revealing' ? Math.min(transitionProgress * 1.35, 1) : 0;
   const isContentInteractive = isWorksDetailContentInteractive(phase, transitionProgress);
+  const isEntryStagePinnedToSection = phase === 'settled' && view === 'entry';
 
   const activeProject = personalData.featuredWorks[activeProjectIndex] ?? personalData.featuredWorks[0];
   const previousProject =
@@ -489,6 +492,19 @@ export default function WorksDetailSection({
         behavior: 'auto',
       });
     }
+  };
+
+  const scrollToNextSection = () => {
+    const nextSection = document.getElementById(WORKS_DETAIL_NEXT_SECTION_ID);
+    if (!nextSection) {
+      return;
+    }
+
+    wheelBufferRef.current = 0;
+    window.scrollTo({
+      top: getWorksDetailPinnedScrollY(nextSection.getBoundingClientRect().top + window.scrollY),
+      behavior: 'smooth',
+    });
   };
 
   useEffect(() => {
@@ -685,6 +701,18 @@ export default function WorksDetailSection({
       const currentDetailMode = detailModeRef.current;
 
       if (
+        shouldAdvanceWorksDetailToNextSection({
+          phase: currentPhase,
+          view: currentView,
+          deltaY: event.deltaY,
+        })
+      ) {
+        event.preventDefault();
+        scrollToNextSection();
+        return;
+      }
+
+      if (
         !shouldLockWorksDetailScroll({
           phase: currentPhase,
           scrollY: window.scrollY,
@@ -785,6 +813,24 @@ export default function WorksDetailSection({
     };
 
     const handleTouchMove = (event: TouchEvent) => {
+      const startY = touchStartYRef.current;
+      const currentY = event.touches[0]?.clientY;
+
+      if (
+        startY !== null &&
+        currentY !== undefined &&
+        shouldAdvanceWorksDetailToNextSection({
+          phase: phaseRef.current,
+          view: viewRef.current,
+          deltaY: startY - currentY,
+        })
+      ) {
+        event.preventDefault();
+        touchStartYRef.current = currentY;
+        scrollToNextSection();
+        return;
+      }
+
       if (
         !shouldLockWorksDetailScroll({
           phase: phaseRef.current,
@@ -800,8 +846,6 @@ export default function WorksDetailSection({
         return;
       }
 
-      const startY = touchStartYRef.current;
-      const currentY = event.touches[0]?.clientY;
       if (startY === null || currentY === undefined) {
         return;
       }
@@ -979,14 +1023,14 @@ export default function WorksDetailSection({
       data-works-detail-view={view}
       data-works-detail-detail-mode={detailMode}
       data-works-detail-loading-src={WORKS_DETAIL_LOADING_SRC}
-      className="relative h-px bg-black text-[#f5efe6]"
+      className={`relative bg-black text-[#f5efe6] ${isEntryStagePinnedToSection ? 'min-h-screen' : 'h-px'}`}
     >
       <h2 id="works-detail-title" className="sr-only">
         Work detail loading transition
       </h2>
 
       <div
-        className={`fixed inset-0 z-50 overflow-hidden bg-black transition-opacity duration-200 ${phase === 'idle' ? 'pointer-events-none opacity-0' : 'pointer-events-auto opacity-100'}`}
+        className={`${isEntryStagePinnedToSection ? 'absolute' : 'fixed'} inset-0 z-50 overflow-hidden bg-black transition-opacity duration-200 ${phase === 'idle' ? 'pointer-events-none opacity-0' : 'pointer-events-auto opacity-100'}`}
       >
         <div
           aria-hidden="true"

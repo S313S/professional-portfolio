@@ -84,6 +84,12 @@ export interface WorksDetailWheelCaptureInput {
   detailMode: WorksDetailDetailMode;
 }
 
+export interface WorksDetailNextSectionNavigationInput {
+  phase: WorksDetailPhase;
+  view: WorksDetailView;
+  deltaY: number;
+}
+
 export interface WorksDetailSceneNavigationInput {
   scene: WorksDetailScene;
   activeProjectIndex: number;
@@ -232,7 +238,7 @@ export function shouldLockWorksDetailScroll({
   sectionTop: _sectionTop,
   sectionHeight,
 }: WorksDetailScrollLockInput) {
-  if (phase === 'idle' || sectionHeight <= 0) {
+  if (phase === 'idle' || phase === 'settled' || sectionHeight <= 0) {
     return false;
   }
 
@@ -253,6 +259,14 @@ export function shouldCaptureWorksDetailWheel({
   }
 
   return true;
+}
+
+export function shouldAdvanceWorksDetailToNextSection({
+  phase,
+  view,
+  deltaY,
+}: WorksDetailNextSectionNavigationInput) {
+  return phase === 'settled' && view === 'entry' && deltaY > 0;
 }
 
 export function getWorksDetailWheelState({
@@ -292,7 +306,7 @@ export function getWorksDetailWheelState({
     return {
       nextPhase: 'settled',
       nextTransitionProgress: 1,
-      shouldPreventScroll: true,
+      shouldPreventScroll: false,
       shouldExitToLobby: false,
     };
   }
@@ -352,7 +366,7 @@ export function getWorksDetailVisualState(
       loadingTranslateY: -100,
       loadingPointerEvents: 'none',
       showIframe: false,
-      shouldLockScroll: true,
+      shouldLockScroll: false,
     };
   }
 

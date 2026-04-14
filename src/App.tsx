@@ -8,6 +8,7 @@ import CareerJourneySection from './components/CareerJourneySection';
 import CareerDetailSection from './components/CareerDetailSection';
 import WorksDetailSection from './components/WorksDetailSection';
 import WorksLobbySection from './components/WorksLobbySection';
+import FriendBookFinalSection from './components/FriendBookFinalSection';
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
         <CareerDetailSection />
         <WorksLobbySection />
         <WorksDetailSection />
+        <FriendBookFinalSection />
       </main>
     </div>
   );

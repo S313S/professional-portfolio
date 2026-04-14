@@ -13,6 +13,7 @@ import {
   openWorksDetailCodingView,
   openWorksDetailDesignView,
   getWorksDetailPinnedScrollY,
+  shouldAdvanceWorksDetailToNextSection,
   shouldCaptureWorksDetailWheel,
   getWorksDetailVisualState,
   getWorksDetailWheelBufferState,
@@ -123,6 +124,44 @@ test('coding detail mode releases wheel scrolling back to the panel instead of h
   );
 });
 
+test('settled entry view converts downward wheel input into next-section navigation', () => {
+  assert.equal(
+    shouldAdvanceWorksDetailToNextSection({
+      phase: 'settled',
+      view: 'entry',
+      deltaY: 120,
+    }),
+    true,
+  );
+
+  assert.equal(
+    shouldAdvanceWorksDetailToNextSection({
+      phase: 'settled',
+      view: 'detail',
+      deltaY: 120,
+    }),
+    false,
+  );
+
+  assert.equal(
+    shouldAdvanceWorksDetailToNextSection({
+      phase: 'revealing',
+      view: 'entry',
+      deltaY: 120,
+    }),
+    false,
+  );
+
+  assert.equal(
+    shouldAdvanceWorksDetailToNextSection({
+      phase: 'settled',
+      view: 'entry',
+      deltaY: -120,
+    }),
+    false,
+  );
+});
+
 test('late reveal state is already interactive once the entry content is fully visible', () => {
   assert.equal(isWorksDetailContentInteractive('revealing', 0.8), true);
   assert.equal(isWorksDetailContentInteractive('revealing', 0.4), false);
@@ -157,7 +196,7 @@ test('visual state keeps the background fixed and pushes the loading layer upwar
     loadingTranslateY: -100,
     loadingPointerEvents: 'none',
     showIframe: false,
-    shouldLockScroll: true,
+    shouldLockScroll: false,
   });
 });
 
@@ -278,7 +317,7 @@ test('detail view no longer maps upward scroll to closing the current page', () 
   });
 });
 
-test('settled stage remains locked on downward scroll so the background can hold future actions', () => {
+test('settled stage releases downward scroll so the next page can enter naturally', () => {
   assert.deepEqual(
     getWorksDetailWheelState({
       phase: 'settled',
@@ -289,9 +328,21 @@ test('settled stage remains locked on downward scroll so the background can hold
     {
       nextPhase: 'settled',
       nextTransitionProgress: 1,
-      shouldPreventScroll: true,
+      shouldPreventScroll: false,
       shouldExitToLobby: false,
     },
+  );
+});
+
+test('settled stage no longer requests global scroll locking', () => {
+  assert.equal(
+    shouldLockWorksDetailScroll({
+      phase: 'settled',
+      scrollY: 3200,
+      sectionTop: 3200,
+      sectionHeight: 1800,
+    }),
+    false,
   );
 });
 

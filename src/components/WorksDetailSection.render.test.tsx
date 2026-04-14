@@ -125,6 +125,23 @@ test('transparent loading fallback does not keep intercepting clicks after the t
   assert.match(markup, /opacity:0;pointer-events:none/);
 });
 
+test('entry overlay becomes section-bound after settling so the next page can scroll into view', () => {
+  const markup = renderToStaticMarkup(
+    <WorksDetailSection initialPhase="settled" initialTransitionProgress={1} />,
+  );
+
+  assert.match(markup, /id="works-detail-section"/);
+  assert.match(markup, /class="relative [^"]*bg-black[^"]*text-\[#f5efe6\][^"]*min-h-screen"/);
+  assert.match(
+    markup,
+    /class="absolute inset-0 z-50 overflow-hidden bg-black transition-opacity duration-200 pointer-events-auto opacity-100"/,
+  );
+  assert.doesNotMatch(
+    markup,
+    /class="fixed inset-0 z-50 overflow-hidden bg-black transition-opacity duration-200 pointer-events-auto opacity-100"/,
+  );
+});
+
 test('keeps the current text blocks edge-aligned with equalized description heights', () => {
   const markup = renderToStaticMarkup(<WorksDetailSection />);
   const minHeightMatches = markup.match(/min-h-\[3\.8rem\]/g) ?? [];

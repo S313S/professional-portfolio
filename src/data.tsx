@@ -32,6 +32,23 @@ export interface CodingProjectCard {
   link: string;
 }
 
+export interface FriendBookFinalPillar {
+  id: string;
+  title: string;
+  status: string;
+  description: string;
+}
+
+export interface FriendBookFinalEntry {
+  id: string;
+  nickname: string;
+  resonance: string;
+  blessing: string;
+  source: string;
+  date: string;
+  seal: string;
+}
+
 const featuredWorks: FeaturedWork[] = [
   {
     id: 'signal-in-motion',
@@ -308,6 +325,96 @@ const codingProjects: Record<CodingCategoryId, CodingProjectCard[]> = {
     },
   ],
 };
+
+export const friendBookFinalSectionData = {
+  overline: 'Next Chapter / 友人帐',
+  title: 'A softer public site for work, play, and remembrance.',
+  description:
+    'Friend Book is framed here as a quieter public chapter: visitors can arrive through a work, a tiny game, or a passing feeling, then leave a name that is less about identity and more about memory.',
+  ctaLinks: [
+    {
+      id: 'friend-book-pillars-link',
+      label: 'Read the structure',
+      href: '#friend-book-pillars',
+    },
+    {
+      id: 'friend-book-thesis-link',
+      label: 'Why leave a name',
+      href: '#leave-name-band',
+    },
+    {
+      id: 'friend-book-preview-link',
+      label: 'Preview the entries',
+      href: '#friend-book-preview',
+    },
+  ],
+  pillars: [
+    {
+      id: 'works',
+      title: 'Works',
+      status: 'MVP',
+      description:
+        'A slower gallery of selected pieces, each one treated as an invitation rather than a portfolio checkpoint.',
+    },
+    {
+      id: 'play',
+      title: 'Play',
+      status: 'MVP',
+      description:
+        'Short interactive scenes designed to create a mood shift in under a minute, not a competitive game layer.',
+    },
+    {
+      id: 'leave-a-name',
+      title: 'Leave a Name',
+      status: 'MVP',
+      description:
+        'A gentle writing moment where visitors choose how they would like to be remembered after reading or playing.',
+    },
+    {
+      id: 'friend-book',
+      title: 'Friend Book',
+      status: 'MVP',
+      description:
+        'A browsable set of public traces that feels closer to a shared keepsake shelf than a comment thread.',
+    },
+  ] satisfies FriendBookFinalPillar[],
+  thesis:
+    'Not your identity. The name you’d like me to remember.',
+  thesisDescription:
+    'The friend-book idea is meant to hold echoes, blessings, and brief emotional traces. It is not a profile system, not a review box, and not a demand for real-world credentials.',
+  entries: [
+    {
+      id: 'moonlit-echo',
+      nickname: 'Moonlit Echo',
+      resonance:
+        'I stayed for the pacing. It felt like reading a quiet interface instead of scanning one.',
+      blessing: 'May your next chapter keep the same soft confidence.',
+      source: 'Late-night prototype',
+      date: 'Apr 13, 2026',
+      seal: 'Moon Seal',
+    },
+    {
+      id: 'paper-trail',
+      nickname: 'Paper Trail',
+      resonance:
+        'The playful detour made the work feel easier to approach, like someone leaving the lamp on for me.',
+      blessing: 'Hope the small interactions keep leading people to the bigger story.',
+      source: 'Game ending',
+      date: 'Apr 10, 2026',
+      seal: 'Wind Mark',
+    },
+    {
+      id: 'night-keepsake',
+      nickname: 'Night Keepsake',
+      resonance:
+        'The idea of a remembered name landed harder than a normal contact form ever could.',
+      blessing: 'May the archive keep growing without getting louder.',
+      source: 'Work page',
+      date: 'Apr 06, 2026',
+      seal: 'Paper Star',
+    },
+  ] satisfies FriendBookFinalEntry[],
+} as const;
 
 export const personalData = {
   name: "Xiao Ci - AI Builder",
