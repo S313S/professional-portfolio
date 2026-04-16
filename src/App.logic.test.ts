@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { getInitialScrollResetState } from './App.logic';
+import { getInitialFocusTarget, getInitialScrollResetState } from './App.logic';
 
 test('reload navigation resets the app back to the homepage top', () => {
   assert.deepEqual(getInitialScrollResetState('reload'), {
@@ -20,4 +20,22 @@ test('non-reload navigations keep the browser scroll restoration defaults', () =
     shouldResetScrollToTop: false,
     scrollRestoration: 'auto',
   });
+});
+
+test('reload navigation does not force scroll-to-top when a supported debug focus target is present', () => {
+  assert.deepEqual(getInitialScrollResetState('reload', 'friend-book-finale-section'), {
+    shouldResetScrollToTop: false,
+    scrollRestoration: 'manual',
+  });
+});
+
+test('parses only supported focus query values from the url search string', () => {
+  assert.equal(
+    getInitialFocusTarget('?focus=friend-book-finale-section'),
+    'friend-book-finale-section',
+  );
+  assert.equal(getInitialFocusTarget('?focus=friend-book-game-grid'), 'friend-book-game-grid');
+  assert.equal(getInitialFocusTarget('?focus=friend-book-preview'), 'friend-book-preview');
+  assert.equal(getInitialFocusTarget('?focus=works-detail-section'), null);
+  assert.equal(getInitialFocusTarget('?foo=friend-book-finale-section'), null);
 });

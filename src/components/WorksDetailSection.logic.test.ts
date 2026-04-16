@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   closeWorksDetailView,
   getWorksDetailActivationState,
+  getWorksDetailAdvanceGateArmState,
   getWorksDetailBackNavigationState,
   getWorksDetailCompletionState,
   getWorksDetailDetailModeResetState,
@@ -124,11 +125,23 @@ test('coding detail mode releases wheel scrolling back to the panel instead of h
   );
 });
 
-test('settled entry view converts downward wheel input into next-section navigation as soon as detailWork is fully revealed', () => {
+test('settled entry view only advances to the next section after a fresh downward gesture', () => {
   assert.equal(
     shouldAdvanceWorksDetailToNextSection({
       phase: 'settled',
       view: 'entry',
+      isNextSectionAdvanceArmed: false,
+      deltaY: 120,
+      nextSectionTop: 240,
+    }),
+    false,
+  );
+
+  assert.equal(
+    shouldAdvanceWorksDetailToNextSection({
+      phase: 'settled',
+      view: 'entry',
+      isNextSectionAdvanceArmed: true,
       deltaY: 120,
       nextSectionTop: 240,
     }),
@@ -139,6 +152,7 @@ test('settled entry view converts downward wheel input into next-section navigat
     shouldAdvanceWorksDetailToNextSection({
       phase: 'settled',
       view: 'detail',
+      isNextSectionAdvanceArmed: true,
       deltaY: 120,
       nextSectionTop: 240,
     }),
@@ -149,6 +163,7 @@ test('settled entry view converts downward wheel input into next-section navigat
     shouldAdvanceWorksDetailToNextSection({
       phase: 'revealing',
       view: 'entry',
+      isNextSectionAdvanceArmed: true,
       deltaY: 120,
       nextSectionTop: 240,
     }),
@@ -159,6 +174,7 @@ test('settled entry view converts downward wheel input into next-section navigat
     shouldAdvanceWorksDetailToNextSection({
       phase: 'settled',
       view: 'entry',
+      isNextSectionAdvanceArmed: true,
       deltaY: -120,
       nextSectionTop: 240,
     }),
@@ -169,6 +185,7 @@ test('settled entry view converts downward wheel input into next-section navigat
     shouldAdvanceWorksDetailToNextSection({
       phase: 'settled',
       view: 'entry',
+      isNextSectionAdvanceArmed: true,
       deltaY: 120,
       nextSectionTop: 0,
     }),
@@ -179,8 +196,61 @@ test('settled entry view converts downward wheel input into next-section navigat
     shouldAdvanceWorksDetailToNextSection({
       phase: 'settled',
       view: 'entry',
+      isNextSectionAdvanceArmed: true,
       deltaY: 120,
       nextSectionTop: null,
+    }),
+    false,
+  );
+});
+
+test('settled entry view arms the release gate only on the first downward gesture after reveal completion', () => {
+  assert.equal(
+    getWorksDetailAdvanceGateArmState({
+      phase: 'settled',
+      view: 'entry',
+      deltaY: 120,
+      isNextSectionAdvanceArmed: false,
+    }),
+    true,
+  );
+
+  assert.equal(
+    getWorksDetailAdvanceGateArmState({
+      phase: 'settled',
+      view: 'entry',
+      deltaY: 120,
+      isNextSectionAdvanceArmed: true,
+    }),
+    false,
+  );
+
+  assert.equal(
+    getWorksDetailAdvanceGateArmState({
+      phase: 'revealing',
+      view: 'entry',
+      deltaY: 120,
+      isNextSectionAdvanceArmed: false,
+    }),
+    false,
+  );
+
+  assert.equal(
+    getWorksDetailAdvanceGateArmState({
+      phase: 'settled',
+      view: 'detail',
+      deltaY: 120,
+      isNextSectionAdvanceArmed: false,
+    }),
+    false,
+  );
+
+  assert.equal(
+    getWorksDetailAdvanceGateArmState({
+      phase: 'settled',
+      view: 'entry',
+      deltaY: -120,
+      isNextSectionAdvanceArmed: false,
     }),
     false,
   );

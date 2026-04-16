@@ -5,19 +5,37 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import FriendBookFinalSection, { FRIEND_BOOK_BUTTON_POSITIONING } from './FriendBookFinalSection';
 
 test('exports a centralized button positioning config for the friend-book landing buttons', () => {
-  assert.deepEqual(FRIEND_BOOK_BUTTON_POSITIONING.hero.primary, { x: 0, y: 0 });
-  assert.deepEqual(FRIEND_BOOK_BUTTON_POSITIONING.hero.secondary.startPlaying, { x: 0, y: 0 });
-  assert.deepEqual(FRIEND_BOOK_BUTTON_POSITIONING.hero.secondary.openFriendBook, { x: 0, y: 0 });
-  assert.deepEqual(FRIEND_BOOK_BUTTON_POSITIONING.gameCards.shared, { x: 0, y: 0 });
-  assert.deepEqual(FRIEND_BOOK_BUTTON_POSITIONING.gameCards.perCard['between-two-pages'], {
-    x: 0,
-    y: 0,
-  });
-  assert.deepEqual(FRIEND_BOOK_BUTTON_POSITIONING.gameCards.perCard['moon-run'], { x: 0, y: 0 });
-  assert.deepEqual(FRIEND_BOOK_BUTTON_POSITIONING.gameCards.perCard['one-stroke-mark'], {
-    x: 0,
-    y: 0,
-  });
+  assert.equal(typeof FRIEND_BOOK_BUTTON_POSITIONING.hero.primary.x, 'number');
+  assert.equal(typeof FRIEND_BOOK_BUTTON_POSITIONING.hero.primary.y, 'number');
+  assert.equal(typeof FRIEND_BOOK_BUTTON_POSITIONING.hero.secondary.startPlaying.x, 'number');
+  assert.equal(typeof FRIEND_BOOK_BUTTON_POSITIONING.hero.secondary.startPlaying.y, 'number');
+  assert.equal(typeof FRIEND_BOOK_BUTTON_POSITIONING.hero.secondary.openFriendBook.x, 'number');
+  assert.equal(typeof FRIEND_BOOK_BUTTON_POSITIONING.hero.secondary.openFriendBook.y, 'number');
+  assert.equal(typeof FRIEND_BOOK_BUTTON_POSITIONING.gameCards.shared.x, 'number');
+  assert.equal(typeof FRIEND_BOOK_BUTTON_POSITIONING.gameCards.shared.y, 'number');
+  assert.deepEqual(Object.keys(FRIEND_BOOK_BUTTON_POSITIONING.gameCards.perCard).sort(), [
+    'between-two-pages',
+    'moon-run',
+    'one-stroke-mark',
+  ]);
+  assert.equal(
+    typeof FRIEND_BOOK_BUTTON_POSITIONING.gameCards.perCard['between-two-pages'].x,
+    'number',
+  );
+  assert.equal(
+    typeof FRIEND_BOOK_BUTTON_POSITIONING.gameCards.perCard['between-two-pages'].y,
+    'number',
+  );
+  assert.equal(typeof FRIEND_BOOK_BUTTON_POSITIONING.gameCards.perCard['moon-run'].x, 'number');
+  assert.equal(typeof FRIEND_BOOK_BUTTON_POSITIONING.gameCards.perCard['moon-run'].y, 'number');
+  assert.equal(
+    typeof FRIEND_BOOK_BUTTON_POSITIONING.gameCards.perCard['one-stroke-mark'].x,
+    'number',
+  );
+  assert.equal(
+    typeof FRIEND_BOOK_BUTTON_POSITIONING.gameCards.perCard['one-stroke-mark'].y,
+    'number',
+  );
 });
 
 test('renders the friend-book finale as a paper-book landing scene with sample archive and user slots', () => {

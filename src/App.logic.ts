@@ -5,12 +5,21 @@ export interface InitialScrollResetState {
   scrollRestoration: 'auto' | 'manual';
 }
 
+const SUPPORTED_FOCUS_TARGETS = [
+  'friend-book-finale-section',
+  'friend-book-game-grid',
+  'friend-book-preview',
+] as const;
+
+type SupportedFocusTarget = (typeof SUPPORTED_FOCUS_TARGETS)[number];
+
 export function getInitialScrollResetState(
   navigationType: AppNavigationType,
+  focusTarget: SupportedFocusTarget | null = null,
 ): InitialScrollResetState {
   if (navigationType === 'reload') {
     return {
-      shouldResetScrollToTop: true,
+      shouldResetScrollToTop: focusTarget === null,
       scrollRestoration: 'manual',
     };
   }
@@ -19,6 +28,19 @@ export function getInitialScrollResetState(
     shouldResetScrollToTop: false,
     scrollRestoration: 'auto',
   };
+}
+
+export function getInitialFocusTarget(search: string): SupportedFocusTarget | null {
+  const focusTarget = new URLSearchParams(search).get('focus');
+
+  if (
+    focusTarget &&
+    SUPPORTED_FOCUS_TARGETS.includes(focusTarget as SupportedFocusTarget)
+  ) {
+    return focusTarget as SupportedFocusTarget;
+  }
+
+  return null;
 }
 
 export function getCurrentNavigationType(): AppNavigationType {

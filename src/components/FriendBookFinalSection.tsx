@@ -107,7 +107,7 @@ type FriendBookButtonOffset = {
  */
 export const FRIEND_BOOK_BUTTON_POSITIONING = {
   hero: {
-    primary: { x: 0, y: 0 },
+    primary: { x: -10, y: 20 },
     secondary: {
       startPlaying: { x: 0, y: 0 },
       openFriendBook: { x: 0, y: 0 },
@@ -658,11 +658,10 @@ export default function FriendBookFinalSection() {
                           type="button"
                           onClick={() => isAvailable && setSelectedAvatarCandidate(avatar.id)}
                           disabled={!isAvailable}
-                          className={`flex items-center gap-4 rounded-[1.4rem] border px-4 py-4 text-left transition ${
-                            isSelected
-                              ? 'border-[#6f4d3d] bg-[rgba(255,247,239,0.96)] shadow-[0_14px_24px_rgba(84,56,36,0.12)]'
-                              : 'border-[#d8c5ae] bg-[rgba(255,250,245,0.82)]'
-                          } ${!isAvailable ? 'opacity-55' : 'hover:-translate-y-0.5'}`}
+                          className={`flex items-center gap-4 rounded-[1.4rem] border px-4 py-4 text-left transition ${isSelected
+                            ? 'border-[#6f4d3d] bg-[rgba(255,247,239,0.96)] shadow-[0_14px_24px_rgba(84,56,36,0.12)]'
+                            : 'border-[#d8c5ae] bg-[rgba(255,250,245,0.82)]'
+                            } ${!isAvailable ? 'opacity-55' : 'hover:-translate-y-0.5'}`}
                         >
                           <img
                             src={avatar.asset}
@@ -739,11 +738,10 @@ export default function FriendBookFinalSection() {
                           type="button"
                           aria-label={`Find ${spot.label}`}
                           onClick={() => handleDifferenceSpotSelect(spot.id)}
-                          className={`absolute flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border text-[#5d4032] shadow-[0_8px_12px_rgba(69,43,29,0.12)] transition ${
-                            isFound
-                              ? 'border-[#7d604c] bg-[rgba(255,244,230,0.94)]'
-                              : 'border-[rgba(126,92,67,0.48)] bg-[rgba(255,248,242,0.6)] hover:bg-[rgba(255,248,242,0.85)]'
-                          }`}
+                          className={`absolute flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border text-[#5d4032] shadow-[0_8px_12px_rgba(69,43,29,0.12)] transition ${isFound
+                            ? 'border-[#7d604c] bg-[rgba(255,244,230,0.94)]'
+                            : 'border-[rgba(126,92,67,0.48)] bg-[rgba(255,248,242,0.6)] hover:bg-[rgba(255,248,242,0.85)]'
+                            }`}
                           style={spot.style}
                         >
                           {isFound ? (
@@ -767,11 +765,10 @@ export default function FriendBookFinalSection() {
                       {FRIEND_BOOK_DIFFERENCE_TARGETS.map((targetId) => (
                         <li key={targetId} className="flex items-center gap-2">
                           <span
-                            className={`h-2.5 w-2.5 rounded-full ${
-                              differenceSpotIds.includes(targetId)
-                                ? 'bg-[#6e5443]'
-                                : 'bg-[#d5c0ab]'
-                            }`}
+                            className={`h-2.5 w-2.5 rounded-full ${differenceSpotIds.includes(targetId)
+                              ? 'bg-[#6e5443]'
+                              : 'bg-[#d5c0ab]'
+                              }`}
                           />
                           <span>{targetId.replace('-', ' ')}</span>
                         </li>

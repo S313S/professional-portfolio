@@ -87,8 +87,16 @@ export interface WorksDetailWheelCaptureInput {
 export interface WorksDetailNextSectionNavigationInput {
   phase: WorksDetailPhase;
   view: WorksDetailView;
+  isNextSectionAdvanceArmed: boolean;
   deltaY: number;
   nextSectionTop: number | null;
+}
+
+export interface WorksDetailAdvanceGateArmInput {
+  phase: WorksDetailPhase;
+  view: WorksDetailView;
+  isNextSectionAdvanceArmed: boolean;
+  deltaY: number;
 }
 
 export interface WorksDetailSceneNavigationInput {
@@ -265,16 +273,27 @@ export function shouldCaptureWorksDetailWheel({
 export function shouldAdvanceWorksDetailToNextSection({
   phase,
   view,
+  isNextSectionAdvanceArmed,
   deltaY,
   nextSectionTop,
 }: WorksDetailNextSectionNavigationInput) {
   return (
     phase === 'settled' &&
     view === 'entry' &&
+    isNextSectionAdvanceArmed &&
     deltaY > 0 &&
     nextSectionTop !== null &&
     nextSectionTop > 0
   );
+}
+
+export function getWorksDetailAdvanceGateArmState({
+  phase,
+  view,
+  isNextSectionAdvanceArmed,
+  deltaY,
+}: WorksDetailAdvanceGateArmInput) {
+  return phase === 'settled' && view === 'entry' && !isNextSectionAdvanceArmed && deltaY > 0;
 }
 
 export function getWorksDetailWheelState({
