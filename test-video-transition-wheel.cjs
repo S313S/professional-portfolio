@@ -296,12 +296,27 @@ const baseUrl = process.env.BASE_URL || 'http://127.0.0.1:3001';
     );
     return {
       phase: section.dataset.phase,
+      scrollY: window.scrollY,
       hasButton: Boolean(section.querySelector('button')),
     };
   });
 
-  assert.equal(afterRewindDown.phase, 'awaitingActivation');
-  assert.equal(afterRewindDown.hasButton, true, 'Expected CTA to reappear after scrolling down from the rewound curtain loop.');
+  assert.equal(afterRewindDown.phase, 'loopPlaying');
+  assert.equal(afterRewindDown.hasButton, false, 'Expected CTA to stay hidden while the curtain loop is still playing.');
+  assert.ok(
+    Math.abs(afterRewindDown.scrollY - sectionTop) <= 2,
+    `Expected downward wheel during loop playback to keep the page pinned instead of reactivating the CTA. Got scrollY=${afterRewindDown.scrollY}, sectionTop=${sectionTop}`,
+  );
+
+  await page.evaluate((y) => {
+    window.scrollTo(0, y);
+    const section = Array.from(document.querySelectorAll('section')).find(
+      (node) => node.querySelectorAll('video').length >= 2,
+    );
+    const videos = section ? Array.from(section.querySelectorAll('video')) : [];
+    videos[0]?.dispatchEvent(new Event('ended'));
+  }, sectionTop);
+  await page.waitForTimeout(350);
 
   await page.getByRole('button', { name: /start dragging|play the album transition video/i }).click();
   await page.waitForTimeout(150);

@@ -316,6 +316,13 @@ export function getVideoWheelState({ state, deltaY, step }: VideoWheelInput): Vi
   };
 }
 
+export function shouldRestoreLoopPlaybackOnWheelStateChange(
+  currentState: VideoScrollState,
+  nextState: VideoScrollState,
+) {
+  return currentState.phase !== 'loopPlaying' && nextState.phase === 'loopPlaying';
+}
+
 export function shouldPlayLoopVideoInSection({
   state,
   isSectionInView,

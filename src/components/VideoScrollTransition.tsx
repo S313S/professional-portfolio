@@ -24,6 +24,7 @@ import {
   shouldPinVideoSectionOnPrompt,
   shouldRepinAwaitingActivationOnScroll,
   shouldResetCompletedVideoOnScroll,
+  shouldRestoreLoopPlaybackOnWheelStateChange,
   VIDEO_SCROLL_TRANSITION_SECTION_ID,
   type VideoNavigationType,
   type VideoScrollState,
@@ -527,7 +528,7 @@ export default function VideoScrollTransition() {
         setMobileAutoplay(false);
       }
 
-      if (wheelState.nextState.phase === 'loopPlaying') {
+      if (shouldRestoreLoopPlaybackOnWheelStateChange(stateRef.current, wheelState.nextState)) {
         restoreLoopPlayback();
       }
 

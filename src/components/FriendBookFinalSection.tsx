@@ -69,7 +69,42 @@ type FriendBookButtonOffset = {
   y: number;
 };
 
-// All values are pixel offsets: positive x moves right, positive y moves down.
+/**
+ * Friend Book Finale 按钮位置参数
+ *
+ * 所有数值单位都是像素：
+ * - x: 水平位移，正数向右，负数向左
+ * - y: 垂直位移，正数向下，负数向上
+ *
+ * 参数结构说明：
+ * - hero.primary
+ *   顶部大按钮「Start Playing」的位置
+ * - hero.secondary.startPlaying
+ *   顶部右侧小按钮「Start Playing →」的位置
+ * - hero.secondary.openFriendBook
+ *   顶部右侧小按钮「Open Friend Book →」的位置
+ * - gameCards.shared
+ *   三张游戏卡底部 Begin 按钮的统一偏移量
+ * - gameCards.perCard[gameId]
+ *   单张卡片自己的额外偏移量，会叠加到 shared 上
+ *
+ * 示范案例 1：把顶部大按钮向右移动 24px、向下移动 12px
+ * hero: {
+ *   primary: { x: 24, y: 12 },
+ * }
+ *
+ * 示范案例 2：让三张卡片的 Begin 按钮整体向左 10px
+ * gameCards: {
+ *   shared: { x: -10, y: 0 },
+ * }
+ *
+ * 示范案例 3：只单独调整 Moon Run 这一张卡片的 Begin 按钮
+ * gameCards: {
+ *   perCard: {
+ *     'moon-run': { x: 18, y: -6 },
+ *   }
+ * }
+ */
 export const FRIEND_BOOK_BUTTON_POSITIONING = {
   hero: {
     primary: { x: 0, y: 0 },
@@ -110,6 +145,7 @@ function combineOffsets(
   baseOffset: FriendBookButtonOffset,
   overrideOffset: FriendBookButtonOffset,
 ): FriendBookButtonOffset {
+  // 卡片按钮同时支持“全局统一偏移”和“单卡额外偏移”，这里负责把两者叠加。
   return {
     x: baseOffset.x + overrideOffset.x,
     y: baseOffset.y + overrideOffset.y,

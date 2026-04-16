@@ -124,7 +124,7 @@ test('coding detail mode releases wheel scrolling back to the panel instead of h
   );
 });
 
-test('settled entry view converts downward wheel input into next-section navigation', () => {
+test('settled entry view converts downward wheel input into next-section navigation as soon as detailWork is fully revealed', () => {
   assert.equal(
     shouldAdvanceWorksDetailToNextSection({
       phase: 'settled',

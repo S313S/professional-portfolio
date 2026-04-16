@@ -76,10 +76,10 @@ async function getVideoSection(page) {
 
   assert.ok(
     Math.abs(afterWheel.scrollY - reloaded.sectionTop) <= 2,
-    `Expected first wheel step after reload to keep the page pinned. Got scrollY=${afterWheel.scrollY}, sectionTop=${reloaded.sectionTop}`,
+    `Expected downward wheel during loop playback to keep the page pinned. Got scrollY=${afterWheel.scrollY}, sectionTop=${reloaded.sectionTop}`,
   );
-  assert.equal(afterWheel.phase, 'awaitingActivation');
-  assert.equal(afterWheel.ctaVisible, true, 'Expected reload recovery to show the CTA on first downward wheel intent.');
+  assert.equal(afterWheel.phase, 'loopPlaying');
+  assert.equal(afterWheel.ctaVisible, false, 'Expected CTA to stay hidden while the curtain loop is still playing.');
   assert.ok(afterWheel.overlayOpacity < 0.05, `Expected push-in layer to stay hidden until CTA activation. Got ${afterWheel.overlayOpacity}`);
   assert.ok(afterWheel.pushTime < 0.05, `Expected push-in video to stay reset until CTA activation. Got ${afterWheel.pushTime}`);
 

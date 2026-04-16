@@ -20,6 +20,7 @@ import {
   shouldPlayLoopVideoInSection,
   getVideoVisualState,
   getVideoWheelState,
+  shouldRestoreLoopPlaybackOnWheelStateChange,
   shouldRepinAwaitingActivationOnScroll,
   shouldResetCompletedVideoOnScroll,
 } from './VideoScrollTransition.logic.ts';
@@ -150,7 +151,7 @@ test('shows the CTA when the curtain video finishes naturally', () => {
   assert.equal(visualState.shouldPlayLoopVideo, false);
 });
 
-test('downward wheel input stays pinned during loop playback instead of revealing the CTA', () => {
+test('downward wheel input stays pinned without controlling playback while the curtain loop is still playing', () => {
   const wheelState = getVideoWheelState({
     state: DEFAULT_VIDEO_SCROLL_INITIAL_STATE,
     deltaY: 120,
@@ -159,6 +160,27 @@ test('downward wheel input stays pinned during loop playback instead of revealin
 
   assert.equal(wheelState.shouldPreventScroll, true);
   assert.deepEqual(wheelState.nextState, DEFAULT_VIDEO_SCROLL_INITIAL_STATE);
+});
+
+test('loop playback restoration only runs when wheel input returns from another phase to loopPlaying', () => {
+  assert.equal(
+    shouldRestoreLoopPlaybackOnWheelStateChange(
+      DEFAULT_VIDEO_SCROLL_INITIAL_STATE,
+      DEFAULT_VIDEO_SCROLL_INITIAL_STATE,
+    ),
+    false,
+  );
+
+  assert.equal(
+    shouldRestoreLoopPlaybackOnWheelStateChange(
+      {
+        phase: 'completed',
+        scrubProgress: 1,
+      },
+      DEFAULT_VIDEO_SCROLL_INITIAL_STATE,
+    ),
+    true,
+  );
 });
 
 test('clicking the CTA arms the push-in animation at progress zero', () => {
