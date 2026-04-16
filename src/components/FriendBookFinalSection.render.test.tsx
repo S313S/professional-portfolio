@@ -2,15 +2,22 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { renderToStaticMarkup } from 'react-dom/server';
 
-import FriendBookFinalSection, { FRIEND_BOOK_BUTTON_POSITIONING } from './FriendBookFinalSection';
+import FriendBookFinalSection, {
+  FRIEND_BOOK_BUTTON_POSITIONING,
+  FRIEND_BOOK_COPY_POSITIONING,
+} from './FriendBookFinalSection';
 
-test('exports a centralized button positioning config for the friend-book landing buttons', () => {
+test('exports centralized positioning configs for the friend-book landing controls and copy', () => {
   assert.equal(typeof FRIEND_BOOK_BUTTON_POSITIONING.hero.primary.x, 'number');
   assert.equal(typeof FRIEND_BOOK_BUTTON_POSITIONING.hero.primary.y, 'number');
   assert.equal(typeof FRIEND_BOOK_BUTTON_POSITIONING.hero.secondary.startPlaying.x, 'number');
   assert.equal(typeof FRIEND_BOOK_BUTTON_POSITIONING.hero.secondary.startPlaying.y, 'number');
+  assert.equal(typeof FRIEND_BOOK_BUTTON_POSITIONING.hero.secondary.startPlaying.width.mobile, 'number');
+  assert.equal(typeof FRIEND_BOOK_BUTTON_POSITIONING.hero.secondary.startPlaying.width.desktop, 'number');
   assert.equal(typeof FRIEND_BOOK_BUTTON_POSITIONING.hero.secondary.openFriendBook.x, 'number');
   assert.equal(typeof FRIEND_BOOK_BUTTON_POSITIONING.hero.secondary.openFriendBook.y, 'number');
+  assert.equal(typeof FRIEND_BOOK_BUTTON_POSITIONING.hero.secondary.openFriendBook.width.mobile, 'number');
+  assert.equal(typeof FRIEND_BOOK_BUTTON_POSITIONING.hero.secondary.openFriendBook.width.desktop, 'number');
   assert.equal(typeof FRIEND_BOOK_BUTTON_POSITIONING.gameCards.shared.x, 'number');
   assert.equal(typeof FRIEND_BOOK_BUTTON_POSITIONING.gameCards.shared.y, 'number');
   assert.deepEqual(Object.keys(FRIEND_BOOK_BUTTON_POSITIONING.gameCards.perCard).sort(), [
@@ -34,6 +41,29 @@ test('exports a centralized button positioning config for the friend-book landin
   );
   assert.equal(
     typeof FRIEND_BOOK_BUTTON_POSITIONING.gameCards.perCard['one-stroke-mark'].y,
+    'number',
+  );
+  assert.equal(typeof FRIEND_BOOK_COPY_POSITIONING.gameCards.shared.container.x, 'number');
+  assert.equal(typeof FRIEND_BOOK_COPY_POSITIONING.gameCards.shared.container.y, 'number');
+  assert.equal(typeof FRIEND_BOOK_COPY_POSITIONING.gameCards.shared.title.x, 'number');
+  assert.equal(typeof FRIEND_BOOK_COPY_POSITIONING.gameCards.shared.title.y, 'number');
+  assert.equal(typeof FRIEND_BOOK_COPY_POSITIONING.gameCards.shared.description.x, 'number');
+  assert.equal(typeof FRIEND_BOOK_COPY_POSITIONING.gameCards.shared.description.y, 'number');
+  assert.deepEqual(Object.keys(FRIEND_BOOK_COPY_POSITIONING.gameCards.perCard).sort(), [
+    'between-two-pages',
+    'moon-run',
+    'one-stroke-mark',
+  ]);
+  assert.equal(
+    typeof FRIEND_BOOK_COPY_POSITIONING.gameCards.perCard['moon-run'].container.x,
+    'number',
+  );
+  assert.equal(
+    typeof FRIEND_BOOK_COPY_POSITIONING.gameCards.perCard['moon-run'].title.y,
+    'number',
+  );
+  assert.equal(
+    typeof FRIEND_BOOK_COPY_POSITIONING.gameCards.perCard['moon-run'].description.x,
     'number',
   );
 });
@@ -69,6 +99,8 @@ test('renders the friend-book finale as a paper-book landing scene with sample a
   assert.match(markup, /data-friend-book-button-anchor="hero-primary"/);
   assert.match(markup, /data-friend-book-button-anchor="hero-secondary-start-playing"/);
   assert.match(markup, /data-friend-book-button-anchor="hero-secondary-open-friend-book"/);
+  assert.match(markup, /data-friend-book-button-size="hero-secondary-start-playing"/);
+  assert.match(markup, /data-friend-book-button-size="hero-secondary-open-friend-book"/);
   assert.match(markup, /data-friend-book-button-anchor="game-card-between-two-pages"/);
   assert.match(markup, /data-friend-book-button-anchor="game-card-moon-run"/);
   assert.match(markup, /data-friend-book-button-anchor="game-card-one-stroke-mark"/);
@@ -76,6 +108,19 @@ test('renders the friend-book finale as a paper-book landing scene with sample a
   assert.match(markup, /Moon Run/);
   assert.match(markup, /One Stroke Mark/);
   assert.match(markup, /Begin/);
+  assert.match(markup, /data-friend-book-card-top-spacer="between-two-pages"/);
+  assert.match(markup, /data-friend-book-card-top-spacer="moon-run"/);
+  assert.match(markup, /data-friend-book-card-top-spacer="one-stroke-mark"/);
+  assert.match(markup, /data-friend-book-card-copy="between-two-pages"/);
+  assert.match(markup, /data-friend-book-card-copy="moon-run"/);
+  assert.match(markup, /data-friend-book-card-copy="one-stroke-mark"/);
+  assert.match(markup, /data-friend-book-card-copy-title="moon-run"/);
+  assert.match(markup, /data-friend-book-card-copy-description="moon-run"/);
+  assert.doesNotMatch(markup, /rounded-full bg-\[rgba\(255,247,238,0\.74\)\] px-3 py-1 text-\[0\.68rem\] uppercase tracking-\[0\.18em\] text-\[#62483a\]/);
+  assert.doesNotMatch(markup, /inline-flex h-10 w-10 items-center justify-center rounded-full border border-\[#b99774\]/);
+  assert.doesNotMatch(markup, /lucide-search h-4 w-4/);
+  assert.doesNotMatch(markup, /lucide-moon-star h-4 w-4/);
+  assert.doesNotMatch(markup, /lucide-pen-line h-4 w-4/);
   assert.match(markup, /ARCHIVE OF BONDS/);
   assert.match(markup, /Soft Archive of Tonight/);
   assert.match(markup, /樱花季的风/);

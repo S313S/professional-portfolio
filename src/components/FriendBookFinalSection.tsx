@@ -3,11 +3,11 @@ import type { CSSProperties, PointerEvent as ReactPointerEvent } from 'react';
 import {
   BookOpenText,
   CheckCircle2,
-  MoonStar,
-  PenLine,
   RotateCcw,
   Search,
   Sparkles,
+  MoonStar,
+  PenLine,
 } from 'lucide-react';
 
 import { friendBookFinalSectionData } from '../data';
@@ -30,12 +30,6 @@ import {
   resolveOneStrokeMarkAttempt,
   selectFriendBookAvatar,
 } from './FriendBookFinalSection.logic';
-
-const GAME_CARD_ICONS = {
-  'between-two-pages': Search,
-  'moon-run': MoonStar,
-  'one-stroke-mark': PenLine,
-} as const;
 
 const DIFFERENCE_HOTSPOTS = [
   {
@@ -69,6 +63,44 @@ type FriendBookButtonOffset = {
   y: number;
 };
 
+type FriendBookResponsiveButtonWidth = {
+  mobile: number;
+  desktop: number;
+};
+
+type FriendBookCopyOffsetGroup = {
+  container: FriendBookButtonOffset;
+  title: FriendBookButtonOffset;
+  description: FriendBookButtonOffset;
+};
+
+type FriendBookAbsoluteLayout = {
+  left: string;
+  top: string;
+  width: string;
+  height?: string;
+};
+
+const FRIEND_BOOK_ARCHIVE_DESKTOP_LAYOUT = {
+  headerLeft: { left: '2.7%', top: '3.6%', width: '45.6%' },
+  headerRight: { left: '51.6%', top: '3.8%', width: '42.8%' },
+  sampleEntries: {
+    'spring-wind': { left: '3.9%', top: '24.0%', width: '44.2%', height: '16.4%' },
+    'book-sea-diver': { left: '3.9%', top: '47.3%', width: '44.2%', height: '16.4%' },
+    'night-watcher': { left: '3.9%', top: '70.4%', width: '44.2%', height: '16.4%' },
+  },
+  userSlots: {
+    'between-two-pages': { left: '51.5%', top: '22.8%', width: '43.1%', height: '16.0%' },
+    'moon-run': { left: '51.5%', top: '45.3%', width: '43.1%', height: '15.6%' },
+    'one-stroke-mark': { left: '51.5%', top: '67.8%', width: '43.1%', height: '15.6%' },
+  },
+} as const satisfies {
+  headerLeft: FriendBookAbsoluteLayout;
+  headerRight: FriendBookAbsoluteLayout;
+  sampleEntries: Record<'spring-wind' | 'book-sea-diver' | 'night-watcher', FriendBookAbsoluteLayout>;
+  userSlots: Record<FriendBookGameId, FriendBookAbsoluteLayout>;
+};
+
 /**
  * Friend Book Finale 按钮位置参数
  *
@@ -80,9 +112,9 @@ type FriendBookButtonOffset = {
  * - hero.primary
  *   顶部大按钮「Start Playing」的位置
  * - hero.secondary.startPlaying
- *   顶部右侧小按钮「Start Playing →」的位置
+ *   顶部右侧小按钮「Start Playing →」的位置和尺寸
  * - hero.secondary.openFriendBook
- *   顶部右侧小按钮「Open Friend Book →」的位置
+ *   顶部右侧小按钮「Open Friend Book →」的位置和尺寸
  * - gameCards.shared
  *   三张游戏卡底部 Begin 按钮的统一偏移量
  * - gameCards.perCard[gameId]
@@ -104,13 +136,32 @@ type FriendBookButtonOffset = {
  *     'moon-run': { x: 18, y: -6 },
  *   }
  * }
+ *
+ * 示范案例 4：单独放大 Open Friend Book →
+ * hero: {
+ *   secondary: {
+ *     openFriendBook: {
+ *       x: 0,
+ *       y: 0,
+ *       width: { mobile: 168, desktop: 198 },
+ *     },
+ *   },
+ * }
  */
 export const FRIEND_BOOK_BUTTON_POSITIONING = {
   hero: {
-    primary: { x: -10, y: 35 },
+    primary: { x: -50, y: 35 },
     secondary: {
-      startPlaying: { x: -190, y: 60 },
-      openFriendBook: { x: 0, y: 0 },
+      startPlaying: {
+        x: -250,
+        y: 60,
+        width: { mobile: 140, desktop: 170 },
+      },
+      openFriendBook: {
+        x: 30,
+        y: -5,
+        width: { mobile: 168, desktop: 230 },
+      },
     },
   },
   gameCards: {
@@ -125,8 +176,8 @@ export const FRIEND_BOOK_BUTTON_POSITIONING = {
   hero: {
     primary: FriendBookButtonOffset;
     secondary: {
-      startPlaying: FriendBookButtonOffset;
-      openFriendBook: FriendBookButtonOffset;
+      startPlaying: FriendBookButtonOffset & { width: FriendBookResponsiveButtonWidth };
+      openFriendBook: FriendBookButtonOffset & { width: FriendBookResponsiveButtonWidth };
     };
   };
   gameCards: {
@@ -135,9 +186,82 @@ export const FRIEND_BOOK_BUTTON_POSITIONING = {
   };
 };
 
+/**
+ * Friend Book Finale 文案位置参数
+ *
+ * 所有数值单位都是像素：
+ * - container: 整个文案块（标题 + 描述）一起移动
+ * - title: 只移动标题
+ * - description: 只移动描述
+ *
+ * 推荐调整顺序：
+ * 1. 先改 `container`
+ * 2. 再用 `title` / `description` 微调
+ *
+ * 示例：单独把 Moon Run 的标题右移 18px、描述下移 8px
+ * gameCards: {
+ *   perCard: {
+ *     'moon-run': {
+ *       container: { x: 0, y: 0 },
+ *       title: { x: 18, y: 0 },
+ *       description: { x: 0, y: 8 },
+ *     },
+ *   },
+ * }
+ */
+export const FRIEND_BOOK_COPY_POSITIONING = {
+  gameCards: {
+    shared: {
+      container: { x: 0, y: 0 },
+      title: { x: 0, y: 0 },
+      description: { x: 0, y: 0 },
+    },
+    perCard: {
+      'between-two-pages': {
+        container: { x: 0, y: 0 },
+        title: { x: 0, y: 0 },
+        description: { x: 0, y: 0 },
+      },
+      'moon-run': {
+        container: { x: 0, y: -17 },
+        title: { x: 0, y: 0 },
+        description: { x: 0, y: 0 },
+      },
+      'one-stroke-mark': {
+        container: { x: 0, y: 0 },
+        title: { x: 0, y: 0 },
+        description: { x: 0, y: 0 },
+      },
+    },
+  },
+} as const satisfies {
+  gameCards: {
+    shared: FriendBookCopyOffsetGroup;
+    perCard: Record<FriendBookGameId, FriendBookCopyOffsetGroup>;
+  };
+};
+
 function getOffsetStyle(offset: FriendBookButtonOffset): CSSProperties {
   return {
     transform: `translate(${offset.x}px, ${offset.y}px)`,
+  };
+}
+
+function getAbsoluteLayoutStyle(layout: FriendBookAbsoluteLayout): CSSProperties {
+  return {
+    left: layout.left,
+    top: layout.top,
+    width: layout.width,
+    height: layout.height,
+  };
+}
+
+function getResponsiveButtonWidthStyle(
+  width: FriendBookResponsiveButtonWidth,
+): CSSProperties & Record<'--friend-book-button-width-mobile' | '--friend-book-button-width-desktop', string> {
+  return {
+    '--friend-book-button-width-mobile': `${width.mobile}px`,
+    '--friend-book-button-width-desktop': `${width.desktop}px`,
   };
 }
 
@@ -152,9 +276,13 @@ function combineOffsets(
   };
 }
 
+function getCssUrlValue(imageUrl: string) {
+  return `url("${encodeURI(imageUrl)}")`;
+}
+
 function getPaperBackgroundStyle(imageUrl: string, overlay = 'rgba(255,247,232,0.86)') {
   return {
-    backgroundImage: `linear-gradient(${overlay}, ${overlay}), url(${imageUrl})`,
+    backgroundImage: `linear-gradient(${overlay}, ${overlay}), ${getCssUrlValue(imageUrl)}`,
     backgroundPosition: 'center',
     backgroundRepeat: 'no-repeat',
     backgroundSize: 'cover',
@@ -163,10 +291,19 @@ function getPaperBackgroundStyle(imageUrl: string, overlay = 'rgba(255,247,232,0
 
 function getIllustratedBackgroundStyle(imageUrl: string) {
   return {
-    backgroundImage: `linear-gradient(rgba(255,246,236,0.12), rgba(255,246,236,0.12)), url(${imageUrl})`,
+    backgroundImage: `linear-gradient(rgba(255,246,236,0.12), rgba(255,246,236,0.12)), ${getCssUrlValue(imageUrl)}`,
     backgroundPosition: 'center',
     backgroundRepeat: 'no-repeat',
     backgroundSize: 'cover',
+  } as const;
+}
+
+function getArchiveBoardBackgroundStyle(imageUrl: string) {
+  return {
+    backgroundImage: getCssUrlValue(imageUrl),
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat',
+    backgroundSize: '100% 100%',
   } as const;
 }
 
@@ -176,12 +313,16 @@ function FriendBookImageButton({
   onClick,
   className,
   disabled,
+  style,
+  dataButtonSize,
 }: {
   label: string;
   asset: string;
   onClick: () => void;
   className?: string;
   disabled?: boolean;
+  style?: CSSProperties;
+  dataButtonSize?: string;
 }) {
   return (
     <button
@@ -189,6 +330,8 @@ function FriendBookImageButton({
       aria-label={label}
       disabled={disabled}
       onClick={onClick}
+      data-friend-book-button-size={dataButtonSize}
+      style={style}
       className={`inline-flex items-center justify-center transition duration-200 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 ${className ?? ''}`}
     >
       <img src={asset} alt="" aria-hidden="true" className="block h-auto w-full drop-shadow-[0_6px_10px_rgba(64,36,24,0.18)]" />
@@ -534,10 +677,20 @@ export default function FriendBookFinalSection() {
                     )}
                   >
                     <FriendBookImageButton
+                      dataButtonSize={
+                        ctaLink.id === 'friend-book-start-link'
+                          ? 'hero-secondary-start-playing'
+                          : 'hero-secondary-open-friend-book'
+                      }
                       label={ctaLink.label}
                       asset={ctaLink.asset}
                       onClick={() => scrollToTarget(ctaLink.href.slice(1))}
-                      className="w-[140px] sm:w-[170px]"
+                      className="w-[var(--friend-book-button-width-mobile)] sm:w-[var(--friend-book-button-width-desktop)]"
+                      style={getResponsiveButtonWidthStyle(
+                        ctaLink.id === 'friend-book-start-link'
+                          ? FRIEND_BOOK_BUTTON_POSITIONING.hero.secondary.startPlaying.width
+                          : FRIEND_BOOK_BUTTON_POSITIONING.hero.secondary.openFriendBook.width,
+                      )}
                     />
                   </div>
                 ))}
@@ -551,7 +704,7 @@ export default function FriendBookFinalSection() {
           className="grid gap-4 lg:grid-cols-3"
         >
           {friendBookFinalSectionData.gameCards.map((card) => {
-            const Icon = GAME_CARD_ICONS[card.id];
+            const copyOffsetGroup = FRIEND_BOOK_COPY_POSITIONING.gameCards.perCard[card.id];
 
             return (
               <article
@@ -562,20 +715,44 @@ export default function FriendBookFinalSection() {
               >
                 <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,248,239,0.42),rgba(255,248,239,0.08)_36%,rgba(75,53,38,0.04)_100%)]" />
                 <div className="relative flex min-h-[318px] flex-col justify-between gap-4 px-5 py-5 sm:min-h-[340px]">
-                  <div className="flex items-start justify-between gap-4">
-                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#b99774] bg-[rgba(251,235,210,0.88)] text-[#5a4032] shadow-[0_4px_8px_rgba(84,56,36,0.15)]">
-                      <Icon className="h-4 w-4" strokeWidth={1.8} />
-                    </span>
-                    <span className="rounded-full bg-[rgba(255,247,238,0.74)] px-3 py-1 text-[0.68rem] uppercase tracking-[0.18em] text-[#62483a] shadow-[0_4px_8px_rgba(84,56,36,0.08)]">
-                      {card.accentLabel}
-                    </span>
-                  </div>
+                  <div
+                    aria-hidden="true"
+                    data-friend-book-card-top-spacer={card.id}
+                    className="h-10 flex-none"
+                  />
 
-                  <div className="max-w-[18rem]">
-                    <h3 className="font-serif text-[2.2rem] leading-[0.96] tracking-[-0.05em] text-[#2a2020]">
+                  <div
+                    data-friend-book-card-copy={card.id}
+                    className="w-[18rem] max-w-full"
+                    style={getOffsetStyle(
+                      combineOffsets(
+                        FRIEND_BOOK_COPY_POSITIONING.gameCards.shared.container,
+                        copyOffsetGroup.container,
+                      ),
+                    )}
+                  >
+                    <h3
+                      data-friend-book-card-copy-title={card.id}
+                      style={getOffsetStyle(
+                        combineOffsets(
+                          FRIEND_BOOK_COPY_POSITIONING.gameCards.shared.title,
+                          copyOffsetGroup.title,
+                        ),
+                      )}
+                      className="font-serif text-[2.2rem] leading-[0.96] tracking-[-0.05em] text-[#2a2020]"
+                    >
                       {card.title}
                     </h3>
-                    <p className="mt-3 max-w-[16rem] text-[1.02rem] leading-8 text-[#46362f]">
+                    <p
+                      data-friend-book-card-copy-description={card.id}
+                      style={getOffsetStyle(
+                        combineOffsets(
+                          FRIEND_BOOK_COPY_POSITIONING.gameCards.shared.description,
+                          copyOffsetGroup.description,
+                        ),
+                      )}
+                      className="mt-3 max-w-[16rem] text-[1.02rem] leading-8 text-[#46362f]"
+                    >
                       {card.description}
                     </p>
                   </div>
@@ -964,166 +1141,292 @@ export default function FriendBookFinalSection() {
 
         <section
           id="friend-book-preview"
-          className="rounded-[1.9rem] bg-[#5b4033] p-[5px] shadow-[0_18px_36px_rgba(67,42,29,0.28)]"
+          data-friend-book-archive-board="preview"
+          data-friend-book-archive-background={friendBookFinalSectionData.assets.archiveBoardBackground}
+          className="relative overflow-hidden rounded-[1.2rem] border border-[rgba(101,69,51,0.26)] px-5 py-5 shadow-[0_18px_36px_rgba(67,42,29,0.22)] sm:px-6 sm:py-6 lg:px-0 lg:py-0"
+          style={getArchiveBoardBackgroundStyle(friendBookFinalSectionData.assets.archiveBoardBackground)}
         >
           <div
-            className="rounded-[1.6rem] px-5 py-5 sm:px-6 sm:py-6"
-            style={getPaperBackgroundStyle(
-              friendBookFinalSectionData.assets.archiveBoardBackground,
-              'rgba(255,248,238,0.9)',
-            )}
-          >
-            <div className="grid gap-5 lg:grid-cols-[1.02fr_0.98fr]">
-              <div>
-                <p className="font-mono text-[0.72rem] uppercase tracking-[0.32em] text-[#5c4336]">
-                  {friendBookFinalSectionData.previewEyebrow}
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,248,238,0.08),rgba(255,248,238,0.03)_24%,rgba(90,60,42,0.04)_100%)]"
+          />
+          <div data-friend-book-preview-desktop="true" className="relative hidden aspect-[3104/1376] w-full lg:block">
+            <div
+              data-friend-book-preview-header="left"
+              className="absolute"
+              style={getAbsoluteLayoutStyle(FRIEND_BOOK_ARCHIVE_DESKTOP_LAYOUT.headerLeft)}
+            >
+              <p className="font-mono text-[0.7rem] uppercase tracking-[0.34em] text-[#5c4336] xl:text-[0.78rem]">
+                {friendBookFinalSectionData.previewEyebrow}
+              </p>
+              <h3 className="mt-2 font-serif text-[clamp(1.9rem,2.65vw,2.9rem)] leading-[0.95] tracking-[-0.05em] text-[#332625]">
+                {friendBookFinalSectionData.previewTitle}
+              </h3>
+              {friendBookFinalSectionData.previewDescription ? (
+                <p className="mt-3 max-w-[31rem] text-[0.9rem] leading-7 text-[#55433b] xl:text-[0.98rem]">
+                  {friendBookFinalSectionData.previewDescription}
                 </p>
-                <h3 className="mt-2 font-serif text-[2.15rem] leading-none tracking-[-0.04em] text-[#332625]">
-                  {friendBookFinalSectionData.previewTitle}
-                </h3>
+              ) : null}
+            </div>
+
+            <div
+              data-friend-book-preview-header="right"
+              className="absolute"
+              style={getAbsoluteLayoutStyle(FRIEND_BOOK_ARCHIVE_DESKTOP_LAYOUT.headerRight)}
+            >
+              <p className="font-mono text-[0.7rem] uppercase tracking-[0.34em] text-[#7a5d4d] xl:text-[0.76rem]">
+                Your echoes
+              </p>
+              <p className="mt-2 max-w-[34rem] text-[0.98rem] leading-7 text-[#5c4940] xl:text-[1.02rem]">
+                Each game keeps one slot on the right. Replaying it rewrites only that page.
+              </p>
+            </div>
+
+            {friendBookFinalSectionData.entries.map((entry) => (
+              <article
+                key={entry.id}
+                data-friend-book-sample-entry-desktop={entry.id}
+                className="absolute"
+                style={getAbsoluteLayoutStyle(FRIEND_BOOK_ARCHIVE_DESKTOP_LAYOUT.sampleEntries[entry.id])}
+              >
+                <div className="grid h-full grid-cols-[58px_minmax(0,1fr)_88px] gap-3 px-4 py-3 xl:grid-cols-[68px_minmax(0,1fr)_98px] xl:px-5 xl:py-4">
+                  <img
+                    src={entry.avatarImage}
+                    alt=""
+                    aria-hidden="true"
+                    className="mt-1 h-15 w-15 rounded-full border border-[#d4bea8] object-cover xl:h-[4.6rem] xl:w-[4.6rem]"
+                  />
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h4
+                        data-friend-book-sample-entry-title={entry.id}
+                        className="font-serif text-[1.62rem] leading-none tracking-[-0.04em] text-[#2d2221] xl:text-[2rem]"
+                      >
+                        {entry.nickname}
+                      </h4>
+                      <span className="rounded-full border border-[#d5b4a4] bg-[rgba(240,212,212,0.72)] px-2.5 py-1 text-[0.64rem] uppercase tracking-[0.16em] text-[#714942] xl:px-3 xl:text-[0.72rem]">
+                        {entry.seal}
+                      </span>
+                    </div>
+                    <p
+                      data-friend-book-sample-entry-excerpt={entry.id}
+                      className="mt-2 text-[0.96rem] leading-7 text-[#463731] xl:text-[1.18rem] xl:leading-[1.6]"
+                    >
+                      {entry.excerpt}
+                    </p>
+                  </div>
+                  <div className="flex h-full items-center justify-end pb-1 pt-1">
+                    <img
+                      src={entry.medalImage}
+                      alt=""
+                      aria-hidden="true"
+                      className="h-15 w-15 rounded-[1rem] border border-[#d4bea8] object-cover xl:h-[4.4rem] xl:w-[4.4rem]"
+                    />
+                  </div>
+                </div>
+              </article>
+            ))}
+
+            {friendBookFinalSectionData.userSlots.map((slot) => {
+              const slotProgress = progress.games[slot.gameId];
+              const slotAvatar = slotProgress.latestAvatarId
+                ? avatarById[slotProgress.latestAvatarId]
+                : null;
+
+              return (
+                <article
+                  key={slot.gameId}
+                  data-friend-book-user-record-desktop={slot.gameId}
+                  className="absolute"
+                  style={getAbsoluteLayoutStyle(FRIEND_BOOK_ARCHIVE_DESKTOP_LAYOUT.userSlots[slot.gameId])}
+                >
+                  <div className="flex h-full justify-between gap-4 px-5 py-4 xl:px-6 xl:py-5">
+                    <div className="min-w-0">
+                      {slotProgress.latestNote ? (
+                        <>
+                          <p className="font-mono text-[0.62rem] uppercase tracking-[0.28em] text-[#7a5d4d] xl:text-[0.68rem]">
+                            {slot.label}
+                          </p>
+                          <p className="mt-3 text-[0.92rem] leading-6 text-[#3f312b] xl:text-[1rem]">
+                            {slotProgress.latestNote}
+                          </p>
+                          <p className="mt-2 text-[0.78rem] leading-5 text-[#6b5650]">
+                            {slotProgress.completionCount} completion{slotProgress.completionCount > 1 ? 's' : ''} saved in this slot.
+                          </p>
+                        </>
+                      ) : null}
+                    </div>
+
+                    <div className="flex h-full min-w-[82px] flex-col items-end justify-between pt-1">
+                      {slotAvatar ? (
+                        <img
+                          src={slotAvatar.asset}
+                          alt=""
+                          aria-hidden="true"
+                          className="h-14 w-14 rounded-full border border-[#d4bea8] object-cover"
+                        />
+                      ) : null}
+                      {slotProgress.latestMedalId ? (
+                        <img
+                          src={slotProgress.latestMedalId}
+                          alt=""
+                          aria-hidden="true"
+                          className="h-14 w-14 rounded-[0.9rem] border border-[#d4bea8] object-cover"
+                        />
+                      ) : null}
+                      <p className="font-mono text-[0.64rem] uppercase tracking-[0.18em] text-[#6d5546] xl:text-[0.72rem]">
+                        {slotProgress.latestDate ?? slot.previewDate}
+                      </p>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+
+          <div className="relative grid gap-5 lg:hidden">
+            <div>
+              <p className="font-mono text-[0.72rem] uppercase tracking-[0.32em] text-[#5c4336]">
+                {friendBookFinalSectionData.previewEyebrow}
+              </p>
+              <h3 className="mt-2 font-serif text-[2.15rem] leading-none tracking-[-0.04em] text-[#332625]">
+                {friendBookFinalSectionData.previewTitle}
+              </h3>
+              {friendBookFinalSectionData.previewDescription ? (
                 <p className="mt-3 max-w-[36rem] text-[0.98rem] leading-7 text-[#55433b]">
                   {friendBookFinalSectionData.previewDescription}
                 </p>
+              ) : null}
 
-                <div className="mt-5 grid gap-3">
-                  {friendBookFinalSectionData.entries.map((entry) => (
-                    <article
-                      key={entry.id}
-                      data-friend-book-sample-entry={entry.id}
-                      className="grid gap-4 rounded-[1.4rem] bg-[rgba(255,250,244,0.82)] px-4 py-4 shadow-[0_10px_18px_rgba(84,56,36,0.08)] sm:grid-cols-[auto_minmax(0,1fr)_auto]"
-                    >
+              <div className="mt-5 grid gap-3">
+                {friendBookFinalSectionData.entries.map((entry) => (
+                  <article
+                    key={entry.id}
+                    data-friend-book-sample-entry={entry.id}
+                    className="grid gap-4 rounded-[1.4rem] bg-[rgba(255,251,246,0.72)] px-4 py-4 shadow-[0_10px_18px_rgba(84,56,36,0.06)] backdrop-blur-[1px] sm:grid-cols-[auto_minmax(0,1fr)_auto]"
+                  >
+                    <img
+                      src={entry.avatarImage}
+                      alt=""
+                      aria-hidden="true"
+                      className="h-16 w-16 rounded-full border border-[#d4bea8] object-cover"
+                    />
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h4 className="font-serif text-[1.75rem] leading-none tracking-[-0.03em] text-[#2d2221]">
+                          {entry.nickname}
+                        </h4>
+                        <span className="rounded-full border border-[#d5b4a4] bg-[#f0d4d4] px-3 py-1 text-[0.7rem] uppercase tracking-[0.16em] text-[#714942]">
+                          {entry.seal}
+                        </span>
+                      </div>
+                      <p className="mt-2 text-[0.98rem] leading-7 text-[#463731]">
+                        {entry.excerpt}
+                      </p>
+                      <p className="text-sm leading-7 text-[#6b5650]">{entry.note}</p>
+                    </div>
+                    <div className="flex flex-col items-start gap-3 sm:items-end">
                       <img
-                        src={entry.avatarImage}
+                        src={entry.medalImage}
                         alt=""
                         aria-hidden="true"
-                        className="h-16 w-16 rounded-full border border-[#d4bea8] object-cover"
+                        className="h-16 w-16 rounded-[1rem] border border-[#d4bea8] object-cover"
+                      />
+                      <p className="font-mono text-[0.72rem] uppercase tracking-[0.2em] text-[#6d5546]">
+                        {entry.date}
+                      </p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="font-mono text-[0.68rem] uppercase tracking-[0.28em] text-[#7a5d4d]">
+                    Your echoes
+                  </p>
+                  <p className="mt-2 text-sm leading-7 text-[#5c4940]">
+                    Each game keeps one slot on the right. Replaying it rewrites only that page.
+                  </p>
+                </div>
+                {currentAvatar ? (
+                  <div className="rounded-full border border-[#d6bfaa] bg-[rgba(255,250,244,0.7)] px-3 py-2 backdrop-blur-[1px]">
+                    <div className="flex items-center gap-2">
+                      <img
+                        src={currentAvatar.asset}
+                        alt=""
+                        aria-hidden="true"
+                        className="h-10 w-10 rounded-full border border-[#d4bea8] object-cover"
                       />
                       <div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h4 className="font-serif text-[1.75rem] leading-none tracking-[-0.03em] text-[#2d2221]">
-                            {entry.nickname}
-                          </h4>
-                          <span className="rounded-full border border-[#d5b4a4] bg-[#f0d4d4] px-3 py-1 text-[0.7rem] uppercase tracking-[0.16em] text-[#714942]">
-                            {entry.seal}
-                          </span>
-                        </div>
-                        <p className="mt-2 text-[0.98rem] leading-7 text-[#463731]">
-                          {entry.excerpt}
+                        <p className="text-xs uppercase tracking-[0.2em] text-[#7a5d4d]">
+                          Signing as
                         </p>
-                        <p className="text-sm leading-7 text-[#6b5650]">{entry.note}</p>
-                      </div>
-                      <div className="flex flex-col items-start gap-3 sm:items-end">
-                        <img
-                          src={entry.medalImage}
-                          alt=""
-                          aria-hidden="true"
-                          className="h-16 w-16 rounded-[1rem] border border-[#d4bea8] object-cover"
-                        />
-                        <p className="font-mono text-[0.72rem] uppercase tracking-[0.2em] text-[#6d5546]">
-                          {entry.date}
+                        <p className="font-serif text-lg text-[#332625]">
+                          {currentAvatar.label}
                         </p>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-3">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="font-mono text-[0.68rem] uppercase tracking-[0.28em] text-[#7a5d4d]">
-                      Your echoes
-                    </p>
-                    <p className="mt-2 text-sm leading-7 text-[#5c4940]">
-                      Each game keeps one slot on the right. Replaying it rewrites only that page.
-                    </p>
-                  </div>
-                  {currentAvatar ? (
-                    <div className="rounded-full border border-[#d6bfaa] bg-[rgba(255,250,244,0.84)] px-3 py-2">
-                      <div className="flex items-center gap-2">
-                        <img
-                          src={currentAvatar.asset}
-                          alt=""
-                          aria-hidden="true"
-                          className="h-10 w-10 rounded-full border border-[#d4bea8] object-cover"
-                        />
-                        <div>
-                          <p className="text-xs uppercase tracking-[0.2em] text-[#7a5d4d]">
-                            Signing as
-                          </p>
-                          <p className="font-serif text-lg text-[#332625]">
-                            {currentAvatar.label}
-                          </p>
-                        </div>
                       </div>
                     </div>
-                  ) : null}
-                </div>
-
-                {friendBookFinalSectionData.userSlots.map((slot) => {
-                  const slotProgress = progress.games[slot.gameId];
-                  const slotAvatar = slotProgress.latestAvatarId
-                    ? avatarById[slotProgress.latestAvatarId]
-                    : null;
-
-                  return (
-                    <article
-                      key={slot.gameId}
-                      data-friend-book-user-record={slot.gameId}
-                      className="rounded-[1.35rem] bg-[rgba(255,250,244,0.72)] px-4 py-4 shadow-[0_10px_18px_rgba(84,56,36,0.08)]"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <p className="font-mono text-[0.68rem] uppercase tracking-[0.24em] text-[#7a5d4d]">
-                            {slot.label}
-                          </p>
-                          {slotProgress.latestNote ? (
-                            <>
-                              <p className="mt-2 text-[0.98rem] leading-7 text-[#3f312b]">
-                                {slotProgress.latestNote}
-                              </p>
-                              <p className="text-sm leading-7 text-[#6b5650]">
-                                {slotProgress.completionCount} completion{slotProgress.completionCount > 1 ? 's' : ''} saved in this slot.
-                              </p>
-                            </>
-                          ) : (
-                            <>
-                              <p className="mt-2 font-serif text-[1.5rem] leading-none tracking-[-0.03em] text-[#3b2e2b]">
-                                {slot.emptyTitle}
-                              </p>
-                              <p className="mt-2 text-sm leading-7 text-[#6b5650]">
-                                {slot.emptyDescription}
-                              </p>
-                            </>
-                          )}
-                        </div>
-
-                        <div className="flex flex-col items-end gap-3">
-                          {slotAvatar ? (
-                            <img
-                              src={slotAvatar.asset}
-                              alt=""
-                              aria-hidden="true"
-                              className="h-14 w-14 rounded-full border border-[#d4bea8] object-cover"
-                            />
-                          ) : null}
-                          {slotProgress.latestMedalId ? (
-                            <img
-                              src={slotProgress.latestMedalId}
-                              alt=""
-                              aria-hidden="true"
-                              className="h-14 w-14 rounded-[0.9rem] border border-[#d4bea8] object-cover"
-                            />
-                          ) : null}
-                          <p className="font-mono text-[0.72rem] uppercase tracking-[0.22em] text-[#6d5546]">
-                            {slotProgress.latestDate ?? 'UNWRITTEN'}
-                          </p>
-                        </div>
-                      </div>
-                    </article>
-                  );
-                })}
+                  </div>
+                ) : null}
               </div>
+
+              {friendBookFinalSectionData.userSlots.map((slot) => {
+                const slotProgress = progress.games[slot.gameId];
+                const slotAvatar = slotProgress.latestAvatarId
+                  ? avatarById[slotProgress.latestAvatarId]
+                  : null;
+
+                return (
+                  <article
+                    key={slot.gameId}
+                    data-friend-book-user-record={slot.gameId}
+                    className="rounded-[1.35rem] bg-[rgba(255,251,246,0.6)] px-4 py-4 shadow-[0_10px_18px_rgba(84,56,36,0.06)] backdrop-blur-[1px]"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        {slotProgress.latestNote ? (
+                          <>
+                            <p className="font-mono text-[0.68rem] uppercase tracking-[0.24em] text-[#7a5d4d]">
+                              {slot.label}
+                            </p>
+                            <p className="mt-2 text-[0.98rem] leading-7 text-[#3f312b]">
+                              {slotProgress.latestNote}
+                            </p>
+                            <p className="text-sm leading-7 text-[#6b5650]">
+                              {slotProgress.completionCount} completion{slotProgress.completionCount > 1 ? 's' : ''} saved in this slot.
+                            </p>
+                          </>
+                        ) : null}
+                      </div>
+
+                      <div className="flex flex-col items-end gap-3">
+                        {slotAvatar ? (
+                          <img
+                            src={slotAvatar.asset}
+                            alt=""
+                            aria-hidden="true"
+                            className="h-14 w-14 rounded-full border border-[#d4bea8] object-cover"
+                          />
+                        ) : null}
+                        {slotProgress.latestMedalId ? (
+                          <img
+                            src={slotProgress.latestMedalId}
+                            alt=""
+                            aria-hidden="true"
+                            className="h-14 w-14 rounded-[0.9rem] border border-[#d4bea8] object-cover"
+                          />
+                        ) : null}
+                        <p className="font-mono text-[0.72rem] uppercase tracking-[0.22em] text-[#6d5546]">
+                          {slotProgress.latestDate ?? slot.previewDate}
+                        </p>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
             </div>
           </div>
         </section>

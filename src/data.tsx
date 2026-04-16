@@ -42,7 +42,6 @@ export interface FriendBookFinalGameCard {
   description: string;
   ctaLabel: string;
   backgroundImage: string;
-  accentLabel: string;
 }
 
 export interface FriendBookFinalEntry {
@@ -68,6 +67,7 @@ export interface FriendBookFinalUserSlot {
   label: string;
   emptyTitle: string;
   emptyDescription: string;
+  previewDate: string;
 }
 
 const featuredWorks: FeaturedWork[] = [
@@ -389,7 +389,6 @@ export const friendBookFinalSectionData = {
         'Find a few small differences before the page closes for the night.',
       ctaLabel: 'Begin',
       backgroundImage: '/images/BookofFriends_Bg_CatBook_Left.png',
-      accentLabel: 'Seek 3 quiet marks',
     },
     {
       id: 'moon-run',
@@ -398,7 +397,6 @@ export const friendBookFinalSectionData = {
         'A short night run where timing matters more than speed.',
       ctaLabel: 'Begin',
       backgroundImage: '/images/BookofFriends_Bg_CatBook_middle.png',
-      accentLabel: 'Stop inside the moon band',
     },
     {
       id: 'one-stroke-mark',
@@ -407,7 +405,6 @@ export const friendBookFinalSectionData = {
         'Leave a single drawn trace before you decide whether to be remembered.',
       ctaLabel: 'Begin',
       backgroundImage: '/images/BookofFriends_Bg_CatBook_Right.png',
-      accentLabel: 'Draw one unbroken line',
     },
   ] satisfies FriendBookFinalGameCard[],
   avatars: [
@@ -470,8 +467,7 @@ export const friendBookFinalSectionData = {
   } satisfies Record<FriendBookGameId, string[]>,
   previewEyebrow: 'ARCHIVE OF BONDS / 羁绊存档',
   previewTitle: 'Soft Archive of Tonight',
-  previewDescription:
-    'Three older echoes rest on the left. Your latest traces will settle into the right-hand page.',
+  previewDescription: '',
   entries: [
     {
       id: 'spring-wind',
@@ -510,18 +506,21 @@ export const friendBookFinalSectionData = {
       label: 'Between Two Pages',
       emptyTitle: 'A page still waiting',
       emptyDescription: 'Find the three quiet marks to leave the first archive note here.',
+      previewDate: 'APR 12, 2024',
     },
     {
       gameId: 'moon-run',
       label: 'Moon Run',
       emptyTitle: 'A night run not yet finished',
       emptyDescription: 'Stop inside the moon band to write the memory for this slot.',
+      previewDate: 'APR 18, 2026',
     },
     {
       gameId: 'one-stroke-mark',
       label: 'One Stroke Mark',
       emptyTitle: 'A trace still unwritten',
       emptyDescription: 'Draw one unbroken line to let this page remember you.',
+      previewDate: 'APR 06, 2026',
     },
   ] satisfies FriendBookFinalUserSlot[],
   footerLine:

@@ -142,6 +142,16 @@ test('entry overlay becomes section-bound after settling so the next page can sc
   );
 });
 
+test('settled entry view exposes a dedicated landing-animation hook for the auto-revealed attachment page', () => {
+  const markup = renderToStaticMarkup(
+    <WorksDetailSection initialPhase="settled" initialTransitionProgress={1} />,
+  );
+
+  assert.match(markup, /data-works-detail-entry-landing="visible"/);
+  assert.match(markup, /data-works-detail-entry-landing-layer="background"/);
+  assert.match(markup, /data-works-detail-entry-landing-layer="content"/);
+});
+
 test('keeps the current text blocks edge-aligned with equalized description heights', () => {
   const markup = renderToStaticMarkup(<WorksDetailSection />);
   const minHeightMatches = markup.match(/min-h-\[3\.8rem\]/g) ?? [];

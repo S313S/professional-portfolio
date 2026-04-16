@@ -35,6 +35,7 @@ const WORKS_DETAIL_REVEAL_STEP = 0.18;
 const WORKS_DETAIL_WHEEL_THRESHOLD_PX = 30;
 const WORKS_DETAIL_WHEEL_UNIT_DELTA = 120;
 const WORKS_DETAIL_NEXT_SECTION_ID = 'friend-book-finale-section';
+const WORKS_DETAIL_ENTRY_LANDING_DURATION_MS = 2400;
 const WORKS_DETAIL_LEFT_BUTTON_SRC = '/images/workDetail_left_icon.png.png';
 const WORKS_DETAIL_RIGHT_BUTTON_SRC = '/images/workDetail_rigtht_icon.png';
 const WORKS_DETAIL_STAGE_BACKGROUND_SRC = '';
@@ -49,6 +50,7 @@ const WORKS_DETAIL_DEFAULT_CODING_CATEGORY_ID: CodingCategoryId =
   personalData.codingCategories[0]?.id ?? 'workflow';
 const WORKS_DETAIL_CODING_DRAG_THRESHOLD_PX = 56;
 type WorksDetailCustomProperties = CSSProperties & Record<`--${string}`, string>;
+type WorksDetailEntryLandingState = 'hidden' | 'preparing' | 'visible';
 
 interface WorksDetailGallerySlotLayout {
   x: string;
@@ -326,6 +328,9 @@ export default function WorksDetailSection({
   const [activeCodingCategoryId, setActiveCodingCategoryId] = useState<CodingCategoryId>(
     WORKS_DETAIL_DEFAULT_CODING_CATEGORY_ID,
   );
+  const [entryLandingState, setEntryLandingState] = useState<WorksDetailEntryLandingState>(
+    initialPhase === 'settled' && initialView === 'entry' ? 'visible' : 'hidden',
+  );
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isTransitioningScene, setIsTransitioningScene] = useState(false);
@@ -414,6 +419,7 @@ export default function WorksDetailSection({
     resetDetailState();
     resetCodingState();
     resetDetailMode();
+    setEntryLandingState(prefersReducedMotion ? 'visible' : 'preparing');
     setPhase(completionState.nextPhase);
     setTransitionProgress(completionState.nextTransitionProgress);
 
@@ -453,11 +459,14 @@ export default function WorksDetailSection({
     view === 'detail' && detailMode === 'coding'
       ? WORKS_DETAIL_CODING_BACKGROUND_SRC
       : WORKS_DETAIL_REVEAL_IMAGE_SRC;
+  const isEntryLandingStage = phase === 'settled' && view === 'entry';
+  const isEntryLandingVisible = entryLandingState === 'visible';
 
   const exitToLobby = () => {
     clearLoadingTimeout();
     clearSceneUnlockTimeout();
     wheelBufferRef.current = 0;
+    setEntryLandingState('hidden');
     setPhase('idle');
     setTransitionProgress(0);
     setView('entry');
@@ -472,6 +481,7 @@ export default function WorksDetailSection({
 
     clearLoadingTimeout();
     wheelBufferRef.current = 0;
+    setEntryLandingState('hidden');
     resetDetailState();
     resetCodingState();
     resetDetailMode();
@@ -690,6 +700,25 @@ export default function WorksDetailSection({
       context.revert();
     };
   }, [activeCodingCategoryId, activeProjectIndex, detailMode, detailScene, phase, prefersReducedMotion, view]);
+
+  useEffect(() => {
+    if (
+      entryLandingState !== 'preparing' ||
+      phase !== 'settled' ||
+      view !== 'entry' ||
+      prefersReducedMotion
+    ) {
+      return undefined;
+    }
+
+    const frameId = window.requestAnimationFrame(() => {
+      setEntryLandingState('visible');
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [entryLandingState, phase, prefersReducedMotion, view]);
 
   useEffect(() => {
     return () => {
@@ -919,6 +948,7 @@ export default function WorksDetailSection({
     }
 
     wheelBufferRef.current = 0;
+    setEntryLandingState('visible');
     resetDetailState();
     resetCodingState();
     const openState = openWorksDetailDesignView(viewRef.current);
@@ -932,6 +962,7 @@ export default function WorksDetailSection({
     }
 
     wheelBufferRef.current = 0;
+    setEntryLandingState('visible');
     resetDetailState();
     resetCodingState();
     const openState = openWorksDetailCodingView(viewRef.current);
@@ -941,6 +972,7 @@ export default function WorksDetailSection({
 
   const handleCloseDetailView = () => {
     wheelBufferRef.current = 0;
+    setEntryLandingState('visible');
 
     if (detailModeRef.current === 'coding') {
       resetCodingState();
@@ -979,6 +1011,7 @@ export default function WorksDetailSection({
       return;
     }
 
+    setEntryLandingState('visible');
     transitionDetailState('project', clampProjectIndex(nextProjectIndex));
   };
 
@@ -1050,24 +1083,40 @@ export default function WorksDetailSection({
         <div
           aria-hidden="true"
           data-works-detail-layer="background"
+          data-works-detail-entry-landing-layer={isEntryLandingStage ? 'background' : undefined}
           className="absolute inset-0 bg-cover bg-center"
           style={{
             opacity: visualState.backgroundOpacity,
             backgroundImage: `url(${backgroundImageSrc})`,
-            transform: `scale(${visualState.backgroundScale})`,
+            transform: `scale(${isEntryLandingStage && !isEntryLandingVisible ? visualState.backgroundScale + 0.03 : visualState.backgroundScale})`,
+            transition: isEntryLandingStage
+              ? `transform ${WORKS_DETAIL_ENTRY_LANDING_DURATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1), opacity ${WORKS_DETAIL_ENTRY_LANDING_DURATION_MS}ms ease-out`
+              : undefined,
           }}
         />
 
         <div
           data-works-detail-layer="content"
+          data-works-detail-entry-landing={isEntryLandingStage ? entryLandingState : undefined}
+          data-works-detail-entry-landing-layer={isEntryLandingStage ? 'content' : undefined}
           className={
             view === 'detail'
               ? 'absolute inset-0 flex items-center justify-center'
               : 'absolute inset-0 flex items-center justify-center px-4 sm:px-8'
           }
           style={{
-            opacity: contentOpacity,
+            opacity: isEntryLandingStage && !isEntryLandingVisible ? 0 : contentOpacity,
             pointerEvents: isContentInteractive ? 'auto' : 'none',
+            transform: isEntryLandingStage && !isEntryLandingVisible ? 'translate3d(0, 16px, 0)' : 'translate3d(0, 0, 0)',
+            filter: isEntryLandingStage && !isEntryLandingVisible ? 'blur(4px)' : 'blur(0)',
+            transition: isEntryLandingStage
+              ? [
+                  `opacity ${WORKS_DETAIL_ENTRY_LANDING_DURATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`,
+                  `transform ${WORKS_DETAIL_ENTRY_LANDING_DURATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`,
+                  `filter ${WORKS_DETAIL_ENTRY_LANDING_DURATION_MS}ms ease-out`,
+                ].join(', ')
+              : undefined,
+            willChange: isEntryLandingStage ? 'opacity, transform, filter' : undefined,
           }}
         >
           {view === 'detail' ? (
