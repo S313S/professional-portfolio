@@ -44,10 +44,17 @@ export interface FriendBookFinalGameCard {
   backgroundImage: string;
 }
 
+export interface FriendBookFinalEntrySeal {
+  label: string;
+  backgroundColor: string;
+  borderColor: string;
+  textColor: string;
+}
+
 export interface FriendBookFinalEntry {
   id: string;
   nickname: string;
-  seal: string;
+  seal: FriendBookFinalEntrySeal;
   excerpt: string;
   note: string;
   date: string;
@@ -400,9 +407,9 @@ export const friendBookFinalSectionData = {
     },
     {
       id: 'one-stroke-mark',
-      title: 'One Stroke Mark',
+      title: "Who’s This?",
       description:
-        'Leave a single drawn trace before you decide whether to be remembered.',
+        'Based on the image I provided, choose the option that you think it is.',
       ctaLabel: 'Begin',
       backgroundImage: '/images/BookofFriends_Bg_CatBook_Right.png',
     },
@@ -472,7 +479,12 @@ export const friendBookFinalSectionData = {
     {
       id: 'spring-wind',
       nickname: '樱花季的风',
-      seal: 'Moon Seal',
+      seal: {
+        label: 'Moon Seal',
+        backgroundColor: 'rgba(238,205,206,0.72)',
+        borderColor: '#d7a7a6',
+        textColor: '#7a5450',
+      },
       excerpt: '今晚的风具温柔，在这个情里，我留下了温柔的心情。',
       note: 'A gentle mood stayed with the page long after the round ended.',
       date: 'APR 12, 2024',
@@ -482,7 +494,12 @@ export const friendBookFinalSectionData = {
     {
       id: 'book-sea-diver',
       nickname: '书海潜水员',
-      seal: 'Mino Seal',
+      seal: {
+        label: 'Wind Mark',
+        backgroundColor: 'rgba(214,225,194,0.84)',
+        borderColor: '#b4c69a',
+        textColor: '#66724a',
+      },
       excerpt: '简单的一划，初记住了今天最特别的一刻。',
       note: 'Some memories arrive as a single line and stay longer than expected.',
       date: 'APR 18, 2026',
@@ -492,7 +509,12 @@ export const friendBookFinalSectionData = {
     {
       id: 'night-watcher',
       nickname: '深夜守望者',
-      seal: 'Night Watch Seed',
+      seal: {
+        label: 'Night Watch Echo',
+        backgroundColor: 'rgba(221,210,225,0.78)',
+        borderColor: '#c0b0c7',
+        textColor: '#6b5e74',
+      },
       excerpt: '这本书的最后一页，我想用这个故事填满。',
       note: 'A small promise to come back when the night grows quiet again.',
       date: 'APR 06, 2026',
@@ -517,7 +539,7 @@ export const friendBookFinalSectionData = {
     },
     {
       gameId: 'one-stroke-mark',
-      label: 'One Stroke Mark',
+      label: "Who’s This?",
       emptyTitle: 'A trace still unwritten',
       emptyDescription: 'Draw one unbroken line to let this page remember you.',
       previewDate: 'APR 06, 2026',

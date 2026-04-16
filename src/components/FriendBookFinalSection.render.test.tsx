@@ -106,7 +106,7 @@ test('renders the friend-book finale as a paper-book landing scene with sample a
   assert.match(markup, /data-friend-book-button-anchor="game-card-one-stroke-mark"/);
   assert.match(markup, /Between Two Pages/);
   assert.match(markup, /Moon Run/);
-  assert.match(markup, /One Stroke Mark/);
+  assert.match(markup, /Who’s This\?/);
   assert.match(markup, /Begin/);
   assert.match(markup, /data-friend-book-card-top-spacer="between-two-pages"/);
   assert.match(markup, /data-friend-book-card-top-spacer="moon-run"/);

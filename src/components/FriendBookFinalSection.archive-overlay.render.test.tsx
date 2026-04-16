@@ -8,6 +8,10 @@ test('renders a dedicated desktop archive overlay mapped onto the message-board 
   const markup = renderToStaticMarkup(<FriendBookFinalSection />);
 
   assert.match(markup, /data-friend-book-preview-desktop="true"/);
+  assert.match(
+    markup,
+    /data-friend-book-preview-sample-stack="true"[^>]*style="[^"]*transform:translateY\(-18px\)/,
+  );
   assert.match(markup, /data-friend-book-preview-header="left"/);
   assert.match(markup, /data-friend-book-preview-header="right"/);
   assert.match(markup, /data-friend-book-sample-entry-desktop="spring-wind"/);

@@ -81,6 +81,14 @@ type FriendBookAbsoluteLayout = {
   height?: string;
 };
 
+// 中文注释：用于整体微调左页三条样例记录。
+// x 为水平位移，负数向左、正数向右；y 为垂直位移，负数向上、正数向下。
+// 这里只移动“头像 + 标题 + 正文 + 右侧徽章”这一整组，不影响右页日期槽位。
+export const FRIEND_BOOK_ARCHIVE_SAMPLE_STACK_NUDGE = {
+  x: 0,
+  y: -18,
+} as const;
+
 const FRIEND_BOOK_ARCHIVE_DESKTOP_LAYOUT = {
   headerLeft: { left: '2.7%', top: '3.6%', width: '45.6%' },
   headerRight: { left: '51.6%', top: '3.8%', width: '42.8%' },
@@ -1182,50 +1190,64 @@ export default function FriendBookFinalSection() {
               </p>
             </div>
 
-            {friendBookFinalSectionData.entries.map((entry) => (
-              <article
-                key={entry.id}
-                data-friend-book-sample-entry-desktop={entry.id}
-                className="absolute"
-                style={getAbsoluteLayoutStyle(FRIEND_BOOK_ARCHIVE_DESKTOP_LAYOUT.sampleEntries[entry.id])}
-              >
-                <div className="grid h-full grid-cols-[58px_minmax(0,1fr)_88px] gap-3 px-4 py-3 xl:grid-cols-[68px_minmax(0,1fr)_98px] xl:px-5 xl:py-4">
-                  <img
-                    src={entry.avatarImage}
-                    alt=""
-                    aria-hidden="true"
-                    className="mt-1 h-15 w-15 rounded-full border border-[#d4bea8] object-cover xl:h-[4.6rem] xl:w-[4.6rem]"
-                  />
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h4
-                        data-friend-book-sample-entry-title={entry.id}
-                        className="font-serif text-[1.62rem] leading-none tracking-[-0.04em] text-[#2d2221] xl:text-[2rem]"
-                      >
-                        {entry.nickname}
-                      </h4>
-                      <span className="rounded-full border border-[#d5b4a4] bg-[rgba(240,212,212,0.72)] px-2.5 py-1 text-[0.64rem] uppercase tracking-[0.16em] text-[#714942] xl:px-3 xl:text-[0.72rem]">
-                        {entry.seal}
-                      </span>
-                    </div>
-                    <p
-                      data-friend-book-sample-entry-excerpt={entry.id}
-                      className="mt-2 text-[0.96rem] leading-7 text-[#463731] xl:text-[1.18rem] xl:leading-[1.6]"
-                    >
-                      {entry.excerpt}
-                    </p>
-                  </div>
-                  <div className="flex h-full items-center justify-end pb-1 pt-1">
+            <div
+              data-friend-book-preview-sample-stack="true"
+              className="absolute inset-0"
+              style={{ transform: `translateY(${FRIEND_BOOK_ARCHIVE_SAMPLE_STACK_NUDGE.y}px)` }}
+            >
+              {friendBookFinalSectionData.entries.map((entry) => (
+                <article
+                  key={entry.id}
+                  data-friend-book-sample-entry-desktop={entry.id}
+                  className="absolute"
+                  style={getAbsoluteLayoutStyle(FRIEND_BOOK_ARCHIVE_DESKTOP_LAYOUT.sampleEntries[entry.id])}
+                >
+                  <div className="grid h-full grid-cols-[58px_minmax(0,1fr)_88px] gap-3 px-4 py-3 xl:grid-cols-[68px_minmax(0,1fr)_98px] xl:px-5 xl:py-4">
                     <img
-                      src={entry.medalImage}
+                      src={entry.avatarImage}
                       alt=""
                       aria-hidden="true"
-                      className="h-15 w-15 rounded-[1rem] border border-[#d4bea8] object-cover xl:h-[4.4rem] xl:w-[4.4rem]"
+                      className="mt-1 h-15 w-15 rounded-full border border-[#d4bea8] object-cover xl:h-[4.6rem] xl:w-[4.6rem]"
                     />
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h4
+                          data-friend-book-sample-entry-title={entry.id}
+                          className="font-serif text-[1.62rem] leading-none tracking-[-0.04em] text-[#2d2221] xl:text-[2rem]"
+                        >
+                          {entry.nickname}
+                        </h4>
+                        <span
+                          data-friend-book-sample-entry-seal-desktop={entry.id}
+                          className="rounded-full border px-2.5 py-1 text-[0.64rem] uppercase tracking-[0.16em] xl:px-3 xl:text-[0.72rem]"
+                          style={{
+                            backgroundColor: entry.seal.backgroundColor,
+                            borderColor: entry.seal.borderColor,
+                            color: entry.seal.textColor,
+                          }}
+                        >
+                          {entry.seal.label}
+                        </span>
+                      </div>
+                      <p
+                        data-friend-book-sample-entry-excerpt={entry.id}
+                        className="mt-2 text-[0.96rem] leading-7 text-[#463731] xl:text-[1.18rem] xl:leading-[1.6]"
+                      >
+                        {entry.excerpt}
+                      </p>
+                    </div>
+                    <div className="flex h-full items-center justify-end pb-1 pt-1">
+                      <img
+                        src={entry.medalImage}
+                        alt=""
+                        aria-hidden="true"
+                        className="h-15 w-15 rounded-[1rem] border border-[#d4bea8] object-cover xl:h-[4.4rem] xl:w-[4.4rem]"
+                      />
+                    </div>
                   </div>
-                </div>
-              </article>
-            ))}
+                </article>
+              ))}
+            </div>
 
             {friendBookFinalSectionData.userSlots.map((slot) => {
               const slotProgress = progress.games[slot.gameId];
@@ -1316,8 +1338,15 @@ export default function FriendBookFinalSection() {
                         <h4 className="font-serif text-[1.75rem] leading-none tracking-[-0.03em] text-[#2d2221]">
                           {entry.nickname}
                         </h4>
-                        <span className="rounded-full border border-[#d5b4a4] bg-[#f0d4d4] px-3 py-1 text-[0.7rem] uppercase tracking-[0.16em] text-[#714942]">
-                          {entry.seal}
+                        <span
+                          className="rounded-full border px-3 py-1 text-[0.7rem] uppercase tracking-[0.16em]"
+                          style={{
+                            backgroundColor: entry.seal.backgroundColor,
+                            borderColor: entry.seal.borderColor,
+                            color: entry.seal.textColor,
+                          }}
+                        >
+                          {entry.seal.label}
                         </span>
                       </div>
                       <p className="mt-2 text-[0.98rem] leading-7 text-[#463731]">
