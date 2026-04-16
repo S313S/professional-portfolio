@@ -480,7 +480,7 @@ export const friendBookFinalSectionData = {
       id: 'spring-wind',
       nickname: '樱花季的风',
       seal: {
-        label: 'Moon Seal',
+        label: 'Two Pages',
         backgroundColor: 'rgba(238,205,206,0.72)',
         borderColor: '#d7a7a6',
         textColor: '#7a5450',
@@ -495,7 +495,7 @@ export const friendBookFinalSectionData = {
       id: 'book-sea-diver',
       nickname: '书海潜水员',
       seal: {
-        label: 'Wind Mark',
+        label: 'Moon Run',
         backgroundColor: 'rgba(214,225,194,0.84)',
         borderColor: '#b4c69a',
         textColor: '#66724a',
@@ -510,7 +510,7 @@ export const friendBookFinalSectionData = {
       id: 'night-watcher',
       nickname: '深夜守望者',
       seal: {
-        label: 'Night Watch Echo',
+        label: "Who's This",
         backgroundColor: 'rgba(221,210,225,0.78)',
         borderColor: '#c0b0c7',
         textColor: '#6b5e74',

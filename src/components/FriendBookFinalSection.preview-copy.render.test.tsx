@@ -64,7 +64,11 @@ test('renders empty archive slots as date-only placeholders without the old help
   assert.doesNotMatch(desktopSpringWind, /APR 12, 2024/);
   assert.match(
     desktopSpringWind,
-    /data-friend-book-sample-entry-seal-desktop="spring-wind"[\s\S]*?>Moon Seal<\/span>/,
+    /data-friend-book-sample-entry-header-desktop="spring-wind"[^>]*class="flex items-start gap-3"/,
+  );
+  assert.match(
+    desktopSpringWind,
+    /data-friend-book-sample-entry-seal-desktop="spring-wind"[\s\S]*?>Two Pages<\/span>/,
   );
   assert.match(desktopSpringWind, /background-color:rgba\(238,205,206,0\.72\)/);
   assert.match(desktopSpringWind, /border-color:#d7a7a6/);
@@ -77,7 +81,11 @@ test('renders empty archive slots as date-only placeholders without the old help
   assert.doesNotMatch(desktopBookSeaDiver, /APR 18, 2026/);
   assert.match(
     desktopBookSeaDiver,
-    /data-friend-book-sample-entry-seal-desktop="book-sea-diver"[\s\S]*?>Wind Mark<\/span>/,
+    /data-friend-book-sample-entry-header-desktop="book-sea-diver"[^>]*class="flex items-start gap-3"/,
+  );
+  assert.match(
+    desktopBookSeaDiver,
+    /data-friend-book-sample-entry-seal-desktop="book-sea-diver"[\s\S]*?>Moon Run<\/span>/,
   );
   assert.match(desktopBookSeaDiver, /background-color:rgba\(214,225,194,0\.84\)/);
   assert.match(desktopBookSeaDiver, /border-color:#b4c69a/);
@@ -90,7 +98,11 @@ test('renders empty archive slots as date-only placeholders without the old help
   assert.doesNotMatch(desktopNightWatcher, /APR 06, 2026/);
   assert.match(
     desktopNightWatcher,
-    /data-friend-book-sample-entry-seal-desktop="night-watcher"[\s\S]*?>Night Watch Echo<\/span>/,
+    /data-friend-book-sample-entry-header-desktop="night-watcher"[^>]*class="flex items-start gap-3"/,
+  );
+  assert.match(
+    desktopNightWatcher,
+    /data-friend-book-sample-entry-seal-desktop="night-watcher"[\s\S]*?>Who&#x27;s This<\/span>/,
   );
   assert.match(desktopNightWatcher, /background-color:rgba\(221,210,225,0\.78\)/);
   assert.match(desktopNightWatcher, /border-color:#c0b0c7/);

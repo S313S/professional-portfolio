@@ -1210,16 +1210,19 @@ export default function FriendBookFinalSection() {
                       className="mt-1 h-15 w-15 rounded-full border border-[#d4bea8] object-cover xl:h-[4.6rem] xl:w-[4.6rem]"
                     />
                     <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
+                      <div
+                        data-friend-book-sample-entry-header-desktop={entry.id}
+                        className="flex items-start gap-3"
+                      >
                         <h4
                           data-friend-book-sample-entry-title={entry.id}
-                          className="font-serif text-[1.62rem] leading-none tracking-[-0.04em] text-[#2d2221] xl:text-[2rem]"
+                          className="shrink-0 font-serif text-[1.62rem] leading-none tracking-[-0.04em] text-[#2d2221] xl:text-[2rem]"
                         >
                           {entry.nickname}
                         </h4>
                         <span
                           data-friend-book-sample-entry-seal-desktop={entry.id}
-                          className="rounded-full border px-2.5 py-1 text-[0.64rem] uppercase tracking-[0.16em] xl:px-3 xl:text-[0.72rem]"
+                          className="ml-1 mt-[0.16rem] shrink-0 rounded-full border px-2.5 py-1 text-[0.64rem] uppercase tracking-[0.16em] xl:ml-1.5 xl:mt-[0.22rem] xl:px-3 xl:text-[0.72rem]"
                           style={{
                             backgroundColor: entry.seal.backgroundColor,
                             borderColor: entry.seal.borderColor,
