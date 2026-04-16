@@ -12,6 +12,12 @@ const SUPPORTED_FOCUS_TARGETS = [
 ] as const;
 
 type SupportedFocusTarget = (typeof SUPPORTED_FOCUS_TARGETS)[number];
+const SUPPORTED_DEV_STANDALONE_ROUTES = {
+  '/debug/friend-book-finale': 'friend-book-finale',
+} as const;
+
+export type SupportedDevStandaloneRoute =
+  (typeof SUPPORTED_DEV_STANDALONE_ROUTES)[keyof typeof SUPPORTED_DEV_STANDALONE_ROUTES];
 
 export function getInitialScrollResetState(
   navigationType: AppNavigationType,
@@ -41,6 +47,19 @@ export function getInitialFocusTarget(search: string): SupportedFocusTarget | nu
   }
 
   return null;
+}
+
+export function getDevStandaloneRoute(
+  pathname: string,
+  isDev: boolean,
+): SupportedDevStandaloneRoute | null {
+  if (!isDev) {
+    return null;
+  }
+
+  return SUPPORTED_DEV_STANDALONE_ROUTES[
+    pathname as keyof typeof SUPPORTED_DEV_STANDALONE_ROUTES
+  ] ?? null;
 }
 
 export function getCurrentNavigationType(): AppNavigationType {

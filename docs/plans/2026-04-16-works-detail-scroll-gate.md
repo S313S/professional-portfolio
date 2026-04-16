@@ -4,7 +4,7 @@
 
 **Goal:** Make `Works Detail` reveal itself after the intro animation completes, and only advance to `Friend Book Finale` after `detailWork` is fully visible and the user scrolls down again.
 
-**Architecture:** Keep the existing `WorksDetailSection` loading/reveal state machine intact, but add a tiny settled-entry release gate. Downward wheel or touch input should continue to drive the reveal while the section is in `revealing`; once the section first reaches `settled`, the current gesture must stop on the fully visible `detailWork` screen, and only the next fresh downward gesture should trigger the existing smooth scroll to `Friend Book Finale`.
+**Architecture:** End the loading sequence by landing directly on the fully visible `detailWork` attachment page (`settled` at progress `1`) so the user never has to manually reveal that screen after the animation. From that fully visible state, the next downward wheel or touch gesture should trigger the existing smooth scroll into `Friend Book Finale`, while the settled design-detail gallery should keep capturing wheel input for internal project switching instead of leaking native page scroll.
 
 **Tech Stack:** React, TypeScript, node:test, Vite
 
@@ -18,16 +18,16 @@
 
 **Step 1: Write the failing test**
 
-Add a test that asserts the settled entry view does not advance until a fresh downward gesture arrives after reveal completion, while non-entry states still cannot advance.
+Add a test that asserts loading completion lands directly on the fully revealed attachment page and that the settled entry view advances to the next section on the next downward gesture, while non-entry states still cannot advance.
 
 **Step 2: Run test to verify it fails**
 
 Run: `node --import tsx --test src/components/WorksDetailSection.logic.test.ts`
-Expected: FAIL because the current settled-entry behavior still allows or disallows the transition at the wrong moment.
+Expected: FAIL because loading completion and settled-entry navigation semantics still reflect the older reveal-after-animation flow.
 
 **Step 3: Write minimal implementation**
 
-Require an explicit settled-entry release flag before the next-section transition is allowed, and add a helper that arms that flag only for the first downward gesture after reveal completion.
+Return a settled completion state (`nextPhase: 'settled'`, `nextTransitionProgress: 1`) and keep the next-section navigation rule simple for the fully visible attachment page.
 
 **Step 4: Run test to verify it passes**
 
@@ -58,7 +58,7 @@ Expected: FAIL until the component and helper agree on the new gate semantics.
 
 **Step 3: Write minimal implementation**
 
-Keep the component aligned with the state machine: while the phase is still `revealing`, downward wheel/touch input only drives the reveal progress. Once the phase becomes `settled`, the first downward wheel/touch interaction should only repin and arm the release gate; only the next fresh downward interaction should go through the existing `scrollToNextSection()` path.
+Keep the component aligned with the new completion state: after loading finishes, the entry view is already fully visible, so the next downward wheel/touch interaction should go through the existing `scrollToNextSection()` path without any extra manual reveal step. Also ensure the settled design-detail gallery continues to capture wheel input for project switching instead of falling back to native page scroll.
 
 **Step 4: Run test to verify it passes**
 

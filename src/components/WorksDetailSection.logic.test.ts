@@ -4,7 +4,6 @@ import assert from 'node:assert/strict';
 import {
   closeWorksDetailView,
   getWorksDetailActivationState,
-  getWorksDetailAdvanceGateArmState,
   getWorksDetailBackNavigationState,
   getWorksDetailCompletionState,
   getWorksDetailDetailModeResetState,
@@ -66,10 +65,10 @@ test('detail view ignores upward back navigation and entry view remains the only
   });
 });
 
-test('completing the loading animation transitions into reveal mode at the start of the curtain push', () => {
+test('completing the loading animation lands directly on the fully revealed attachment page', () => {
   assert.deepEqual(getWorksDetailCompletionState(), {
-    nextPhase: 'revealing',
-    nextTransitionProgress: 0,
+    nextPhase: 'settled',
+    nextTransitionProgress: 1,
   });
 });
 
@@ -87,6 +86,8 @@ test('loading phase locks scroll while the viewport is inside the works detail s
   assert.equal(
     shouldLockWorksDetailScroll({
       phase: 'revealing',
+      view: 'entry',
+      detailMode: 'design',
       scrollY: 3200,
       sectionTop: 3200,
       sectionHeight: 1800,
@@ -97,7 +98,21 @@ test('loading phase locks scroll while the viewport is inside the works detail s
   assert.equal(
     shouldLockWorksDetailScroll({
       phase: 'revealing',
+      view: 'entry',
+      detailMode: 'design',
       scrollY: 3168,
+      sectionTop: 3200,
+      sectionHeight: 1800,
+    }),
+    true,
+  );
+
+  assert.equal(
+    shouldLockWorksDetailScroll({
+      phase: 'settled',
+      view: 'detail',
+      detailMode: 'design',
+      scrollY: 3200,
       sectionTop: 3200,
       sectionHeight: 1800,
     }),
@@ -125,23 +140,11 @@ test('coding detail mode releases wheel scrolling back to the panel instead of h
   );
 });
 
-test('settled entry view only advances to the next section after a fresh downward gesture', () => {
+test('settled entry view advances to the next section on the next downward gesture once attachment page one is fully visible', () => {
   assert.equal(
     shouldAdvanceWorksDetailToNextSection({
       phase: 'settled',
       view: 'entry',
-      isNextSectionAdvanceArmed: false,
-      deltaY: 120,
-      nextSectionTop: 240,
-    }),
-    false,
-  );
-
-  assert.equal(
-    shouldAdvanceWorksDetailToNextSection({
-      phase: 'settled',
-      view: 'entry',
-      isNextSectionAdvanceArmed: true,
       deltaY: 120,
       nextSectionTop: 240,
     }),
@@ -152,7 +155,6 @@ test('settled entry view only advances to the next section after a fresh downwar
     shouldAdvanceWorksDetailToNextSection({
       phase: 'settled',
       view: 'detail',
-      isNextSectionAdvanceArmed: true,
       deltaY: 120,
       nextSectionTop: 240,
     }),
@@ -163,7 +165,6 @@ test('settled entry view only advances to the next section after a fresh downwar
     shouldAdvanceWorksDetailToNextSection({
       phase: 'revealing',
       view: 'entry',
-      isNextSectionAdvanceArmed: true,
       deltaY: 120,
       nextSectionTop: 240,
     }),
@@ -174,7 +175,6 @@ test('settled entry view only advances to the next section after a fresh downwar
     shouldAdvanceWorksDetailToNextSection({
       phase: 'settled',
       view: 'entry',
-      isNextSectionAdvanceArmed: true,
       deltaY: -120,
       nextSectionTop: 240,
     }),
@@ -185,7 +185,6 @@ test('settled entry view only advances to the next section after a fresh downwar
     shouldAdvanceWorksDetailToNextSection({
       phase: 'settled',
       view: 'entry',
-      isNextSectionAdvanceArmed: true,
       deltaY: 120,
       nextSectionTop: 0,
     }),
@@ -196,61 +195,8 @@ test('settled entry view only advances to the next section after a fresh downwar
     shouldAdvanceWorksDetailToNextSection({
       phase: 'settled',
       view: 'entry',
-      isNextSectionAdvanceArmed: true,
       deltaY: 120,
       nextSectionTop: null,
-    }),
-    false,
-  );
-});
-
-test('settled entry view arms the release gate only on the first downward gesture after reveal completion', () => {
-  assert.equal(
-    getWorksDetailAdvanceGateArmState({
-      phase: 'settled',
-      view: 'entry',
-      deltaY: 120,
-      isNextSectionAdvanceArmed: false,
-    }),
-    true,
-  );
-
-  assert.equal(
-    getWorksDetailAdvanceGateArmState({
-      phase: 'settled',
-      view: 'entry',
-      deltaY: 120,
-      isNextSectionAdvanceArmed: true,
-    }),
-    false,
-  );
-
-  assert.equal(
-    getWorksDetailAdvanceGateArmState({
-      phase: 'revealing',
-      view: 'entry',
-      deltaY: 120,
-      isNextSectionAdvanceArmed: false,
-    }),
-    false,
-  );
-
-  assert.equal(
-    getWorksDetailAdvanceGateArmState({
-      phase: 'settled',
-      view: 'detail',
-      deltaY: 120,
-      isNextSectionAdvanceArmed: false,
-    }),
-    false,
-  );
-
-  assert.equal(
-    getWorksDetailAdvanceGateArmState({
-      phase: 'settled',
-      view: 'entry',
-      deltaY: -120,
-      isNextSectionAdvanceArmed: false,
     }),
     false,
   );
@@ -432,6 +378,20 @@ test('settled stage no longer requests global scroll locking', () => {
   assert.equal(
     shouldLockWorksDetailScroll({
       phase: 'settled',
+      view: 'entry',
+      detailMode: 'design',
+      scrollY: 3200,
+      sectionTop: 3200,
+      sectionHeight: 1800,
+    }),
+    false,
+  );
+
+  assert.equal(
+    shouldLockWorksDetailScroll({
+      phase: 'settled',
+      view: 'detail',
+      detailMode: 'coding',
       scrollY: 3200,
       sectionTop: 3200,
       sectionHeight: 1800,

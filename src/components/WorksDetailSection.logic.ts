@@ -23,6 +23,8 @@ export interface WorksDetailCompletionState {
 
 export interface WorksDetailScrollLockInput {
   phase: WorksDetailPhase;
+  view: WorksDetailView;
+  detailMode: WorksDetailDetailMode;
   scrollY: number;
   sectionTop: number;
   sectionHeight: number;
@@ -87,16 +89,8 @@ export interface WorksDetailWheelCaptureInput {
 export interface WorksDetailNextSectionNavigationInput {
   phase: WorksDetailPhase;
   view: WorksDetailView;
-  isNextSectionAdvanceArmed: boolean;
   deltaY: number;
   nextSectionTop: number | null;
-}
-
-export interface WorksDetailAdvanceGateArmInput {
-  phase: WorksDetailPhase;
-  view: WorksDetailView;
-  isNextSectionAdvanceArmed: boolean;
-  deltaY: number;
 }
 
 export interface WorksDetailSceneNavigationInput {
@@ -185,8 +179,8 @@ export function getWorksDetailActivationState(previousCycleKey = 0): WorksDetail
 
 export function getWorksDetailCompletionState(): WorksDetailCompletionState {
   return {
-    nextPhase: 'revealing',
-    nextTransitionProgress: 0,
+    nextPhase: 'settled',
+    nextTransitionProgress: 1,
   };
 }
 
@@ -243,12 +237,18 @@ export function getWorksDetailWheelBufferState({
 
 export function shouldLockWorksDetailScroll({
   phase,
+  view,
+  detailMode,
   scrollY: _scrollY,
   sectionTop: _sectionTop,
   sectionHeight,
 }: WorksDetailScrollLockInput) {
-  if (phase === 'idle' || phase === 'settled' || sectionHeight <= 0) {
+  if (phase === 'idle' || sectionHeight <= 0) {
     return false;
+  }
+
+  if (phase === 'settled') {
+    return view === 'detail' && detailMode !== 'coding';
   }
 
   return true;
@@ -273,27 +273,16 @@ export function shouldCaptureWorksDetailWheel({
 export function shouldAdvanceWorksDetailToNextSection({
   phase,
   view,
-  isNextSectionAdvanceArmed,
   deltaY,
   nextSectionTop,
 }: WorksDetailNextSectionNavigationInput) {
   return (
     phase === 'settled' &&
     view === 'entry' &&
-    isNextSectionAdvanceArmed &&
     deltaY > 0 &&
     nextSectionTop !== null &&
     nextSectionTop > 0
   );
-}
-
-export function getWorksDetailAdvanceGateArmState({
-  phase,
-  view,
-  isNextSectionAdvanceArmed,
-  deltaY,
-}: WorksDetailAdvanceGateArmInput) {
-  return phase === 'settled' && view === 'entry' && !isNextSectionAdvanceArmed && deltaY > 0;
 }
 
 export function getWorksDetailWheelState({

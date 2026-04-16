@@ -1,15 +1,28 @@
 import {StrictMode} from 'react';
 import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
-import { getCurrentNavigationType, getInitialFocusTarget, getInitialScrollResetState } from './App.logic.ts';
+import FriendBookFinaleDebugPage from './FriendBookFinaleDebugPage.tsx';
+import {
+  getCurrentNavigationType,
+  getDevStandaloneRoute,
+  getInitialFocusTarget,
+  getInitialScrollResetState,
+} from './App.logic.ts';
 import './index.css';
 
+const standaloneRoute =
+  typeof window === 'undefined'
+    ? null
+    : getDevStandaloneRoute(window.location.pathname, import.meta.env.DEV);
 const initialFocusTarget =
-  typeof window === 'undefined' ? null : getInitialFocusTarget(window.location.search);
+  typeof window === 'undefined' || standaloneRoute !== null
+    ? null
+    : getInitialFocusTarget(window.location.search);
 const initialScrollResetState = getInitialScrollResetState(
   getCurrentNavigationType(),
   initialFocusTarget,
 );
+const RootComponent = standaloneRoute === 'friend-book-finale' ? FriendBookFinaleDebugPage : App;
 
 if (typeof window !== 'undefined') {
   window.history.scrollRestoration = initialScrollResetState.scrollRestoration;
@@ -27,6 +40,6 @@ if (typeof window !== 'undefined') {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <RootComponent />
   </StrictMode>,
 );

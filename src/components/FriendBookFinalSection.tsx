@@ -107,18 +107,18 @@ type FriendBookButtonOffset = {
  */
 export const FRIEND_BOOK_BUTTON_POSITIONING = {
   hero: {
-    primary: { x: -10, y: 20 },
+    primary: { x: -10, y: 35 },
     secondary: {
-      startPlaying: { x: 0, y: 0 },
+      startPlaying: { x: -190, y: 60 },
       openFriendBook: { x: 0, y: 0 },
     },
   },
   gameCards: {
     shared: { x: 0, y: 0 },
     perCard: {
-      'between-two-pages': { x: 0, y: 0 },
-      'moon-run': { x: 0, y: 0 },
-      'one-stroke-mark': { x: 0, y: 0 },
+      'between-two-pages': { x: -10, y: -22 },
+      'moon-run': { x: -20, y: -16 },
+      'one-stroke-mark': { x: -21, y: -15 },
     },
   },
 } as const satisfies {

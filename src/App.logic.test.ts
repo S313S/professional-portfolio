@@ -1,7 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { getInitialFocusTarget, getInitialScrollResetState } from './App.logic';
+import {
+  getDevStandaloneRoute,
+  getInitialFocusTarget,
+  getInitialScrollResetState,
+} from './App.logic';
 
 test('reload navigation resets the app back to the homepage top', () => {
   assert.deepEqual(getInitialScrollResetState('reload'), {
@@ -38,4 +42,10 @@ test('parses only supported focus query values from the url search string', () =
   assert.equal(getInitialFocusTarget('?focus=friend-book-preview'), 'friend-book-preview');
   assert.equal(getInitialFocusTarget('?focus=works-detail-section'), null);
   assert.equal(getInitialFocusTarget('?foo=friend-book-finale-section'), null);
+});
+
+test('matches the friend-book standalone debug route only in development', () => {
+  assert.equal(getDevStandaloneRoute('/debug/friend-book-finale', true), 'friend-book-finale');
+  assert.equal(getDevStandaloneRoute('/debug/friend-book-finale', false), null);
+  assert.equal(getDevStandaloneRoute('/debug/works-detail', true), null);
 });

@@ -4,7 +4,6 @@ import gsap from 'gsap';
 import { personalData, type CodingCategoryId } from '../data';
 import {
   closeWorksDetailView,
-  getWorksDetailAdvanceGateArmState,
   getWorksDetailActivationState,
   getWorksDetailCompletionState,
   getWorksDetailDetailModeResetState,
@@ -310,7 +309,6 @@ export default function WorksDetailSection({
   const detailModeRef = useRef<WorksDetailDetailMode>(initialDetailMode);
   const loadingTimeoutRef = useRef<number | null>(null);
   const wheelBufferRef = useRef(0);
-  const nextSectionAdvanceArmedRef = useRef(false);
   const sceneUnlockTimeoutRef = useRef<number | null>(null);
   const detailSceneRef = useRef<WorksDetailScene>('gallery');
   const activeProjectIndexRef = useRef(WORKS_DETAIL_DEFAULT_ACTIVE_INDEX);
@@ -374,10 +372,6 @@ export default function WorksDetailSection({
     setDetailMode(getWorksDetailDetailModeResetState(detailModeRef.current).nextDetailMode);
   };
 
-  const clearNextSectionAdvanceGate = () => {
-    nextSectionAdvanceArmedRef.current = false;
-  };
-
   const scheduleSceneUnlock = () => {
     clearSceneUnlockTimeout();
 
@@ -416,7 +410,6 @@ export default function WorksDetailSection({
     const section = sectionRef.current;
 
     clearLoadingTimeout();
-    clearNextSectionAdvanceGate();
     wheelBufferRef.current = 0;
     resetDetailState();
     resetCodingState();
@@ -464,7 +457,6 @@ export default function WorksDetailSection({
   const exitToLobby = () => {
     clearLoadingTimeout();
     clearSceneUnlockTimeout();
-    clearNextSectionAdvanceGate();
     wheelBufferRef.current = 0;
     setPhase('idle');
     setTransitionProgress(0);
@@ -479,7 +471,6 @@ export default function WorksDetailSection({
     const activationState = getWorksDetailActivationState(iframeKey);
 
     clearLoadingTimeout();
-    clearNextSectionAdvanceGate();
     wheelBufferRef.current = 0;
     resetDetailState();
     resetCodingState();
@@ -503,25 +494,12 @@ export default function WorksDetailSection({
     }
   };
 
-  const repinWorksDetailEntryStage = () => {
-    const section = sectionRef.current;
-    if (!section) {
-      return;
-    }
-
-    window.scrollTo({
-      top: getWorksDetailPinnedScrollY(section.getBoundingClientRect().top + window.scrollY),
-      behavior: 'auto',
-    });
-  };
-
   const scrollToNextSection = () => {
     const nextSection = document.getElementById(WORKS_DETAIL_NEXT_SECTION_ID);
     if (!nextSection) {
       return;
     }
 
-    clearNextSectionAdvanceGate();
     wheelBufferRef.current = 0;
     window.scrollTo({
       top: getWorksDetailPinnedScrollY(nextSection.getBoundingClientRect().top + window.scrollY),
@@ -735,7 +713,6 @@ export default function WorksDetailSection({
         shouldAdvanceWorksDetailToNextSection({
           phase: currentPhase,
           view: currentView,
-          isNextSectionAdvanceArmed: nextSectionAdvanceArmedRef.current,
           deltaY: event.deltaY,
           nextSectionTop: getNextSectionTop(),
         })
@@ -746,29 +723,15 @@ export default function WorksDetailSection({
       }
 
       if (
-        getWorksDetailAdvanceGateArmState({
-          phase: currentPhase,
-          view: currentView,
-          isNextSectionAdvanceArmed: nextSectionAdvanceArmedRef.current,
-          deltaY: event.deltaY,
-        })
-      ) {
-        event.preventDefault();
-        nextSectionAdvanceArmedRef.current = true;
-        wheelBufferRef.current = 0;
-        repinWorksDetailEntryStage();
-        return;
-      }
-
-      if (
         !shouldLockWorksDetailScroll({
           phase: currentPhase,
+          view: currentView,
+          detailMode: currentDetailMode,
           scrollY: window.scrollY,
           sectionTop: 0,
           sectionHeight: 1,
         })
       ) {
-        clearNextSectionAdvanceGate();
         wheelBufferRef.current = 0;
         return;
       }
@@ -780,7 +743,6 @@ export default function WorksDetailSection({
           detailMode: currentDetailMode,
         })
       ) {
-        clearNextSectionAdvanceGate();
         wheelBufferRef.current = 0;
         return;
       }
@@ -872,7 +834,6 @@ export default function WorksDetailSection({
         shouldAdvanceWorksDetailToNextSection({
           phase: phaseRef.current,
           view: viewRef.current,
-          isNextSectionAdvanceArmed: nextSectionAdvanceArmedRef.current,
           deltaY: startY - currentY,
           nextSectionTop: getNextSectionTop(),
         })
@@ -884,30 +845,15 @@ export default function WorksDetailSection({
       }
 
       if (
-        getWorksDetailAdvanceGateArmState({
-          phase: phaseRef.current,
-          view: viewRef.current,
-          isNextSectionAdvanceArmed: nextSectionAdvanceArmedRef.current,
-          deltaY: startY - currentY,
-        })
-      ) {
-        event.preventDefault();
-        nextSectionAdvanceArmedRef.current = true;
-        wheelBufferRef.current = 0;
-        touchStartYRef.current = null;
-        repinWorksDetailEntryStage();
-        return;
-      }
-
-      if (
         !shouldLockWorksDetailScroll({
           phase: phaseRef.current,
+          view: viewRef.current,
+          detailMode: detailModeRef.current,
           scrollY: window.scrollY,
           sectionTop: 0,
           sectionHeight: 1,
         })
       ) {
-        clearNextSectionAdvanceGate();
         return;
       }
 
@@ -972,7 +918,6 @@ export default function WorksDetailSection({
       return;
     }
 
-    clearNextSectionAdvanceGate();
     wheelBufferRef.current = 0;
     resetDetailState();
     resetCodingState();
@@ -986,7 +931,6 @@ export default function WorksDetailSection({
       return;
     }
 
-    clearNextSectionAdvanceGate();
     wheelBufferRef.current = 0;
     resetDetailState();
     resetCodingState();
@@ -996,7 +940,6 @@ export default function WorksDetailSection({
   };
 
   const handleCloseDetailView = () => {
-    clearNextSectionAdvanceGate();
     wheelBufferRef.current = 0;
 
     if (detailModeRef.current === 'coding') {
