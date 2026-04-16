@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { PointerEvent as ReactPointerEvent } from 'react';
+import type { CSSProperties, PointerEvent as ReactPointerEvent } from 'react';
 import {
   BookOpenText,
   CheckCircle2,
@@ -63,6 +63,58 @@ const DIFFERENCE_HOTSPOTS = [
     },
   },
 ] as const;
+
+type FriendBookButtonOffset = {
+  x: number;
+  y: number;
+};
+
+// All values are pixel offsets: positive x moves right, positive y moves down.
+export const FRIEND_BOOK_BUTTON_POSITIONING = {
+  hero: {
+    primary: { x: 0, y: 0 },
+    secondary: {
+      startPlaying: { x: 0, y: 0 },
+      openFriendBook: { x: 0, y: 0 },
+    },
+  },
+  gameCards: {
+    shared: { x: 0, y: 0 },
+    perCard: {
+      'between-two-pages': { x: 0, y: 0 },
+      'moon-run': { x: 0, y: 0 },
+      'one-stroke-mark': { x: 0, y: 0 },
+    },
+  },
+} as const satisfies {
+  hero: {
+    primary: FriendBookButtonOffset;
+    secondary: {
+      startPlaying: FriendBookButtonOffset;
+      openFriendBook: FriendBookButtonOffset;
+    };
+  };
+  gameCards: {
+    shared: FriendBookButtonOffset;
+    perCard: Record<FriendBookGameId, FriendBookButtonOffset>;
+  };
+};
+
+function getOffsetStyle(offset: FriendBookButtonOffset): CSSProperties {
+  return {
+    transform: `translate(${offset.x}px, ${offset.y}px)`,
+  };
+}
+
+function combineOffsets(
+  baseOffset: FriendBookButtonOffset,
+  overrideOffset: FriendBookButtonOffset,
+): FriendBookButtonOffset {
+  return {
+    x: baseOffset.x + overrideOffset.x,
+    y: baseOffset.y + overrideOffset.y,
+  };
+}
 
 function getPaperBackgroundStyle(imageUrl: string, overlay = 'rgba(255,247,232,0.86)') {
   return {
@@ -418,15 +470,33 @@ export default function FriendBookFinalSection() {
             </div>
 
             <div className="flex flex-col justify-center gap-4 lg:items-end">
-              <FriendBookImageButton
-                label="Start Playing"
-                asset={friendBookFinalSectionData.assets.buttons.startPlayingPrimary}
-                onClick={() => scrollToTarget('friend-book-game-grid')}
-                className="w-full max-w-[320px]"
-              />
+              <div
+                data-friend-book-button-anchor="hero-primary"
+                style={getOffsetStyle(FRIEND_BOOK_BUTTON_POSITIONING.hero.primary)}
+                className="w-full lg:flex lg:justify-end"
+              >
+                <FriendBookImageButton
+                  label="Start Playing"
+                  asset={friendBookFinalSectionData.assets.buttons.startPlayingPrimary}
+                  onClick={() => scrollToTarget('friend-book-game-grid')}
+                  className="w-full max-w-[320px]"
+                />
+              </div>
               <div className="flex flex-wrap gap-3 lg:justify-end">
                 {friendBookFinalSectionData.ctaLinks.map((ctaLink) => (
-                  <div key={ctaLink.id} className="contents">
+                  <div
+                    key={ctaLink.id}
+                    data-friend-book-button-anchor={
+                      ctaLink.id === 'friend-book-start-link'
+                        ? 'hero-secondary-start-playing'
+                        : 'hero-secondary-open-friend-book'
+                    }
+                    style={getOffsetStyle(
+                      ctaLink.id === 'friend-book-start-link'
+                        ? FRIEND_BOOK_BUTTON_POSITIONING.hero.secondary.startPlaying
+                        : FRIEND_BOOK_BUTTON_POSITIONING.hero.secondary.openFriendBook,
+                    )}
+                  >
                     <FriendBookImageButton
                       label={ctaLink.label}
                       asset={ctaLink.asset}
@@ -474,12 +544,22 @@ export default function FriendBookFinalSection() {
                     </p>
                   </div>
 
-                  <FriendBookImageButton
-                    label={`${card.ctaLabel} ${card.title}`}
-                    asset={friendBookFinalSectionData.assets.buttons.begin}
-                    onClick={() => beginGame(card.id)}
-                    className="w-[104px]"
-                  />
+                  <div
+                    data-friend-book-button-anchor={`game-card-${card.id}`}
+                    style={getOffsetStyle(
+                      combineOffsets(
+                        FRIEND_BOOK_BUTTON_POSITIONING.gameCards.shared,
+                        FRIEND_BOOK_BUTTON_POSITIONING.gameCards.perCard[card.id],
+                      ),
+                    )}
+                  >
+                    <FriendBookImageButton
+                      label={`${card.ctaLabel} ${card.title}`}
+                      asset={friendBookFinalSectionData.assets.buttons.begin}
+                      onClick={() => beginGame(card.id)}
+                      className="w-[104px]"
+                    />
+                  </div>
                 </div>
               </article>
             );

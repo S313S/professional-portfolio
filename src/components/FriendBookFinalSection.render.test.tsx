@@ -2,7 +2,23 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { renderToStaticMarkup } from 'react-dom/server';
 
-import FriendBookFinalSection from './FriendBookFinalSection';
+import FriendBookFinalSection, { FRIEND_BOOK_BUTTON_POSITIONING } from './FriendBookFinalSection';
+
+test('exports a centralized button positioning config for the friend-book landing buttons', () => {
+  assert.deepEqual(FRIEND_BOOK_BUTTON_POSITIONING.hero.primary, { x: 0, y: 0 });
+  assert.deepEqual(FRIEND_BOOK_BUTTON_POSITIONING.hero.secondary.startPlaying, { x: 0, y: 0 });
+  assert.deepEqual(FRIEND_BOOK_BUTTON_POSITIONING.hero.secondary.openFriendBook, { x: 0, y: 0 });
+  assert.deepEqual(FRIEND_BOOK_BUTTON_POSITIONING.gameCards.shared, { x: 0, y: 0 });
+  assert.deepEqual(FRIEND_BOOK_BUTTON_POSITIONING.gameCards.perCard['between-two-pages'], {
+    x: 0,
+    y: 0,
+  });
+  assert.deepEqual(FRIEND_BOOK_BUTTON_POSITIONING.gameCards.perCard['moon-run'], { x: 0, y: 0 });
+  assert.deepEqual(FRIEND_BOOK_BUTTON_POSITIONING.gameCards.perCard['one-stroke-mark'], {
+    x: 0,
+    y: 0,
+  });
+});
 
 test('renders the friend-book finale as a paper-book landing scene with sample archive and user slots', () => {
   const markup = renderToStaticMarkup(<FriendBookFinalSection />);
@@ -32,6 +48,12 @@ test('renders the friend-book finale as a paper-book landing scene with sample a
   assert.match(markup, /\/images\/BookofFriends_Btn_Begin\.png/);
   assert.match(markup, /Start Playing/);
   assert.match(markup, /Open Friend Book/);
+  assert.match(markup, /data-friend-book-button-anchor="hero-primary"/);
+  assert.match(markup, /data-friend-book-button-anchor="hero-secondary-start-playing"/);
+  assert.match(markup, /data-friend-book-button-anchor="hero-secondary-open-friend-book"/);
+  assert.match(markup, /data-friend-book-button-anchor="game-card-between-two-pages"/);
+  assert.match(markup, /data-friend-book-button-anchor="game-card-moon-run"/);
+  assert.match(markup, /data-friend-book-button-anchor="game-card-one-stroke-mark"/);
   assert.match(markup, /Between Two Pages/);
   assert.match(markup, /Moon Run/);
   assert.match(markup, /One Stroke Mark/);
