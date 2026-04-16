@@ -1,4 +1,8 @@
 import { Github, Linkedin, Mail, Twitter, ExternalLink, Globe } from 'lucide-react';
+import type {
+  FriendBookAvatarId,
+  FriendBookGameId,
+} from './components/FriendBookFinalSection.logic';
 
 export interface FeaturedWork {
   id: string;
@@ -33,10 +37,12 @@ export interface CodingProjectCard {
 }
 
 export interface FriendBookFinalGameCard {
-  id: string;
+  id: FriendBookGameId;
   title: string;
   description: string;
   ctaLabel: string;
+  backgroundImage: string;
+  accentLabel: string;
 }
 
 export interface FriendBookFinalEntry {
@@ -46,6 +52,22 @@ export interface FriendBookFinalEntry {
   excerpt: string;
   note: string;
   date: string;
+  avatarImage: string;
+  medalImage: string;
+}
+
+export interface FriendBookFinalAvatarOption {
+  id: FriendBookAvatarId;
+  label: string;
+  asset: string;
+  hidden?: boolean;
+}
+
+export interface FriendBookFinalUserSlot {
+  gameId: FriendBookGameId;
+  label: string;
+  emptyTitle: string;
+  emptyDescription: string;
 }
 
 const featuredWorks: FeaturedWork[] = [
@@ -326,7 +348,22 @@ const codingProjects: Record<CodingCategoryId, CodingProjectCard[]> = {
 };
 
 export const friendBookFinalSectionData = {
-  overline: 'Friend Book / Play',
+  assets: {
+    sectionBackground: '/images/BookofFriends_Bg01.png',
+    heroPanelBackground: '/images/BookofFriends_Bg02.png',
+    archiveBoardBackground: '/images/BookofFriends_Bg_Message Board.png',
+    buttons: {
+      startPlayingPrimary: '/images/BookofFriends_Btn0_StartPlaying.png',
+      startPlayingSecondary: '/images/BookofFriends_Btn0_StartPlayingArrow.png',
+      openFriendBook: '/images/BookofFriends_Btn0_OpenFriendBook.png',
+      begin: '/images/BookofFriends_Btn_Begin.png',
+    },
+  },
+  topHeading: {
+    english: 'THE BOOK OF FRIENDS /',
+    chinese: '友人帐 (BOOK OF FRIENDS)',
+  },
+  overline: 'THE BOOK OF FRIENDS / 友人帐 (BOOK OF FRIENDS)',
   title: 'Where would you like to begin tonight?',
   description:
     'A few short interactions. When they end, you can decide whether to leave an echo in the Friend Book.',
@@ -335,11 +372,13 @@ export const friendBookFinalSectionData = {
       id: 'friend-book-start-link',
       label: 'Start Playing',
       href: '#friend-book-game-grid',
+      asset: '/images/BookofFriends_Btn0_StartPlayingArrow.png',
     },
     {
       id: 'friend-book-open-link',
       label: 'Open Friend Book',
       href: '#friend-book-preview',
+      asset: '/images/BookofFriends_Btn0_OpenFriendBook.png',
     },
   ],
   gameCards: [
@@ -349,6 +388,8 @@ export const friendBookFinalSectionData = {
       description:
         'Find a few small differences before the page closes for the night.',
       ctaLabel: 'Begin',
+      backgroundImage: '/images/BookofFriends_Bg_CatBook_Left.png',
+      accentLabel: 'Seek 3 quiet marks',
     },
     {
       id: 'moon-run',
@@ -356,6 +397,8 @@ export const friendBookFinalSectionData = {
       description:
         'A short night run where timing matters more than speed.',
       ctaLabel: 'Begin',
+      backgroundImage: '/images/BookofFriends_Bg_CatBook_middle.png',
+      accentLabel: 'Stop inside the moon band',
     },
     {
       id: 'one-stroke-mark',
@@ -363,39 +406,126 @@ export const friendBookFinalSectionData = {
       description:
         'Leave a single drawn trace before you decide whether to be remembered.',
       ctaLabel: 'Begin',
+      backgroundImage: '/images/BookofFriends_Bg_CatBook_Right.png',
+      accentLabel: 'Draw one unbroken line',
     },
   ] satisfies FriendBookFinalGameCard[],
-  previewEyebrow: 'Friend Book Preview',
+  avatars: [
+    {
+      id: 'cat-pi',
+      label: 'CaPi',
+      asset: '/images/Avatar_caPI01.png',
+    },
+    {
+      id: 'cat',
+      label: 'Cat',
+      asset: '/images/Avatar_cat01.png',
+    },
+    {
+      id: 'dog',
+      label: 'Dog',
+      asset: '/images/Avatar_dog01.png',
+    },
+    {
+      id: 'rabbit',
+      label: 'Rabbit',
+      asset: '/images/Avatar_rabit01.png',
+    },
+    {
+      id: 'tree',
+      label: 'Tree',
+      asset: '/images/Avatar_tree.png',
+    },
+    {
+      id: 'hidden-cat',
+      label: 'Hidden Cat',
+      asset: '/images/Avatar_cat_Hidden Edition.png',
+      hidden: true,
+    },
+  ] satisfies FriendBookFinalAvatarOption[],
+  medalPools: {
+    'between-two-pages': [
+      '/images/Animalmedals01.png',
+      '/images/Animalmedals02.png',
+      '/images/Animalmedals03.png',
+      '/images/Animalmedals04.png',
+      '/images/Animalmedals05.png',
+      '/images/Animalmedals06.png',
+      '/images/Animalmedals07.png',
+      '/images/Animalmedals08.png',
+    ],
+    'moon-run': [
+      '/images/GreenMedal01.png',
+      '/images/GreenMedal02.png',
+      '/images/GreenMedal03.png',
+      '/images/GreenMedal04.png',
+    ],
+    'one-stroke-mark': [
+      '/images/PurpleMedal01.png',
+      '/images/PurpleMedal02.png',
+      '/images/PurpleMedal03.png',
+      '/images/PurpleMedal04.png',
+      '/images/PurpleMedal05.png',
+    ],
+  } satisfies Record<FriendBookGameId, string[]>,
+  previewEyebrow: 'ARCHIVE OF BONDS / 羁绊存档',
   previewTitle: 'Soft Archive of Tonight',
   previewDescription:
-    'Three recent echoes, kept brief and quiet.',
+    'Three older echoes rest on the left. Your latest traces will settle into the right-hand page.',
   entries: [
     {
-      id: 'window-lamp',
-      nickname: 'Window Lamp',
+      id: 'spring-wind',
+      nickname: '樱花季的风',
       seal: 'Moon Seal',
-      excerpt: 'Stayed for one round, then lingered for the mood.',
-      note: 'The quiet pacing made the page feel warmer.',
-      date: 'Apr 13, 2026',
+      excerpt: '今晚的风具温柔，在这个情里，我留下了温柔的心情。',
+      note: 'A gentle mood stayed with the page long after the round ended.',
+      date: 'APR 12, 2024',
+      avatarImage: '/images/Avatar_cat01.png',
+      medalImage: '/images/PurpleMedal01.png',
     },
     {
-      id: 'paper-trail',
-      nickname: 'Paper Trail',
-      seal: 'Wind Mark',
-      excerpt: 'A small interaction, then a note left behind.',
-      note: 'It felt easy to enter without needing to explain too much.',
-      date: 'Apr 10, 2026',
+      id: 'book-sea-diver',
+      nickname: '书海潜水员',
+      seal: 'Mino Seal',
+      excerpt: '简单的一划，初记住了今天最特别的一刻。',
+      note: 'Some memories arrive as a single line and stay longer than expected.',
+      date: 'APR 18, 2026',
+      avatarImage: '/images/Avatar_tree.png',
+      medalImage: '/images/GreenMedal02.png',
     },
     {
-      id: 'night-shift',
-      nickname: 'Night Shift',
-      seal: 'Paper Seal',
-      excerpt: 'Came for the game, stayed for the archive.',
-      note: 'The Friend Book preview feels calm instead of performative.',
-      date: 'Apr 06, 2026',
+      id: 'night-watcher',
+      nickname: '深夜守望者',
+      seal: 'Night Watch Seed',
+      excerpt: '这本书的最后一页，我想用这个故事填满。',
+      note: 'A small promise to come back when the night grows quiet again.',
+      date: 'APR 06, 2026',
+      avatarImage: '/images/Avatar_dog01.png',
+      medalImage: '/images/Animalmedals04.png',
     },
   ] satisfies FriendBookFinalEntry[],
-  footerLine: 'Start with a short play session, then decide what tonight should leave behind.',
+  userSlots: [
+    {
+      gameId: 'between-two-pages',
+      label: 'Between Two Pages',
+      emptyTitle: 'A page still waiting',
+      emptyDescription: 'Find the three quiet marks to leave the first archive note here.',
+    },
+    {
+      gameId: 'moon-run',
+      label: 'Moon Run',
+      emptyTitle: 'A night run not yet finished',
+      emptyDescription: 'Stop inside the moon band to write the memory for this slot.',
+    },
+    {
+      gameId: 'one-stroke-mark',
+      label: 'One Stroke Mark',
+      emptyTitle: 'A trace still unwritten',
+      emptyDescription: 'Draw one unbroken line to let this page remember you.',
+    },
+  ] satisfies FriendBookFinalUserSlot[],
+  footerLine:
+    'START WITH A SHORT PLAY SESSION, THEN DECIDE YOUR VALUABLE SUCCESS FROM ARCHIVE.',
 } as const;
 
 export const personalData = {

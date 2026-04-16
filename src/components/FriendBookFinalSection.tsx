@@ -1,170 +1,1023 @@
-import { motion } from 'motion/react';
-import { ArrowRight, MoonStar, PenLine, Search } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import type { PointerEvent as ReactPointerEvent } from 'react';
+import {
+  BookOpenText,
+  CheckCircle2,
+  MoonStar,
+  PenLine,
+  RotateCcw,
+  Search,
+  Sparkles,
+} from 'lucide-react';
 
 import { friendBookFinalSectionData } from '../data';
+import {
+  type FriendBookAvatarId,
+  type FriendBookGameId,
+  type FriendBookPoint,
+  type FriendBookStage,
+  FRIEND_BOOK_DIFFERENCE_TARGETS,
+  completeFriendBookGameSession,
+  createDefaultFriendBookProgress,
+  formatFriendBookArchiveDate,
+  getAvailableFriendBookAvatarIds,
+  getFriendBookGameStartStage,
+  getFriendBookMedalIdForGame,
+  hydrateFriendBookProgress,
+  persistFriendBookProgress,
+  resolveBetweenTwoPagesSpotSelection,
+  resolveMoonRunAttempt,
+  resolveOneStrokeMarkAttempt,
+  selectFriendBookAvatar,
+} from './FriendBookFinalSection.logic';
 
 const GAME_CARD_ICONS = {
-  'Between Two Pages': Search,
-  'Moon Run': MoonStar,
-  'One Stroke Mark': PenLine,
+  'between-two-pages': Search,
+  'moon-run': MoonStar,
+  'one-stroke-mark': PenLine,
 } as const;
 
+const DIFFERENCE_HOTSPOTS = [
+  {
+    id: 'moon-stamp',
+    label: 'Moon stamp',
+    style: {
+      left: '17%',
+      top: '22%',
+    },
+  },
+  {
+    id: 'cat-tail',
+    label: 'Cat tail',
+    style: {
+      left: '72%',
+      top: '70%',
+    },
+  },
+  {
+    id: 'page-fold',
+    label: 'Page fold',
+    style: {
+      left: '54%',
+      top: '45%',
+    },
+  },
+] as const;
+
+function getPaperBackgroundStyle(imageUrl: string, overlay = 'rgba(255,247,232,0.86)') {
+  return {
+    backgroundImage: `linear-gradient(${overlay}, ${overlay}), url(${imageUrl})`,
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat',
+    backgroundSize: 'cover',
+  } as const;
+}
+
+function getIllustratedBackgroundStyle(imageUrl: string) {
+  return {
+    backgroundImage: `linear-gradient(rgba(255,246,236,0.12), rgba(255,246,236,0.12)), url(${imageUrl})`,
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat',
+    backgroundSize: 'cover',
+  } as const;
+}
+
+function FriendBookImageButton({
+  label,
+  asset,
+  onClick,
+  className,
+  disabled,
+}: {
+  label: string;
+  asset: string;
+  onClick: () => void;
+  className?: string;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      disabled={disabled}
+      onClick={onClick}
+      className={`inline-flex items-center justify-center transition duration-200 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 ${className ?? ''}`}
+    >
+      <img src={asset} alt="" aria-hidden="true" className="block h-auto w-full drop-shadow-[0_6px_10px_rgba(64,36,24,0.18)]" />
+      <span className="sr-only">{label}</span>
+    </button>
+  );
+}
+
+function getGamePrompt(gameId: FriendBookGameId): string {
+  switch (gameId) {
+    case 'between-two-pages':
+      return 'Find the three quiet differences hidden inside the page.';
+    case 'moon-run':
+      return 'Stop the moving moon marker inside the pale center band.';
+    case 'one-stroke-mark':
+      return 'Draw one unbroken line across the page without lifting early.';
+    default:
+      return '';
+  }
+}
+
 export default function FriendBookFinalSection() {
+  const [progress, setProgress] = useState(createDefaultFriendBookProgress);
+  const [stage, setStage] = useState<FriendBookStage>('landing');
+  const [activeGameId, setActiveGameId] = useState<FriendBookGameId | null>(null);
+  const [selectedAvatarCandidate, setSelectedAvatarCandidate] = useState<FriendBookAvatarId | null>(null);
+  const [pendingMedalId, setPendingMedalId] = useState<string | null>(null);
+  const [noteDraft, setNoteDraft] = useState('');
+  const [differenceSpotIds, setDifferenceSpotIds] = useState<string[]>([]);
+  const [moonMarkerPosition, setMoonMarkerPosition] = useState(0.12);
+  const [moonMessage, setMoonMessage] = useState('Tap stop when the marker glides through the pale band.');
+  const [strokePoints, setStrokePoints] = useState<FriendBookPoint[]>([]);
+  const [strokeMessage, setStrokeMessage] = useState('Press down, hold, and draw one continuous trace.');
+  const [isHydrated, setIsHydrated] = useState(false);
+  const moonDirectionRef = useRef<1 | -1>(1);
+  const strokePadRef = useRef<SVGSVGElement | null>(null);
+  const drawingPointerIdRef = useRef<number | null>(null);
+  const strokePointsRef = useRef<FriendBookPoint[]>([]);
+
+  const avatarById = Object.fromEntries(
+    friendBookFinalSectionData.avatars.map((avatar) => [avatar.id, avatar]),
+  ) as Record<FriendBookAvatarId, (typeof friendBookFinalSectionData.avatars)[number]>;
+  const activeGame = activeGameId
+    ? friendBookFinalSectionData.gameCards.find((game) => game.id === activeGameId) ?? null
+    : null;
+  const availableAvatarIds = getAvailableFriendBookAvatarIds(progress);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    setProgress(hydrateFriendBookProgress(window.localStorage));
+    setIsHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isHydrated || typeof window === 'undefined') {
+      return;
+    }
+
+    persistFriendBookProgress(progress, window.localStorage);
+  }, [progress, isHydrated]);
+
+  useEffect(() => {
+    setSelectedAvatarCandidate(progress.selectedAvatarId);
+  }, [progress.selectedAvatarId]);
+
+  useEffect(() => {
+    if (stage === 'landing' || typeof window === 'undefined') {
+      return;
+    }
+
+    window.requestAnimationFrame(() => {
+      document.getElementById('friend-book-play-panel')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    });
+  }, [stage, activeGameId]);
+
+  useEffect(() => {
+    if (stage !== 'game-active' || activeGameId !== 'moon-run' || typeof window === 'undefined') {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      setMoonMarkerPosition((currentPosition) => {
+        let nextPosition = currentPosition + 0.018 * moonDirectionRef.current;
+
+        if (nextPosition >= 0.92) {
+          nextPosition = 0.92;
+          moonDirectionRef.current = -1;
+        } else if (nextPosition <= 0.08) {
+          nextPosition = 0.08;
+          moonDirectionRef.current = 1;
+        }
+
+        return nextPosition;
+      });
+    }, 18);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [stage, activeGameId]);
+
+  function resetGameState(gameId: FriendBookGameId) {
+    setActiveGameId(gameId);
+    setPendingMedalId(null);
+    setDifferenceSpotIds([]);
+    setMoonMarkerPosition(0.12);
+    moonDirectionRef.current = 1;
+    setMoonMessage('Tap stop when the marker glides through the pale band.');
+    setStrokeMessage('Press down, hold, and draw one continuous trace.');
+    strokePointsRef.current = [];
+    setStrokePoints([]);
+    drawingPointerIdRef.current = null;
+    setNoteDraft(progress.games[gameId].latestNote);
+  }
+
+  function scrollToTarget(id: string) {
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    document.getElementById(id)?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    });
+  }
+
+  function beginGame(gameId: FriendBookGameId) {
+    resetGameState(gameId);
+    setStage(getFriendBookGameStartStage(progress, gameId));
+  }
+
+  function continueAfterAvatarPick() {
+    if (!selectedAvatarCandidate) {
+      return;
+    }
+
+    setProgress((currentProgress) =>
+      selectFriendBookAvatar(currentProgress, selectedAvatarCandidate),
+    );
+    setStage('game-active');
+  }
+
+  function moveIntoNoteStage(gameId: FriendBookGameId) {
+    const medalId = getFriendBookMedalIdForGame(gameId, Math.random());
+    setPendingMedalId(medalId);
+    setStage('note-entry');
+  }
+
+  function handleDifferenceSpotSelect(spotId: string) {
+    setDifferenceSpotIds((currentIds) => {
+      const nextState = resolveBetweenTwoPagesSpotSelection(currentIds, spotId);
+
+      if (nextState.isComplete) {
+        moveIntoNoteStage('between-two-pages');
+      }
+
+      return nextState.foundSpotIds;
+    });
+  }
+
+  function handleMoonRunStop() {
+    const attempt = resolveMoonRunAttempt(moonMarkerPosition);
+
+    if (attempt.isSuccess) {
+      moveIntoNoteStage('moon-run');
+      return;
+    }
+
+    setMoonMessage('A little too soon. Let the moon drift back and try again.');
+  }
+
+  function updateStrokePoints(nextPoints: FriendBookPoint[]) {
+    strokePointsRef.current = nextPoints;
+    setStrokePoints(nextPoints);
+  }
+
+  function getStrokePoint(event: ReactPointerEvent<SVGSVGElement>): FriendBookPoint | null {
+    const bounds = strokePadRef.current?.getBoundingClientRect();
+
+    if (!bounds) {
+      return null;
+    }
+
+    return {
+      x: ((event.clientX - bounds.left) / bounds.width) * 320,
+      y: ((event.clientY - bounds.top) / bounds.height) * 220,
+    };
+  }
+
+  function handleStrokePointerDown(event: ReactPointerEvent<SVGSVGElement>) {
+    const nextPoint = getStrokePoint(event);
+
+    if (!nextPoint) {
+      return;
+    }
+
+    drawingPointerIdRef.current = event.pointerId;
+    updateStrokePoints([nextPoint]);
+    setStrokeMessage('Keep the line breathing. Lift only when the trace feels complete.');
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+
+  function handleStrokePointerMove(event: ReactPointerEvent<SVGSVGElement>) {
+    if (drawingPointerIdRef.current !== event.pointerId) {
+      return;
+    }
+
+    const nextPoint = getStrokePoint(event);
+
+    if (!nextPoint) {
+      return;
+    }
+
+    updateStrokePoints([...strokePointsRef.current, nextPoint]);
+  }
+
+  function finishStrokeAttempt(event: ReactPointerEvent<SVGSVGElement>) {
+    if (drawingPointerIdRef.current !== event.pointerId) {
+      return;
+    }
+
+    drawingPointerIdRef.current = null;
+    const result = resolveOneStrokeMarkAttempt(strokePointsRef.current);
+
+    if (result.isSuccess) {
+      moveIntoNoteStage('one-stroke-mark');
+      return;
+    }
+
+    setStrokeMessage('That trace ended too soon. Clear the page and try one longer line.');
+  }
+
+  function clearStrokePad() {
+    drawingPointerIdRef.current = null;
+    updateStrokePoints([]);
+    setStrokeMessage('Press down, hold, and draw one continuous trace.');
+  }
+
+  function handleNoteSubmit() {
+    if (!activeGameId || !pendingMedalId || !noteDraft.trim()) {
+      return;
+    }
+
+    const displayDate = formatFriendBookArchiveDate(new Date());
+
+    setProgress((currentProgress) =>
+      completeFriendBookGameSession(currentProgress, {
+        gameId: activeGameId,
+        note: noteDraft,
+        displayDate,
+        medalId: pendingMedalId,
+      }),
+    );
+    setStage('landing');
+    setPendingMedalId(null);
+    setActiveGameId(null);
+    scrollToTarget('friend-book-preview');
+  }
+
+  const currentAvatar = progress.selectedAvatarId
+    ? avatarById[progress.selectedAvatarId]
+    : null;
+  const pendingMedalImage = pendingMedalId;
+  const strokePolyline = strokePoints
+    .map((point) => `${point.x.toFixed(1)},${point.y.toFixed(1)}`)
+    .join(' ');
+
   return (
     <section
       id="friend-book-finale-section"
       aria-labelledby="friend-book-finale-title"
-      className="relative overflow-hidden bg-[linear-gradient(180deg,#10211d_0%,#2f3a33_18%,#d9d5ca_48%,#f3eee4_100%)] px-6 py-18 text-stone-900 sm:px-8 lg:px-12 lg:py-20"
+      data-friend-book-stage={stage}
+      className="relative overflow-hidden px-4 py-12 text-stone-900 sm:px-6 lg:px-8 lg:py-16"
+      style={{
+        backgroundImage: `linear-gradient(rgba(252,247,238,0.68), rgba(248,241,229,0.72)), url(${friendBookFinalSectionData.assets.sectionBackground})`,
+        backgroundPosition: 'center top',
+        backgroundRepeat: 'no-repeat',
+        backgroundSize: 'cover',
+      }}
     >
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 top-0 h-60 bg-[radial-gradient(circle_at_top,rgba(255,247,232,0.26),transparent_62%)]"
-      />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-48 bg-[linear-gradient(180deg,transparent,rgba(255,248,238,0.3))]"
-      />
-
-      <div className="mx-auto flex max-w-7xl flex-col gap-8 lg:gap-10">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.25 }}
-          transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-          className="rounded-[2rem] border border-stone-200/75 bg-[rgba(247,241,231,0.94)] px-7 py-7 shadow-[0_24px_72px_rgba(17,33,29,0.14)] sm:px-9 sm:py-8 lg:px-11"
-        >
-          <p className="font-mono text-[0.7rem] uppercase tracking-[0.42em] text-stone-500">
-            {friendBookFinalSectionData.overline}
+      <div className="mx-auto flex max-w-[1180px] flex-col gap-6 lg:gap-7">
+        <header className="flex min-h-[320px] flex-col items-center justify-center px-4 py-8 text-center sm:min-h-[420px]">
+          <p className="font-serif text-[clamp(2.6rem,6.5vw,5.5rem)] leading-[0.95] tracking-[-0.045em] text-[#2a2020] drop-shadow-[0_2px_0_rgba(255,248,236,0.65)]">
+            {friendBookFinalSectionData.topHeading.english}
           </p>
+          <p className="mt-1 font-serif text-[clamp(2.2rem,5.4vw,4.4rem)] leading-[0.98] tracking-[-0.04em] text-[#2a2020] drop-shadow-[0_2px_0_rgba(255,248,236,0.65)]">
+            {friendBookFinalSectionData.topHeading.chinese}
+          </p>
+        </header>
 
-          <div className="mt-5 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-3xl">
+        <div className="rounded-[2rem] bg-[#5a4032] p-[6px] shadow-[0_22px_48px_rgba(67,42,29,0.3)]">
+          <div
+            className="grid gap-6 rounded-[1.65rem] px-6 py-6 sm:px-8 lg:grid-cols-[minmax(0,1fr)_280px] lg:px-10 lg:py-8"
+            style={getPaperBackgroundStyle(friendBookFinalSectionData.assets.heroPanelBackground)}
+          >
+            <div>
+              <p className="font-mono text-[0.72rem] uppercase tracking-[0.3em] text-[#48362d]">
+                {friendBookFinalSectionData.overline}
+              </p>
               <h2
                 id="friend-book-finale-title"
-                className="max-w-2xl font-serif text-4xl leading-[0.95] tracking-[-0.04em] text-stone-900 sm:text-5xl lg:text-6xl"
+                className="mt-4 max-w-[16ch] font-serif text-[clamp(2.45rem,5vw,4.15rem)] leading-[0.94] tracking-[-0.05em] text-[#2f2120]"
               >
                 {friendBookFinalSectionData.title}
               </h2>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-stone-600 sm:text-lg">
+              <p className="mt-4 max-w-[34rem] text-[1.02rem] leading-8 text-[#47352d]">
                 {friendBookFinalSectionData.description}
               </p>
             </div>
 
-            <div className="flex flex-wrap gap-3">
-              {friendBookFinalSectionData.ctaLinks.map((ctaLink) => (
-                <a
-                  key={ctaLink.id}
-                  href={ctaLink.href}
-                  className="inline-flex items-center gap-2 rounded-full border border-stone-300 bg-white/75 px-5 py-2.5 text-sm font-medium text-stone-700 transition-colors duration-200 hover:border-stone-400 hover:text-stone-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-700"
-                >
-                  <span>{ctaLink.label}</span>
-                  <ArrowRight className="h-4 w-4" strokeWidth={1.8} />
-                </a>
-              ))}
+            <div className="flex flex-col justify-center gap-4 lg:items-end">
+              <FriendBookImageButton
+                label="Start Playing"
+                asset={friendBookFinalSectionData.assets.buttons.startPlayingPrimary}
+                onClick={() => scrollToTarget('friend-book-game-grid')}
+                className="w-full max-w-[320px]"
+              />
+              <div className="flex flex-wrap gap-3 lg:justify-end">
+                {friendBookFinalSectionData.ctaLinks.map((ctaLink) => (
+                  <div key={ctaLink.id} className="contents">
+                    <FriendBookImageButton
+                      label={ctaLink.label}
+                      asset={ctaLink.asset}
+                      onClick={() => scrollToTarget(ctaLink.href.slice(1))}
+                      className="w-[140px] sm:w-[170px]"
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-        </motion.div>
+        </div>
 
-        <motion.div
+        <div
           id="friend-book-game-grid"
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.2 }}
-          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           className="grid gap-4 lg:grid-cols-3"
         >
           {friendBookFinalSectionData.gameCards.map((card) => {
-            const Icon = GAME_CARD_ICONS[card.title];
+            const Icon = GAME_CARD_ICONS[card.id];
 
             return (
               <article
                 key={card.id}
                 data-friend-book-game-card={card.id}
-                className="rounded-[1.85rem] border border-stone-200/80 bg-[rgba(249,244,236,0.95)] p-6 shadow-[0_16px_50px_rgba(39,39,42,0.08)]"
+                className="relative overflow-hidden rounded-[1.2rem] bg-[#f8efe1] shadow-[0_18px_30px_rgba(67,42,29,0.22)]"
+                style={getIllustratedBackgroundStyle(card.backgroundImage)}
               >
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[#e7dece] text-[#23352f]">
-                  <Icon className="h-5 w-5" strokeWidth={1.8} />
-                </span>
-                <h3 className="mt-5 font-serif text-[2rem] leading-none tracking-[-0.03em] text-stone-900">
-                  {card.title}
-                </h3>
-                <p className="mt-4 min-h-[4.8rem] text-sm leading-7 text-stone-600">
-                  {card.description}
-                </p>
-                <button
-                  type="button"
-                  className="mt-6 inline-flex items-center gap-2 rounded-full border border-stone-300 bg-white/70 px-4 py-2 text-sm font-medium text-stone-700"
-                >
-                  <span>{card.ctaLabel}</span>
-                  <ArrowRight className="h-4 w-4" strokeWidth={1.8} />
-                </button>
+                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,248,239,0.42),rgba(255,248,239,0.08)_36%,rgba(75,53,38,0.04)_100%)]" />
+                <div className="relative flex min-h-[318px] flex-col justify-between gap-4 px-5 py-5 sm:min-h-[340px]">
+                  <div className="flex items-start justify-between gap-4">
+                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#b99774] bg-[rgba(251,235,210,0.88)] text-[#5a4032] shadow-[0_4px_8px_rgba(84,56,36,0.15)]">
+                      <Icon className="h-4 w-4" strokeWidth={1.8} />
+                    </span>
+                    <span className="rounded-full bg-[rgba(255,247,238,0.74)] px-3 py-1 text-[0.68rem] uppercase tracking-[0.18em] text-[#62483a] shadow-[0_4px_8px_rgba(84,56,36,0.08)]">
+                      {card.accentLabel}
+                    </span>
+                  </div>
+
+                  <div className="max-w-[18rem]">
+                    <h3 className="font-serif text-[2.2rem] leading-[0.96] tracking-[-0.05em] text-[#2a2020]">
+                      {card.title}
+                    </h3>
+                    <p className="mt-3 max-w-[16rem] text-[1.02rem] leading-8 text-[#46362f]">
+                      {card.description}
+                    </p>
+                  </div>
+
+                  <FriendBookImageButton
+                    label={`${card.ctaLabel} ${card.title}`}
+                    asset={friendBookFinalSectionData.assets.buttons.begin}
+                    onClick={() => beginGame(card.id)}
+                    className="w-[104px]"
+                  />
+                </div>
               </article>
             );
           })}
-        </motion.div>
+        </div>
 
-        <motion.div
-          id="friend-book-preview"
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.2 }}
-          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className="rounded-[2rem] border border-stone-200/80 bg-[rgba(248,243,236,0.95)] px-7 py-7 shadow-[0_18px_52px_rgba(31,47,42,0.08)] sm:px-8"
-        >
-          <div className="flex flex-col gap-2 border-b border-stone-200 pb-5 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="font-mono text-[0.7rem] uppercase tracking-[0.38em] text-stone-500">
-                {friendBookFinalSectionData.previewEyebrow}
-              </p>
-              <h3 className="mt-3 font-serif text-3xl tracking-[-0.03em] text-stone-900">
-                {friendBookFinalSectionData.previewTitle}
-              </h3>
-            </div>
-            <p className="max-w-xl text-sm leading-7 text-stone-600">
-              {friendBookFinalSectionData.previewDescription}
-            </p>
-          </div>
-
-          <div className="mt-5 grid gap-3">
-            {friendBookFinalSectionData.entries.map((entry) => (
-              <article
-                key={entry.id}
-                data-friend-book-preview-item={entry.id}
-                className="grid gap-3 rounded-[1.3rem] bg-white/55 px-4 py-4 sm:grid-cols-[1.1fr_auto] sm:items-start"
-              >
+        {stage !== 'landing' && activeGame ? (
+          <section
+            id="friend-book-play-panel"
+            className="rounded-[1.8rem] bg-[#60493b] p-[5px] shadow-[0_18px_34px_rgba(71,43,31,0.25)]"
+          >
+            <div
+              className="rounded-[1.55rem] px-5 py-5 sm:px-7 sm:py-6"
+              style={getPaperBackgroundStyle(
+                friendBookFinalSectionData.assets.heroPanelBackground,
+                'rgba(255,248,238,0.92)',
+              )}
+            >
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                    <h4 className="font-serif text-2xl tracking-[-0.02em] text-stone-900">
-                      {entry.nickname}
-                    </h4>
-                    <span className="rounded-full border border-[#d7dfd7] bg-[#eff4f0] px-3 py-1 font-mono text-[0.62rem] uppercase tracking-[0.28em] text-[#5d786c]">
-                      {entry.seal}
-                    </span>
-                  </div>
-                  <p className="mt-3 text-sm leading-7 text-stone-700">
-                    {entry.excerpt}
+                  <p className="font-mono text-[0.72rem] uppercase tracking-[0.3em] text-[#6a5040]">
+                    {activeGame.title}
                   </p>
-                  <p className="text-sm leading-7 text-stone-600">
-                    {entry.note}
+                  <h3 className="mt-2 font-serif text-[2rem] leading-[0.98] tracking-[-0.04em] text-[#2c2220]">
+                    {stage === 'avatar-select'
+                      ? 'Choose an avatar for tonight'
+                      : stage === 'note-entry'
+                        ? 'Leave an echo in the Friend Book'
+                        : activeGame.title}
+                  </h3>
+                  <p className="mt-2 max-w-[42rem] text-[0.98rem] leading-7 text-[#4c3b32]">
+                    {stage === 'avatar-select'
+                      ? 'Pick the small companion that will sign your page before the game begins.'
+                      : stage === 'note-entry'
+                        ? 'Your medal is ready. Write one short line, then let it settle into the right-hand page.'
+                        : getGamePrompt(activeGame.id)}
                   </p>
                 </div>
-                <p className="font-mono text-[0.68rem] uppercase tracking-[0.32em] text-stone-500 sm:pt-1 sm:text-right">
-                  {entry.date}
-                </p>
-              </article>
-            ))}
-          </div>
-        </motion.div>
 
-        <motion.p
-          initial={{ opacity: 0, y: 12 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.4 }}
-          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-          className="px-1 text-center font-mono text-[0.72rem] uppercase tracking-[0.34em] text-stone-500"
+                <button
+                  type="button"
+                  onClick={() => setStage('landing')}
+                  className="inline-flex items-center gap-2 self-start rounded-full border border-[#8f715c] bg-[rgba(255,248,240,0.76)] px-4 py-2 text-sm text-[#4b392f]"
+                >
+                  <BookOpenText className="h-4 w-4" strokeWidth={1.8} />
+                  <span>Back to landing</span>
+                </button>
+              </div>
+
+              {stage === 'avatar-select' ? (
+                <div className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_240px]">
+                  <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                    {friendBookFinalSectionData.avatars.map((avatar) => {
+                      const isAvailable = availableAvatarIds.includes(avatar.id);
+                      const isSelected = selectedAvatarCandidate === avatar.id;
+
+                      return (
+                        <button
+                          key={avatar.id}
+                          type="button"
+                          onClick={() => isAvailable && setSelectedAvatarCandidate(avatar.id)}
+                          disabled={!isAvailable}
+                          className={`flex items-center gap-4 rounded-[1.4rem] border px-4 py-4 text-left transition ${
+                            isSelected
+                              ? 'border-[#6f4d3d] bg-[rgba(255,247,239,0.96)] shadow-[0_14px_24px_rgba(84,56,36,0.12)]'
+                              : 'border-[#d8c5ae] bg-[rgba(255,250,245,0.82)]'
+                          } ${!isAvailable ? 'opacity-55' : 'hover:-translate-y-0.5'}`}
+                        >
+                          <img
+                            src={avatar.asset}
+                            alt=""
+                            aria-hidden="true"
+                            className="h-16 w-16 rounded-full border border-[#d1b79f] object-cover"
+                          />
+                          <div>
+                            <p className="font-serif text-xl text-[#2f2320]">{avatar.label}</p>
+                            <p className="mt-1 text-sm leading-6 text-[#5b473d]">
+                              {avatar.hidden
+                                ? 'Unlocks after all three games have been cleared once.'
+                                : 'Ready to sign the Friend Book tonight.'}
+                            </p>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="rounded-[1.5rem] border border-[#dcc9b1] bg-[rgba(255,249,242,0.84)] p-5">
+                    <p className="font-mono text-[0.68rem] uppercase tracking-[0.28em] text-[#7a5d4d]">
+                      Current pick
+                    </p>
+                    {selectedAvatarCandidate ? (
+                      <div className="mt-4 flex items-center gap-4">
+                        <img
+                          src={avatarById[selectedAvatarCandidate].asset}
+                          alt=""
+                          aria-hidden="true"
+                          className="h-18 w-18 rounded-full border border-[#d1b79f] object-cover"
+                        />
+                        <div>
+                          <p className="font-serif text-2xl text-[#2f2320]">
+                            {avatarById[selectedAvatarCandidate].label}
+                          </p>
+                          <p className="text-sm text-[#5b473d]">
+                            This avatar will sign your note until you change it again.
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="mt-4 text-sm leading-7 text-[#5b473d]">
+                        Pick any visible companion to move into the game.
+                      </p>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={continueAfterAvatarPick}
+                      disabled={!selectedAvatarCandidate}
+                      className="mt-6 inline-flex items-center gap-2 rounded-full border border-[#8f715c] bg-[#6a4f3c] px-5 py-3 text-sm font-medium text-[#fff9f4] disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <Sparkles className="h-4 w-4" strokeWidth={1.8} />
+                      <span>Continue to {activeGame.title}</span>
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+
+              {stage === 'game-active' && activeGame.id === 'between-two-pages' ? (
+                <div className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1fr)_250px]">
+                  <div
+                    className="relative min-h-[280px] overflow-hidden rounded-[1.6rem] border border-[#c9b198]"
+                    style={getIllustratedBackgroundStyle(activeGame.backgroundImage)}
+                  >
+                    <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,247,237,0.2),rgba(255,247,237,0.08)_36%,rgba(54,38,29,0.08)_100%)]" />
+                    {DIFFERENCE_HOTSPOTS.map((spot) => {
+                      const isFound = differenceSpotIds.includes(spot.id);
+
+                      return (
+                        <button
+                          key={spot.id}
+                          type="button"
+                          aria-label={`Find ${spot.label}`}
+                          onClick={() => handleDifferenceSpotSelect(spot.id)}
+                          className={`absolute flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border text-[#5d4032] shadow-[0_8px_12px_rgba(69,43,29,0.12)] transition ${
+                            isFound
+                              ? 'border-[#7d604c] bg-[rgba(255,244,230,0.94)]'
+                              : 'border-[rgba(126,92,67,0.48)] bg-[rgba(255,248,242,0.6)] hover:bg-[rgba(255,248,242,0.85)]'
+                          }`}
+                          style={spot.style}
+                        >
+                          {isFound ? (
+                            <CheckCircle2 className="h-5 w-5" strokeWidth={1.8} />
+                          ) : (
+                            <Search className="h-4 w-4" strokeWidth={1.8} />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="rounded-[1.5rem] border border-[#dcc9b1] bg-[rgba(255,249,242,0.84)] p-5">
+                    <p className="font-mono text-[0.68rem] uppercase tracking-[0.28em] text-[#7a5d4d]">
+                      Difference hunt
+                    </p>
+                    <p className="mt-4 text-sm leading-7 text-[#503e35]">
+                      Three soft changes are hiding inside the page: the moon stamp, the cat tail, and a folded corner.
+                    </p>
+                    <ul className="mt-4 grid gap-2 text-sm text-[#5a473d]">
+                      {FRIEND_BOOK_DIFFERENCE_TARGETS.map((targetId) => (
+                        <li key={targetId} className="flex items-center gap-2">
+                          <span
+                            className={`h-2.5 w-2.5 rounded-full ${
+                              differenceSpotIds.includes(targetId)
+                                ? 'bg-[#6e5443]'
+                                : 'bg-[#d5c0ab]'
+                            }`}
+                          />
+                          <span>{targetId.replace('-', ' ')}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              ) : null}
+
+              {stage === 'game-active' && activeGame.id === 'moon-run' ? (
+                <div className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1fr)_260px]">
+                  <div className="rounded-[1.6rem] border border-[#c9b198] bg-[rgba(255,250,245,0.76)] px-5 py-8">
+                    <div
+                      className="relative overflow-hidden rounded-[1.3rem] border border-[#d8c2ab] px-6 py-10"
+                      style={getIllustratedBackgroundStyle(activeGame.backgroundImage)}
+                    >
+                      <div className="absolute inset-x-[44%] top-0 h-full w-[12%] bg-[rgba(248,234,199,0.56)]" />
+                      <div className="relative h-4 rounded-full bg-[rgba(119,90,67,0.14)]">
+                        <div
+                          className="absolute top-1/2 h-9 w-9 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#6f5143] bg-[rgba(255,247,239,0.92)] shadow-[0_8px_14px_rgba(70,43,29,0.16)]"
+                          style={{
+                            left: `${moonMarkerPosition * 100}%`,
+                          }}
+                        />
+                      </div>
+                      <div className="relative mt-8 flex items-center justify-between text-xs uppercase tracking-[0.24em] text-[#6d5546]">
+                        <span>Too soon</span>
+                        <span>Quiet band</span>
+                        <span>Too late</span>
+                      </div>
+                    </div>
+
+                    <p className="mt-4 text-sm leading-7 text-[#503e35]" aria-live="polite">
+                      {moonMessage}
+                    </p>
+                  </div>
+
+                  <div className="rounded-[1.5rem] border border-[#dcc9b1] bg-[rgba(255,249,242,0.84)] p-5">
+                    <p className="font-mono text-[0.68rem] uppercase tracking-[0.28em] text-[#7a5d4d]">
+                      Timing
+                    </p>
+                    <p className="mt-4 text-sm leading-7 text-[#503e35]">
+                      Let the marker float into the pale center band, then stop it at the right moment.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleMoonRunStop}
+                      className="mt-6 inline-flex items-center gap-2 rounded-full border border-[#7d604c] bg-[#6a4f3c] px-5 py-3 text-sm font-medium text-[#fff8f2]"
+                    >
+                      <MoonStar className="h-4 w-4" strokeWidth={1.8} />
+                      <span>Stop the moon</span>
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+
+              {stage === 'game-active' && activeGame.id === 'one-stroke-mark' ? (
+                <div className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1fr)_250px]">
+                  <div className="rounded-[1.6rem] border border-[#c9b198] bg-[rgba(255,250,245,0.76)] p-4">
+                    <svg
+                      ref={strokePadRef}
+                      viewBox="0 0 320 220"
+                      className="h-[280px] w-full touch-none rounded-[1.35rem] border border-[#d8c2ab] bg-[rgba(255,248,242,0.92)]"
+                      onPointerDown={handleStrokePointerDown}
+                      onPointerMove={handleStrokePointerMove}
+                      onPointerUp={finishStrokeAttempt}
+                      onPointerCancel={finishStrokeAttempt}
+                      style={getIllustratedBackgroundStyle(activeGame.backgroundImage)}
+                    >
+                      <rect
+                        x="12"
+                        y="12"
+                        width="296"
+                        height="196"
+                        rx="18"
+                        fill="rgba(255,249,241,0.45)"
+                        stroke="rgba(112,82,61,0.22)"
+                        strokeWidth="1.2"
+                      />
+                      <path
+                        d="M56 178C112 96 164 132 248 54"
+                        fill="none"
+                        stroke="rgba(124,88,63,0.12)"
+                        strokeWidth="6"
+                        strokeDasharray="10 12"
+                        strokeLinecap="round"
+                      />
+                      {strokePolyline ? (
+                        <polyline
+                          points={strokePolyline}
+                          fill="none"
+                          stroke="#5d4032"
+                          strokeWidth="7"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      ) : null}
+                    </svg>
+                    <p className="mt-4 text-sm leading-7 text-[#503e35]" aria-live="polite">
+                      {strokeMessage}
+                    </p>
+                  </div>
+
+                  <div className="rounded-[1.5rem] border border-[#dcc9b1] bg-[rgba(255,249,242,0.84)] p-5">
+                    <p className="font-mono text-[0.68rem] uppercase tracking-[0.28em] text-[#7a5d4d]">
+                      One stroke
+                    </p>
+                    <p className="mt-4 text-sm leading-7 text-[#503e35]">
+                      Hold the pointer down and make one long, single trace. A short gesture will fade away.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={clearStrokePad}
+                      className="mt-6 inline-flex items-center gap-2 rounded-full border border-[#8f715c] bg-[rgba(255,248,240,0.82)] px-4 py-2 text-sm text-[#4b392f]"
+                    >
+                      <RotateCcw className="h-4 w-4" strokeWidth={1.8} />
+                      <span>Clear page</span>
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+
+              {stage === 'note-entry' && activeGame ? (
+                <div className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
+                  <div className="rounded-[1.5rem] border border-[#dcc9b1] bg-[rgba(255,250,245,0.88)] p-5">
+                    <label
+                      htmlFor="friend-book-note"
+                      className="font-mono text-[0.68rem] uppercase tracking-[0.28em] text-[#7a5d4d]"
+                    >
+                      Your line for {activeGame.title}
+                    </label>
+                    <textarea
+                      id="friend-book-note"
+                      value={noteDraft}
+                      onChange={(event) => setNoteDraft(event.target.value)}
+                      placeholder="Write one calm line for tonight..."
+                      className="mt-4 h-36 w-full rounded-[1.3rem] border border-[#d9c8b3] bg-[rgba(255,251,246,0.92)] px-4 py-4 text-base leading-7 text-[#3f312b] outline-none transition focus:border-[#8a654f]"
+                    />
+                    <div className="mt-4 flex flex-wrap items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={handleNoteSubmit}
+                        disabled={!noteDraft.trim()}
+                        className="inline-flex items-center gap-2 rounded-full border border-[#7d604c] bg-[#6a4f3c] px-5 py-3 text-sm font-medium text-[#fff8f2] disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        <PenLine className="h-4 w-4" strokeWidth={1.8} />
+                        <span>Write into the archive</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setStage('game-active')}
+                        className="inline-flex items-center gap-2 rounded-full border border-[#8f715c] bg-[rgba(255,248,240,0.82)] px-4 py-2 text-sm text-[#4b392f]"
+                      >
+                        <RotateCcw className="h-4 w-4" strokeWidth={1.8} />
+                        <span>Back to game</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="rounded-[1.5rem] border border-[#dcc9b1] bg-[rgba(255,249,242,0.84)] p-5">
+                    <p className="font-mono text-[0.68rem] uppercase tracking-[0.28em] text-[#7a5d4d]">
+                      Tonight&apos;s mark
+                    </p>
+                    <div className="mt-4 flex items-center gap-4">
+                      {currentAvatar ? (
+                        <img
+                          src={currentAvatar.asset}
+                          alt=""
+                          aria-hidden="true"
+                          className="h-16 w-16 rounded-full border border-[#d1b79f] object-cover"
+                        />
+                      ) : null}
+                      {pendingMedalImage ? (
+                        <img
+                          src={pendingMedalImage}
+                          alt=""
+                          aria-hidden="true"
+                          className="h-18 w-18 rounded-[1rem] border border-[#d1b79f] object-cover"
+                        />
+                      ) : null}
+                    </div>
+                    <p className="mt-4 text-sm leading-7 text-[#503e35]">
+                      {currentAvatar
+                        ? `${currentAvatar.label} will sign this note, and the latest medal will settle into the ${activeGame.title} slot.`
+                        : 'Your chosen avatar and medal will be saved into this game slot.'}
+                    </p>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </section>
+        ) : null}
+
+        <section
+          id="friend-book-preview"
+          className="rounded-[1.9rem] bg-[#5b4033] p-[5px] shadow-[0_18px_36px_rgba(67,42,29,0.28)]"
         >
+          <div
+            className="rounded-[1.6rem] px-5 py-5 sm:px-6 sm:py-6"
+            style={getPaperBackgroundStyle(
+              friendBookFinalSectionData.assets.archiveBoardBackground,
+              'rgba(255,248,238,0.9)',
+            )}
+          >
+            <div className="grid gap-5 lg:grid-cols-[1.02fr_0.98fr]">
+              <div>
+                <p className="font-mono text-[0.72rem] uppercase tracking-[0.32em] text-[#5c4336]">
+                  {friendBookFinalSectionData.previewEyebrow}
+                </p>
+                <h3 className="mt-2 font-serif text-[2.15rem] leading-none tracking-[-0.04em] text-[#332625]">
+                  {friendBookFinalSectionData.previewTitle}
+                </h3>
+                <p className="mt-3 max-w-[36rem] text-[0.98rem] leading-7 text-[#55433b]">
+                  {friendBookFinalSectionData.previewDescription}
+                </p>
+
+                <div className="mt-5 grid gap-3">
+                  {friendBookFinalSectionData.entries.map((entry) => (
+                    <article
+                      key={entry.id}
+                      data-friend-book-sample-entry={entry.id}
+                      className="grid gap-4 rounded-[1.4rem] bg-[rgba(255,250,244,0.82)] px-4 py-4 shadow-[0_10px_18px_rgba(84,56,36,0.08)] sm:grid-cols-[auto_minmax(0,1fr)_auto]"
+                    >
+                      <img
+                        src={entry.avatarImage}
+                        alt=""
+                        aria-hidden="true"
+                        className="h-16 w-16 rounded-full border border-[#d4bea8] object-cover"
+                      />
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h4 className="font-serif text-[1.75rem] leading-none tracking-[-0.03em] text-[#2d2221]">
+                            {entry.nickname}
+                          </h4>
+                          <span className="rounded-full border border-[#d5b4a4] bg-[#f0d4d4] px-3 py-1 text-[0.7rem] uppercase tracking-[0.16em] text-[#714942]">
+                            {entry.seal}
+                          </span>
+                        </div>
+                        <p className="mt-2 text-[0.98rem] leading-7 text-[#463731]">
+                          {entry.excerpt}
+                        </p>
+                        <p className="text-sm leading-7 text-[#6b5650]">{entry.note}</p>
+                      </div>
+                      <div className="flex flex-col items-start gap-3 sm:items-end">
+                        <img
+                          src={entry.medalImage}
+                          alt=""
+                          aria-hidden="true"
+                          className="h-16 w-16 rounded-[1rem] border border-[#d4bea8] object-cover"
+                        />
+                        <p className="font-mono text-[0.72rem] uppercase tracking-[0.2em] text-[#6d5546]">
+                          {entry.date}
+                        </p>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="font-mono text-[0.68rem] uppercase tracking-[0.28em] text-[#7a5d4d]">
+                      Your echoes
+                    </p>
+                    <p className="mt-2 text-sm leading-7 text-[#5c4940]">
+                      Each game keeps one slot on the right. Replaying it rewrites only that page.
+                    </p>
+                  </div>
+                  {currentAvatar ? (
+                    <div className="rounded-full border border-[#d6bfaa] bg-[rgba(255,250,244,0.84)] px-3 py-2">
+                      <div className="flex items-center gap-2">
+                        <img
+                          src={currentAvatar.asset}
+                          alt=""
+                          aria-hidden="true"
+                          className="h-10 w-10 rounded-full border border-[#d4bea8] object-cover"
+                        />
+                        <div>
+                          <p className="text-xs uppercase tracking-[0.2em] text-[#7a5d4d]">
+                            Signing as
+                          </p>
+                          <p className="font-serif text-lg text-[#332625]">
+                            {currentAvatar.label}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+
+                {friendBookFinalSectionData.userSlots.map((slot) => {
+                  const slotProgress = progress.games[slot.gameId];
+                  const slotAvatar = slotProgress.latestAvatarId
+                    ? avatarById[slotProgress.latestAvatarId]
+                    : null;
+
+                  return (
+                    <article
+                      key={slot.gameId}
+                      data-friend-book-user-record={slot.gameId}
+                      className="rounded-[1.35rem] bg-[rgba(255,250,244,0.72)] px-4 py-4 shadow-[0_10px_18px_rgba(84,56,36,0.08)]"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <p className="font-mono text-[0.68rem] uppercase tracking-[0.24em] text-[#7a5d4d]">
+                            {slot.label}
+                          </p>
+                          {slotProgress.latestNote ? (
+                            <>
+                              <p className="mt-2 text-[0.98rem] leading-7 text-[#3f312b]">
+                                {slotProgress.latestNote}
+                              </p>
+                              <p className="text-sm leading-7 text-[#6b5650]">
+                                {slotProgress.completionCount} completion{slotProgress.completionCount > 1 ? 's' : ''} saved in this slot.
+                              </p>
+                            </>
+                          ) : (
+                            <>
+                              <p className="mt-2 font-serif text-[1.5rem] leading-none tracking-[-0.03em] text-[#3b2e2b]">
+                                {slot.emptyTitle}
+                              </p>
+                              <p className="mt-2 text-sm leading-7 text-[#6b5650]">
+                                {slot.emptyDescription}
+                              </p>
+                            </>
+                          )}
+                        </div>
+
+                        <div className="flex flex-col items-end gap-3">
+                          {slotAvatar ? (
+                            <img
+                              src={slotAvatar.asset}
+                              alt=""
+                              aria-hidden="true"
+                              className="h-14 w-14 rounded-full border border-[#d4bea8] object-cover"
+                            />
+                          ) : null}
+                          {slotProgress.latestMedalId ? (
+                            <img
+                              src={slotProgress.latestMedalId}
+                              alt=""
+                              aria-hidden="true"
+                              className="h-14 w-14 rounded-[0.9rem] border border-[#d4bea8] object-cover"
+                            />
+                          ) : null}
+                          <p className="font-mono text-[0.72rem] uppercase tracking-[0.22em] text-[#6d5546]">
+                            {slotProgress.latestDate ?? 'UNWRITTEN'}
+                          </p>
+                        </div>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <p className="pb-2 text-center font-mono text-[0.72rem] uppercase tracking-[0.24em] text-[#715446]">
           {friendBookFinalSectionData.footerLine}
-        </motion.p>
+        </p>
       </div>
     </section>
   );
