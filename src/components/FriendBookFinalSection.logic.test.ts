@@ -196,7 +196,7 @@ test('between two pages scene exposes paired illustrations and the three true ta
     | {
         baseImage?: string;
         variantImage?: string;
-        targets?: Array<{ id?: string; label?: string }>;
+        targets?: Array<{ id?: string; label?: string; width?: number; height?: number }>;
       }
     | undefined;
 
@@ -209,6 +209,16 @@ test('between two pages scene exposes paired illustrations and the three true ta
   assert.deepEqual(
     scene?.targets?.map((target) => target.label),
     ['moon seal', 'cat tail', 'page fold'],
+  );
+  assert.equal(
+    scene?.targets?.every(
+      (target) =>
+        typeof target.width === 'number' &&
+        typeof target.height === 'number' &&
+        target.width <= 12 &&
+        target.height <= 12,
+    ),
+    true,
   );
   assert.equal(
     existsSync(path.join(process.cwd(), 'public', scene!.baseImage!.slice(1))),

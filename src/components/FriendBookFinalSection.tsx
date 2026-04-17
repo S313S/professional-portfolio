@@ -70,9 +70,9 @@ const FRIEND_BOOK_SAMPLE_ENTRY_GRID = {
     xl: 'xl:grid-cols-[68px_minmax(0,1fr)_140px]',
   },
   copy: 'flex min-w-0 flex-col gap-2',
-  header: 'flex flex-wrap items-baseline gap-x-2 gap-y-1',
+  header: 'flex flex-nowrap items-center gap-x-3',
   seal:
-    'mt-[0.16rem] shrink-0 whitespace-nowrap rounded-full border px-2.5 py-1 text-[0.64rem] uppercase tracking-[0.16em] xl:mt-[0.22rem] xl:px-3 xl:text-[0.72rem]',
+    'inline-flex shrink-0 whitespace-nowrap rounded-full border px-2.5 py-1 text-[0.64rem] uppercase tracking-[0.16em] xl:px-3 xl:text-[0.72rem]',
   excerpt: 'text-[0.96rem] leading-7 text-[#463731] xl:text-[1.18rem] xl:leading-[1.6]',
   medalSize: {
     base: 'h-20 w-20',
@@ -980,7 +980,7 @@ export default function FriendBookFinalSection() {
 
             {stage === 'game-active' && activeGame.id === 'between-two-pages' && gameSession?.betweenTwoPages ? (
               <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
-                <div className="grid gap-4 xl:grid-cols-2">
+                <div className="mx-auto grid w-full max-w-[900px] gap-4 md:grid-cols-2">
                   {[
                     { id: 'left', label: 'Left page', image: betweenTwoPagesScene.baseImage },
                     { id: 'right', label: 'Right page', image: betweenTwoPagesScene.variantImage },
@@ -988,7 +988,7 @@ export default function FriendBookFinalSection() {
                     <div
                       key={page.id}
                       onClick={handleDifferenceMiss}
-                      className="group relative min-h-[360px] overflow-hidden rounded-[1.6rem] border border-[#c9b198] bg-[rgba(255,249,242,0.76)] text-left"
+                      className="group relative aspect-[4/3] overflow-hidden rounded-[1.35rem] border border-[#c9b198] bg-[rgba(255,249,242,0.76)] text-left shadow-[0_10px_24px_rgba(70,43,29,0.08)]"
                     >
                       <img
                         src={page.image}
@@ -1014,8 +1014,8 @@ export default function FriendBookFinalSection() {
                             }}
                             className={`absolute -translate-x-1/2 -translate-y-1/2 rounded-full border transition ${
                               isFound
-                                ? 'border-[#7d604c] bg-[rgba(255,244,230,0.18)]'
-                                : 'border-transparent bg-transparent hover:border-[rgba(126,92,67,0.42)] hover:bg-[rgba(255,248,242,0.16)]'
+                                ? 'border-transparent bg-transparent'
+                                : 'border-transparent bg-transparent hover:border-[rgba(126,92,67,0.32)] hover:bg-[rgba(255,248,242,0.12)]'
                             }`}
                             style={{
                               left: `${target.x}%`,
@@ -1025,8 +1025,8 @@ export default function FriendBookFinalSection() {
                             }}
                           >
                             {isFound ? (
-                              <span className="pointer-events-none absolute inset-1 flex items-center justify-center rounded-full border border-[#7d604c] bg-[rgba(255,248,242,0.84)] text-[#5d4032] shadow-[0_8px_12px_rgba(69,43,29,0.12)]">
-                                <CheckCircle2 className="h-5 w-5" strokeWidth={1.8} />
+                              <span className="pointer-events-none absolute left-1/2 top-1/2 flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-[#7d604c] bg-[rgba(255,248,242,0.92)] text-[#5d4032] shadow-[0_8px_12px_rgba(69,43,29,0.12)]">
+                                <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2} />
                               </span>
                             ) : null}
                           </button>
@@ -1409,7 +1409,7 @@ export default function FriendBookFinalSection() {
                       >
                         <h4
                           data-friend-book-sample-entry-title={entry.id}
-                          className="min-w-0 font-serif text-[1.62rem] leading-none tracking-[-0.04em] text-[#2d2221] xl:text-[2rem]"
+                          className="shrink-0 min-w-0 font-serif text-[1.62rem] leading-none tracking-[-0.04em] text-[#2d2221] xl:text-[2rem]"
                         >
                           {entry.nickname}
                         </h4>

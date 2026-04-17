@@ -76,11 +76,15 @@ test('renders empty archive slots as date-only placeholders without the old help
   );
   assert.match(
     desktopSpringWind,
-    /data-friend-book-sample-entry-header-desktop="spring-wind"[^>]*class="flex flex-wrap items-baseline gap-x-2 gap-y-1"/,
+    /data-friend-book-sample-entry-header-desktop="spring-wind"[^>]*class="flex flex-nowrap items-center gap-x-3"/,
   );
   assert.match(
     desktopSpringWind,
-    /data-friend-book-sample-entry-seal-desktop="spring-wind"[^>]*class="mt-\[0\.16rem\] shrink-0 whitespace-nowrap rounded-full border px-2\.5 py-1 text-\[0\.64rem\] uppercase tracking-\[0\.16em\] xl:mt-\[0\.22rem\] xl:px-3 xl:text-\[0\.72rem\]"/,
+    /data-friend-book-sample-entry-title="spring-wind"[^>]*class="shrink-0 min-w-0 font-serif text-\[1\.62rem\] leading-none tracking-\[-0\.04em\] text-\[#2d2221\] xl:text-\[2rem\]"/,
+  );
+  assert.match(
+    desktopSpringWind,
+    /data-friend-book-sample-entry-seal-desktop="spring-wind"[^>]*class="inline-flex shrink-0 whitespace-nowrap rounded-full border px-2\.5 py-1 text-\[0\.64rem\] uppercase tracking-\[0\.16em\] xl:px-3 xl:text-\[0\.72rem\]"/,
   );
   assert.match(
     desktopSpringWind,
