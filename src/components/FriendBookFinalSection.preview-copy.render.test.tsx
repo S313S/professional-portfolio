@@ -92,6 +92,14 @@ test('renders empty archive slots as date-only placeholders without the old help
   );
   assert.match(
     desktopSpringWind,
+    /src="\/images\/Avatar_cat01\.png"[^>]*class="mt-1 h-15 w-15 rounded-full object-cover xl:h-\[4\.6rem\] xl:w-\[4\.6rem\]"/,
+  );
+  assert.doesNotMatch(
+    desktopSpringWind,
+    /src="\/images\/Avatar_cat01\.png"[^>]*border-\[#d4bea8\]/,
+  );
+  assert.match(
+    desktopSpringWind,
     /class="h-20 w-20 rounded-\[1rem\] border border-\[#d4bea8\] object-cover xl:h-\[7rem\] xl:w-\[7rem\]"/,
   );
   assert.match(

@@ -19,8 +19,8 @@ import {
   hydrateFriendBookProgress,
   persistFriendBookProgress,
   resolveBetweenTwoPagesSpotSelection,
-  registerMoonRunBeat,
-  resolveMoonRunAttempt,
+  getMoonRunRoundSummary,
+  stepMoonRunSession,
 } from './FriendBookFinalSection.logic.ts';
 
 function createMemoryStorage(seed: Record<string, string> = {}) {
@@ -196,12 +196,14 @@ test('between two pages scene exposes paired illustrations and the three true ta
     | {
         baseImage?: string;
         variantImage?: string;
+        aspectRatio?: number;
         targets?: Array<{ id?: string; label?: string; width?: number; height?: number }>;
       }
     | undefined;
 
   assert.equal(typeof scene?.baseImage, 'string');
   assert.equal(typeof scene?.variantImage, 'string');
+  assert.equal(scene?.aspectRatio, 2752 / 1536);
   assert.deepEqual(
     scene?.targets?.map((target) => target.id),
     ['moon-stamp', 'cat-tail', 'page-fold'],
@@ -210,13 +212,16 @@ test('between two pages scene exposes paired illustrations and the three true ta
     scene?.targets?.map((target) => target.label),
     ['moon seal', 'cat tail', 'page fold'],
   );
+  const catTail = scene?.targets?.find((target) => target.id === 'cat-tail');
+  assert.equal(catTail?.width !== undefined && catTail.width >= 15, true);
+  assert.equal(catTail?.height !== undefined && catTail.height >= 13, true);
   assert.equal(
     scene?.targets?.every(
       (target) =>
         typeof target.width === 'number' &&
         typeof target.height === 'number' &&
-        target.width <= 12 &&
-        target.height <= 12,
+        target.width <= 18 &&
+        target.height <= 18,
     ),
     true,
   );
@@ -230,9 +235,14 @@ test('between two pages scene exposes paired illustrations and the three true ta
   );
 });
 
-test('moon run succeeds only when the marker stops inside the success band', () => {
-  assert.equal(resolveMoonRunAttempt(0.5).isSuccess, true);
-  assert.equal(resolveMoonRunAttempt(0.3).isSuccess, false);
+test('moon run level data exposes a short side-scrolling course', () => {
+  const level = friendBookFinalSectionData.moonRunLevel;
+
+  assert.equal(level.worldWidth > level.viewportWidth * 2, true);
+  assert.equal(level.platforms.length >= 4, true);
+  assert.equal(level.pitZones.length >= 2, true);
+  assert.equal(level.enemies.length, 2);
+  assert.equal(level.finish.x > level.start.x, true);
 });
 
 test('friend-book quiz bank exposes fifteen questions with unique answer sets', () => {
@@ -296,11 +306,12 @@ test('friend-book game session initializes only the relevant state slice for eac
   assert.equal(differenceSession.quiz, undefined);
   assert.equal(differenceSession.moonRun, undefined);
 
-  assert.equal(moonRunSession.moonRun?.segmentIndex, 0);
-  assert.equal(moonRunSession.moonRun?.totalSegments, 4);
-  assert.equal(moonRunSession.moonRun?.successes, 0);
-  assert.equal(moonRunSession.moonRun?.markerPosition, 0.5);
-  assert.equal(moonRunSession.moonRun?.feedback, 'idle');
+  assert.equal(moonRunSession.moonRun?.heartsRemaining, 3);
+  assert.equal(moonRunSession.moonRun?.player.x, friendBookFinalSectionData.moonRunLevel.start.x);
+  assert.equal(moonRunSession.moonRun?.player.onGround, true);
+  assert.equal(moonRunSession.moonRun?.cameraX, 0);
+  assert.equal(moonRunSession.moonRun?.enemies.length, 2);
+  assert.equal(moonRunSession.moonRun?.finishReached, false);
   assert.equal(moonRunSession.moonRun?.status, 'active');
   assert.equal(moonRunSession.quiz, undefined);
   assert.equal(moonRunSession.betweenTwoPages, undefined);
@@ -372,22 +383,136 @@ test('between two pages only succeeds when all targets are found before the time
   assert.equal(failureResult.status, 'failed');
 });
 
-test('moon run resolves over four beats and marks the round complete only after the last beat', () => {
+test('moon run step moves the player, supports jumping, and lands back on a platform', () => {
   let session = createFriendBookGameSession('moon-run');
 
-  session = registerMoonRunBeat(session, 0.5);
-  assert.equal(session.moonRun?.successes, 1);
-  assert.equal(session.moonRun?.segmentIndex, 1);
-  assert.equal(session.moonRun?.feedback, 'hit');
-  assert.equal(session.moonRun?.status, 'active');
+  session = stepMoonRunSession(session, { moveRight: true, moveLeft: false, jumpPressed: false }, 120);
+  assert.equal((session.moonRun?.player.x ?? 0) > friendBookFinalSectionData.moonRunLevel.start.x, true);
+  assert.equal(session.moonRun?.player.onGround, true);
 
-  session = registerMoonRunBeat(session, 0.51);
-  session = registerMoonRunBeat(session, 0.49);
-  session = registerMoonRunBeat(session, 0.5);
+  session = stepMoonRunSession(session, { moveRight: true, moveLeft: false, jumpPressed: true }, 16);
+  assert.equal((session.moonRun?.player.vy ?? 0) < 0, true);
+  assert.equal(session.moonRun?.player.onGround, false);
 
-  assert.equal(session.moonRun?.successes, 4);
-  assert.equal(session.moonRun?.segmentIndex, 4);
+  for (let index = 0; index < 90; index += 1) {
+    session = stepMoonRunSession(
+      session,
+      { moveRight: false, moveLeft: false, jumpPressed: false },
+      16,
+    );
+  }
+
+  assert.equal(session.moonRun?.player.onGround, true);
+  assert.equal((session.moonRun?.player.y ?? 0) >= 0, true);
+});
+
+test('moon run supports enemy stomps, damage resets, and failure after the last heart', () => {
+  const baseSession = createFriendBookGameSession('moon-run');
+  const enemy = baseSession.moonRun!.enemies[0]!;
+
+  let stompedSession = {
+    ...baseSession,
+    moonRun: {
+      ...baseSession.moonRun!,
+      player: {
+        ...baseSession.moonRun!.player,
+        x: enemy.x,
+        y: enemy.y - 48,
+        vx: 0,
+        vy: 220,
+        onGround: false,
+      },
+    },
+  };
+  stompedSession = stepMoonRunSession(
+    stompedSession,
+    { moveLeft: false, moveRight: false, jumpPressed: false },
+    16,
+  );
+
+  assert.equal(stompedSession.moonRun?.enemies[0]?.defeated, true);
+  assert.equal((stompedSession.moonRun?.player.vy ?? 0) < 0, true);
+
+  let damagedSession = {
+    ...baseSession,
+    moonRun: {
+      ...baseSession.moonRun!,
+      player: {
+        ...baseSession.moonRun!.player,
+        x: enemy.x,
+        y: enemy.y - baseSession.moonRun!.player.height + 6,
+        vx: 0,
+        vy: 0,
+        onGround: true,
+      },
+    },
+  };
+  damagedSession = stepMoonRunSession(
+    damagedSession,
+    { moveLeft: false, moveRight: false, jumpPressed: false },
+    16,
+  );
+
+  assert.equal(damagedSession.moonRun?.heartsRemaining, 2);
+  assert.equal(damagedSession.moonRun?.player.x, friendBookFinalSectionData.moonRunLevel.start.x);
+  assert.equal((damagedSession.moonRun?.damageRecoveryMs ?? 0) > 0, true);
+
+  let failedSession = damagedSession;
+  failedSession = {
+    ...failedSession,
+    moonRun: {
+      ...failedSession.moonRun!,
+      heartsRemaining: 1,
+      damageRecoveryMs: 0,
+      player: {
+        ...failedSession.moonRun!.player,
+        x: friendBookFinalSectionData.moonRunLevel.pitZones[0]!.startX + 10,
+        y: friendBookFinalSectionData.moonRunLevel.worldHeight + 160,
+        vx: 0,
+        vy: 320,
+        onGround: false,
+      },
+    },
+  };
+  failedSession = stepMoonRunSession(
+    failedSession,
+    { moveLeft: false, moveRight: false, jumpPressed: false },
+    16,
+  );
+
+  assert.equal(failedSession.moonRun?.heartsRemaining, 0);
+  assert.equal(failedSession.moonRun?.status, 'failed');
+});
+
+test('moon run marks success at the finish and reports the remaining hearts in its summary', () => {
+  let session = createFriendBookGameSession('moon-run');
+  const finish = friendBookFinalSectionData.moonRunLevel.finish;
+
+  session = {
+    ...session,
+    moonRun: {
+      ...session.moonRun!,
+      heartsRemaining: 2,
+      player: {
+        ...session.moonRun!.player,
+        x: finish.x,
+        y: finish.y - session.moonRun!.player.height,
+        vx: 120,
+        vy: 0,
+        onGround: true,
+      },
+      cameraX: finish.x - friendBookFinalSectionData.moonRunLevel.viewportWidth / 2,
+    },
+  };
+  session = stepMoonRunSession(
+    session,
+    { moveLeft: false, moveRight: true, jumpPressed: false },
+    16,
+  );
+
+  assert.equal(session.moonRun?.finishReached, true);
   assert.equal(session.moonRun?.status, 'success');
+  assert.equal(getMoonRunRoundSummary(session), 'Reached the moon gate with 2 hearts left.');
 });
 
 test('persist stores the keyed friend-book payload under the versioned storage key', () => {

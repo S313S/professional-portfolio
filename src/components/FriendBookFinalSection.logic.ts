@@ -1,4 +1,7 @@
-import { friendBookFinalSectionData } from '../data';
+import {
+  friendBookFinalSectionData,
+  type FriendBookMoonRunLevel,
+} from '../data';
 
 export type FriendBookGameId =
   | 'between-two-pages'
@@ -31,13 +34,45 @@ export interface FriendBookBetweenTwoPagesSessionState {
   status: 'active' | 'success' | 'failed';
 }
 
+export interface FriendBookMoonRunPlayerState {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  width: number;
+  height: number;
+  facing: 'left' | 'right';
+  onGround: boolean;
+}
+
+export interface FriendBookMoonRunEnemyState {
+  id: string;
+  x: number;
+  y: number;
+  vx: number;
+  direction: 'left' | 'right';
+  width: number;
+  height: number;
+  patrolMinX: number;
+  patrolMaxX: number;
+  speed: number;
+  defeated: boolean;
+}
+
 export interface FriendBookMoonRunSessionState {
-  segmentIndex: number;
-  totalSegments: number;
-  successes: number;
-  markerPosition: number;
-  feedback: 'idle' | 'hit' | 'miss';
+  heartsRemaining: number;
   status: 'active' | 'success' | 'failed';
+  player: FriendBookMoonRunPlayerState;
+  cameraX: number;
+  enemies: FriendBookMoonRunEnemyState[];
+  damageRecoveryMs: number;
+  finishReached: boolean;
+}
+
+export interface FriendBookMoonRunInputState {
+  moveLeft: boolean;
+  moveRight: boolean;
+  jumpPressed: boolean;
 }
 
 export interface FriendBookQuizQuestion {
@@ -94,6 +129,16 @@ export const FRIEND_BOOK_DIFFERENCE_TARGETS = [
   'page-fold',
 ] as const;
 export const FRIEND_BOOK_QUIZ_ROUND_SIZE = 5;
+
+const MOON_RUN_PLAYER_WIDTH = 44;
+const MOON_RUN_PLAYER_HEIGHT = 46;
+const MOON_RUN_MOVE_SPEED = 256;
+const MOON_RUN_JUMP_SPEED = 560;
+const MOON_RUN_GRAVITY = 1680;
+const MOON_RUN_BOUNCE_SPEED = 318;
+const MOON_RUN_DAMAGE_RECOVERY_MS = 850;
+const MOON_RUN_STOMP_VELOCITY = 120;
+const MOON_RUN_MAX_STEP_MS = 48;
 
 const FRIEND_BOOK_GAME_IDS: FriendBookGameId[] = [
   'between-two-pages',
@@ -322,14 +367,7 @@ export function createFriendBookGameSession(
   if (gameId === 'moon-run') {
     return {
       gameId,
-      moonRun: {
-        segmentIndex: 0,
-        totalSegments: 4,
-        successes: 0,
-        markerPosition: 0.5,
-        feedback: 'idle',
-        status: 'active',
-      },
+      moonRun: createMoonRunSession(friendBookFinalSectionData.moonRunLevel),
     };
   }
 
@@ -422,35 +460,122 @@ export function completeBetweenTwoPagesRound(
   };
 }
 
-export function registerMoonRunBeat(
+export function stepMoonRunSession(
   session: FriendBookGameSessionState,
-  markerPosition: number,
+  input: FriendBookMoonRunInputState,
+  deltaMs: number,
+  level: FriendBookMoonRunLevel = friendBookFinalSectionData.moonRunLevel,
 ): FriendBookGameSessionState {
   if (!session.moonRun || session.moonRun.status !== 'active') {
     return session;
   }
 
-  const attempt = resolveMoonRunAttempt(markerPosition);
-  const nextSegmentIndex = Math.min(
-    session.moonRun.segmentIndex + 1,
-    session.moonRun.totalSegments,
+  const stepMs = Math.min(Math.max(deltaMs, 0), MOON_RUN_MAX_STEP_MS);
+  const stepSeconds = stepMs / 1000;
+  const moveDirection = Number(input.moveRight) - Number(input.moveLeft);
+  const nextDamageRecoveryMs = Math.max(session.moonRun.damageRecoveryMs - stepMs, 0);
+
+  let player: FriendBookMoonRunPlayerState = {
+    ...session.moonRun.player,
+    vx: moveDirection * MOON_RUN_MOVE_SPEED,
+    facing:
+      moveDirection < 0
+        ? 'left'
+        : moveDirection > 0
+          ? 'right'
+          : session.moonRun.player.facing,
+  };
+  let enemies = advanceMoonRunEnemies(session.moonRun.enemies, stepSeconds);
+
+  const previousBottom = player.y + player.height;
+  if (input.jumpPressed && player.onGround) {
+    player = {
+      ...player,
+      vy: -MOON_RUN_JUMP_SPEED,
+      onGround: false,
+    };
+  }
+
+  player = {
+    ...player,
+    x: clampToRange(player.x + player.vx * stepSeconds, 0, level.worldWidth - player.width),
+    vy: player.vy + MOON_RUN_GRAVITY * stepSeconds,
+  };
+
+  const proposedY = player.y + player.vy * stepSeconds;
+  const landingSurfaceY = findLandingSurfaceY(
+    level,
+    player.x,
+    player.width,
+    previousBottom,
+    proposedY + player.height,
   );
-  const nextSuccesses = session.moonRun.successes + (attempt.isSuccess ? 1 : 0);
-  const isComplete = nextSegmentIndex >= session.moonRun.totalSegments;
+
+  if (landingSurfaceY !== null) {
+    player = {
+      ...player,
+      y: landingSurfaceY - player.height,
+      vy: 0,
+      onGround: true,
+    };
+  } else {
+    player = {
+      ...player,
+      y: proposedY,
+      onGround: false,
+    };
+  }
+
+  const overlappingEnemy = enemies.find(
+    (enemy) => !enemy.defeated && rectanglesOverlap(player, enemy),
+  );
+  if (overlappingEnemy) {
+    if (
+      player.vy > MOON_RUN_STOMP_VELOCITY &&
+      previousBottom <= overlappingEnemy.y + overlappingEnemy.height * 0.45
+    ) {
+      enemies = enemies.map((enemy) =>
+        enemy.id === overlappingEnemy.id ? { ...enemy, defeated: true, vx: 0 } : enemy,
+      );
+      player = {
+        ...player,
+        vy: -MOON_RUN_BOUNCE_SPEED,
+        onGround: false,
+      };
+    } else if (nextDamageRecoveryMs <= 0) {
+      return {
+        ...session,
+        moonRun: createMoonRunPostDamageState(level, session.moonRun.heartsRemaining - 1),
+      };
+    }
+  }
+
+  if (player.y > level.worldHeight + 120) {
+    return {
+      ...session,
+      moonRun: createMoonRunPostDamageState(level, session.moonRun.heartsRemaining - 1),
+    };
+  }
+
+  const finishReached = rectanglesOverlap(player, {
+    x: level.finish.x,
+    y: level.finish.y,
+    width: level.finish.width,
+    height: level.finish.height,
+  });
+  const status = finishReached ? 'success' : session.moonRun.status;
 
   return {
     ...session,
     moonRun: {
       ...session.moonRun,
-      markerPosition,
-      segmentIndex: nextSegmentIndex,
-      successes: nextSuccesses,
-      feedback: attempt.isSuccess ? 'hit' : 'miss',
-      status: isComplete
-        ? nextSuccesses >= session.moonRun.totalSegments
-          ? 'success'
-          : 'failed'
-        : 'active',
+      heartsRemaining: session.moonRun.heartsRemaining,
+      status,
+      player,
+      enemies,
+      cameraX: resolveMoonRunCameraX(level, player),
+      damageRecoveryMs: nextDamageRecoveryMs,
+      finishReached,
     },
   };
 }
@@ -525,16 +650,13 @@ export function resolveBetweenTwoPagesSpotSelection(
   };
 }
 
-export function resolveMoonRunAttempt(markerPosition: number): {
-  isSuccess: boolean;
-  distanceFromCenter: number;
-} {
-  const distanceFromCenter = Math.abs(markerPosition - 0.5);
+export function getMoonRunRoundSummary(session: FriendBookGameSessionState): string {
+  if (!session.moonRun) {
+    return '';
+  }
 
-  return {
-    isSuccess: markerPosition >= 0.44 && markerPosition <= 0.56,
-    distanceFromCenter,
-  };
+  const heartLabel = session.moonRun.heartsRemaining === 1 ? 'heart' : 'hearts';
+  return `Reached the moon gate with ${session.moonRun.heartsRemaining} ${heartLabel} left.`;
 }
 
 export function resolveOneStrokeMarkAttempt(points: FriendBookPoint[]): {
@@ -569,4 +691,178 @@ export function formatFriendBookArchiveDate(date = new Date()): string {
   ] as const;
 
   return `${months[date.getMonth()]} ${String(date.getDate()).padStart(2, '0')}, ${date.getFullYear()}`;
+}
+
+function createMoonRunSession(
+  level: FriendBookMoonRunLevel,
+  heartsRemaining = 3,
+): FriendBookMoonRunSessionState {
+  return {
+    heartsRemaining,
+    status: heartsRemaining > 0 ? 'active' : 'failed',
+    player: createMoonRunPlayer(level),
+    cameraX: 0,
+    enemies: createMoonRunEnemies(level),
+    damageRecoveryMs: 0,
+    finishReached: false,
+  };
+}
+
+function createMoonRunPlayer(level: FriendBookMoonRunLevel): FriendBookMoonRunPlayerState {
+  return {
+    x: level.start.x,
+    y: level.start.y,
+    vx: 0,
+    vy: 0,
+    width: MOON_RUN_PLAYER_WIDTH,
+    height: MOON_RUN_PLAYER_HEIGHT,
+    facing: 'right',
+    onGround: true,
+  };
+}
+
+function createMoonRunEnemies(
+  level: FriendBookMoonRunLevel,
+): FriendBookMoonRunEnemyState[] {
+  return level.enemies.map((enemy, index) => ({
+    id: enemy.id,
+    x: enemy.x,
+    y: enemy.y,
+    vx: index % 2 === 0 ? -enemy.speed : enemy.speed,
+    direction: index % 2 === 0 ? 'left' : 'right',
+    width: enemy.width,
+    height: enemy.height,
+    patrolMinX: enemy.patrolMinX,
+    patrolMaxX: enemy.patrolMaxX,
+    speed: enemy.speed,
+    defeated: false,
+  }));
+}
+
+function createMoonRunPostDamageState(
+  level: FriendBookMoonRunLevel,
+  nextHeartsRemaining: number,
+): FriendBookMoonRunSessionState {
+  const safeHearts = Math.max(nextHeartsRemaining, 0);
+  return {
+    heartsRemaining: safeHearts,
+    status: safeHearts > 0 ? 'active' : 'failed',
+    player: createMoonRunPlayer(level),
+    cameraX: 0,
+    enemies: createMoonRunEnemies(level),
+    damageRecoveryMs: safeHearts > 0 ? MOON_RUN_DAMAGE_RECOVERY_MS : 0,
+    finishReached: false,
+  };
+}
+
+function advanceMoonRunEnemies(
+  enemies: readonly FriendBookMoonRunEnemyState[],
+  stepSeconds: number,
+): FriendBookMoonRunEnemyState[] {
+  return enemies.map((enemy) => {
+    if (enemy.defeated) {
+      return enemy;
+    }
+
+    let nextX = enemy.x + enemy.vx * stepSeconds;
+    let nextDirection = enemy.direction;
+    if (nextX <= enemy.patrolMinX) {
+      nextX = enemy.patrolMinX;
+      nextDirection = 'right';
+    } else if (nextX >= enemy.patrolMaxX) {
+      nextX = enemy.patrolMaxX;
+      nextDirection = 'left';
+    }
+
+    return {
+      ...enemy,
+      x: nextX,
+      direction: nextDirection,
+      vx: nextDirection === 'left' ? -enemy.speed : enemy.speed,
+    };
+  });
+}
+
+function findLandingSurfaceY(
+  level: FriendBookMoonRunLevel,
+  playerX: number,
+  playerWidth: number,
+  previousBottom: number,
+  nextBottom: number,
+): number | null {
+  const playerLeft = playerX + 4;
+  const playerRight = playerX + playerWidth - 4;
+
+  const surfaces = [
+    ...buildMoonRunGroundSurfaces(level),
+    ...level.platforms.map((platform) => ({
+      x: platform.x,
+      width: platform.width,
+      y: platform.y,
+    })),
+  ]
+    .filter(
+      (surface) =>
+        playerRight > surface.x &&
+        playerLeft < surface.x + surface.width &&
+        previousBottom <= surface.y &&
+        nextBottom >= surface.y,
+    )
+    .sort((left, right) => left.y - right.y);
+
+  return surfaces[0]?.y ?? null;
+}
+
+function buildMoonRunGroundSurfaces(level: FriendBookMoonRunLevel) {
+  const pits = [...level.pitZones].sort((left, right) => left.startX - right.startX);
+  const surfaces: Array<{ x: number; width: number; y: number }> = [];
+  let cursor = 0;
+
+  for (const pit of pits) {
+    if (pit.startX > cursor) {
+      surfaces.push({
+        x: cursor,
+        width: pit.startX - cursor,
+        y: level.groundY,
+      });
+    }
+    cursor = pit.startX + pit.width;
+  }
+
+  if (cursor < level.worldWidth) {
+    surfaces.push({
+      x: cursor,
+      width: level.worldWidth - cursor,
+      y: level.groundY,
+    });
+  }
+
+  return surfaces;
+}
+
+function resolveMoonRunCameraX(
+  level: FriendBookMoonRunLevel,
+  player: FriendBookMoonRunPlayerState,
+): number {
+  return clampToRange(
+    player.x + player.width / 2 - level.viewportWidth / 2,
+    0,
+    level.worldWidth - level.viewportWidth,
+  );
+}
+
+function rectanglesOverlap(
+  first: { x: number; y: number; width: number; height: number },
+  second: { x: number; y: number; width: number; height: number },
+): boolean {
+  return (
+    first.x < second.x + second.width &&
+    first.x + first.width > second.x &&
+    first.y < second.y + second.height &&
+    first.y + first.height > second.y
+  );
+}
+
+function clampToRange(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max);
 }

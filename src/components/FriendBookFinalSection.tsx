@@ -979,8 +979,8 @@ export default function FriendBookFinalSection() {
             ) : null}
 
             {stage === 'game-active' && activeGame.id === 'between-two-pages' && gameSession?.betweenTwoPages ? (
-              <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
-                <div className="mx-auto grid w-full max-w-[900px] gap-4 md:grid-cols-2">
+              <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_248px]">
+                <div className="mx-auto grid w-full max-w-[980px] gap-4 md:grid-cols-2">
                   {[
                     { id: 'left', label: 'Left page', image: betweenTwoPagesScene.baseImage },
                     { id: 'right', label: 'Right page', image: betweenTwoPagesScene.variantImage },
@@ -988,12 +988,13 @@ export default function FriendBookFinalSection() {
                     <div
                       key={page.id}
                       onClick={handleDifferenceMiss}
-                      className="group relative aspect-[4/3] overflow-hidden rounded-[1.35rem] border border-[#c9b198] bg-[rgba(255,249,242,0.76)] text-left shadow-[0_10px_24px_rgba(70,43,29,0.08)]"
+                      className="group relative overflow-hidden rounded-[1.35rem] border border-[#c9b198] bg-[rgba(255,249,242,0.76)] text-left shadow-[0_10px_24px_rgba(70,43,29,0.08)]"
+                      style={{ aspectRatio: `${betweenTwoPagesScene.aspectRatio}` }}
                     >
                       <img
                         src={page.image}
                         alt={page.label}
-                        className="block h-full w-full object-cover"
+                        className="block h-full w-full object-contain"
                       />
                       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,247,237,0.08),rgba(255,247,237,0.03)_36%,rgba(54,38,29,0.08)_100%)]" />
                       <span className="pointer-events-none absolute left-4 top-4 rounded-full border border-[rgba(122,93,77,0.22)] bg-[rgba(255,248,241,0.9)] px-3 py-1 text-[0.68rem] uppercase tracking-[0.24em] text-[#6f5243]">
@@ -1025,7 +1026,7 @@ export default function FriendBookFinalSection() {
                             }}
                           >
                             {isFound ? (
-                              <span className="pointer-events-none absolute left-1/2 top-1/2 flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-[#7d604c] bg-[rgba(255,248,242,0.92)] text-[#5d4032] shadow-[0_8px_12px_rgba(69,43,29,0.12)]">
+                              <span className="pointer-events-none absolute left-1/2 top-1/2 flex h-6 w-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-[#7d604c] bg-[rgba(255,248,242,0.92)] text-[#5d4032] shadow-[0_8px_12px_rgba(69,43,29,0.12)]">
                                 <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2} />
                               </span>
                             ) : null}
@@ -1397,7 +1398,7 @@ export default function FriendBookFinalSection() {
                       src={entry.avatarImage}
                       alt=""
                       aria-hidden="true"
-                      className="mt-1 h-15 w-15 rounded-full border border-[#d4bea8] object-cover xl:h-[4.6rem] xl:w-[4.6rem]"
+                      className="mt-1 h-15 w-15 rounded-full object-cover xl:h-[4.6rem] xl:w-[4.6rem]"
                     />
                     <div
                       data-friend-book-sample-entry-copy-desktop={entry.id}
@@ -1527,7 +1528,7 @@ export default function FriendBookFinalSection() {
                       src={entry.avatarImage}
                       alt=""
                       aria-hidden="true"
-                      className="h-16 w-16 rounded-full border border-[#d4bea8] object-cover"
+                      className="h-16 w-16 rounded-full object-cover"
                     />
                     <div>
                       <div className="flex flex-wrap items-center gap-2">

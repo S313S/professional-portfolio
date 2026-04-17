@@ -57,7 +57,63 @@ export interface FriendBookBetweenTwoPagesTarget {
 export interface FriendBookBetweenTwoPagesScene {
   baseImage: string;
   variantImage: string;
+  aspectRatio: number;
   targets: FriendBookBetweenTwoPagesTarget[];
+}
+
+export interface FriendBookMoonRunPlatform {
+  id: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface FriendBookMoonRunPitZone {
+  startX: number;
+  width: number;
+}
+
+export interface FriendBookMoonRunEnemyConfig {
+  id: string;
+  x: number;
+  y: number;
+  patrolMinX: number;
+  patrolMaxX: number;
+  width: number;
+  height: number;
+  speed: number;
+}
+
+export interface FriendBookMoonRunDecoration {
+  id: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  kind: 'moon' | 'star' | 'paper';
+  opacity?: number;
+}
+
+export interface FriendBookMoonRunLevel {
+  viewportWidth: number;
+  worldWidth: number;
+  worldHeight: number;
+  groundY: number;
+  start: {
+    x: number;
+    y: number;
+  };
+  finish: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+  platforms: FriendBookMoonRunPlatform[];
+  pitZones: FriendBookMoonRunPitZone[];
+  enemies: FriendBookMoonRunEnemyConfig[];
+  decorations: FriendBookMoonRunDecoration[];
 }
 
 export interface FriendBookFinalEntrySeal {
@@ -373,31 +429,88 @@ const codingProjects: Record<CodingCategoryId, CodingProjectCard[]> = {
 const friendBookBetweenTwoPagesScene: FriendBookBetweenTwoPagesScene = {
   baseImage: '/images/friend-book-between-two-pages/base-scene-v1.png',
   variantImage: '/images/friend-book-between-two-pages/variant-scene-v1.png',
+  aspectRatio: 2752 / 1536,
   targets: [
     {
       id: 'moon-stamp',
       label: 'moon seal',
-      x: 28,
-      y: 17,
-      width: 10,
-      height: 10,
+      x: 32,
+      y: 26,
+      width: 12,
+      height: 12,
     },
     {
       id: 'cat-tail',
       label: 'cat tail',
-      x: 73,
-      y: 79,
-      width: 9,
-      height: 10,
+      x: 77,
+      y: 75,
+      width: 17,
+      height: 15,
     },
     {
       id: 'page-fold',
       label: 'page fold',
-      x: 87,
-      y: 10,
-      width: 8,
-      height: 8,
+      x: 83,
+      y: 19,
+      width: 10,
+      height: 12,
     },
+  ],
+};
+
+const friendBookMoonRunLevel: FriendBookMoonRunLevel = {
+  viewportWidth: 860,
+  worldWidth: 2220,
+  worldHeight: 380,
+  groundY: 304,
+  start: {
+    x: 88,
+    y: 258,
+  },
+  finish: {
+    x: 2050,
+    y: 168,
+    width: 74,
+    height: 128,
+  },
+  platforms: [
+    { id: 'step-1', x: 310, y: 244, width: 180, height: 16 },
+    { id: 'step-2', x: 700, y: 216, width: 204, height: 16 },
+    { id: 'step-3', x: 1030, y: 190, width: 168, height: 16 },
+    { id: 'step-4', x: 1380, y: 228, width: 222, height: 16 },
+    { id: 'step-5', x: 1700, y: 196, width: 204, height: 16 },
+  ],
+  pitZones: [
+    { startX: 522, width: 124 },
+    { startX: 1246, width: 150 },
+  ],
+  enemies: [
+    {
+      id: 'paper-hopper',
+      x: 784,
+      y: 182,
+      patrolMinX: 724,
+      patrolMaxX: 842,
+      width: 38,
+      height: 34,
+      speed: 92,
+    },
+    {
+      id: 'ink-mouse',
+      x: 1768,
+      y: 162,
+      patrolMinX: 1722,
+      patrolMaxX: 1846,
+      width: 40,
+      height: 34,
+      speed: 108,
+    },
+  ],
+  decorations: [
+    { id: 'moon-disc', x: 1900, y: 56, width: 104, height: 104, kind: 'moon', opacity: 0.9 },
+    { id: 'paper-star-1', x: 470, y: 56, width: 28, height: 28, kind: 'star', opacity: 0.78 },
+    { id: 'paper-star-2', x: 1280, y: 92, width: 22, height: 22, kind: 'star', opacity: 0.74 },
+    { id: 'paper-strip-1', x: 1110, y: 132, width: 86, height: 20, kind: 'paper', opacity: 0.54 },
   ],
 };
 
@@ -571,7 +684,7 @@ export const friendBookFinalSectionData = {
       id: 'moon-run',
       title: 'Moon Run',
       description:
-        'A short night run where timing matters more than speed.',
+        'Cross the quiet platforms, dodge the night creatures, and reach the moon gate.',
       ctaLabel: 'Begin',
       backgroundImage: '/images/BookofFriends_Bg_CatBook_middle.png',
     },
@@ -585,6 +698,7 @@ export const friendBookFinalSectionData = {
     },
   ] satisfies FriendBookFinalGameCard[],
   betweenTwoPagesScene: friendBookBetweenTwoPagesScene,
+  moonRunLevel: friendBookMoonRunLevel,
   quizQuestionBank: friendBookQuizQuestionBank,
   avatars: [
     {
@@ -706,7 +820,7 @@ export const friendBookFinalSectionData = {
       gameId: 'moon-run',
       label: 'Moon Run',
       emptyTitle: 'A night run not yet finished',
-      emptyDescription: 'Stop inside the moon band to write the memory for this slot.',
+      emptyDescription: 'Reach the moon gate with a few hearts left to write this page.',
       previewDate: 'APR 18, 2026',
     },
     {

@@ -41,7 +41,7 @@ export default function FriendBookGameOverlay({
       data-friend-book-overlay-stage={stage}
       className="fixed inset-0 z-50 overflow-y-auto bg-[rgba(39,24,18,0.56)] px-4 py-5 backdrop-blur-[2px] sm:px-6 sm:py-6"
     >
-      <div className="mx-auto flex min-h-full max-w-[1180px] items-center">
+      <div className="mx-auto flex min-h-full max-w-[1280px] items-center">
         <div className="w-full rounded-[2rem] bg-[#5a4032] p-[6px] shadow-[0_30px_80px_rgba(40,24,18,0.28)]">
           <div
             className="rounded-[1.7rem] border border-[rgba(117,86,64,0.12)] px-5 py-5 sm:px-7 sm:py-7"

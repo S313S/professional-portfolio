@@ -5,6 +5,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { friendBookFinalSectionData } from '../data';
 import { createFriendBookGameSession } from './FriendBookFinalSection.logic';
 import FriendBookGameOverlay from './FriendBookGameOverlay';
+import FriendBookMoonRunStage from './FriendBookMoonRunStage';
 import FriendBookFinalSection, {
   FRIEND_BOOK_BUTTON_POSITIONING,
   FRIEND_BOOK_COPY_POSITIONING,
@@ -187,4 +188,55 @@ test('renders the who’s this overlay content with silhouette art and five-ques
   assert.match(markup, /1 \/ 5/);
   assert.match(markup, /\/images\/friend-book-quiz\/mona-lisa-shadow\.svg/);
   assert.match(markup, /The quiet smile belongs to Mona Lisa\./);
+});
+
+test('renders the moon run overlay as a side-scrolling platform stage with hearts and keyboard guidance', () => {
+  const activeGame =
+    friendBookFinalSectionData.gameCards.find((game) => game.id === 'moon-run')!;
+  const session = createFriendBookGameSession('moon-run');
+  const markup = renderToStaticMarkup(
+    <FriendBookGameOverlay
+      activeGame={activeGame}
+      stage="game-active"
+      prompt="Run across the quiet pages and reach the moon gate."
+      progressLabel={`${session.moonRun!.heartsRemaining} / 3 hearts`}
+    >
+      <FriendBookMoonRunStage
+        session={session.moonRun!}
+        level={friendBookFinalSectionData.moonRunLevel}
+      />
+    </FriendBookGameOverlay>,
+  );
+
+  assert.match(markup, /data-friend-book-overlay-game="moon-run"/);
+  assert.match(markup, /Run across the quiet pages and reach the moon gate\./);
+  assert.match(markup, /3 \/ 3 hearts/);
+  assert.match(markup, /data-moon-run-viewport="true"/);
+  assert.match(markup, /data-moon-run-player="true"/);
+  assert.match(markup, /data-moon-run-finish="true"/);
+  assert.match(markup, /Arrow Keys or A\/D/);
+  assert.match(markup, /Space, W, or ↑ to jump/);
+  assert.doesNotMatch(markup, /Quiet band/);
+  assert.doesNotMatch(markup, /Stop this beat/);
+});
+
+test('between two pages overlay gives the image stage more room than the sidebar', () => {
+  const activeGame =
+    friendBookFinalSectionData.gameCards.find((game) => game.id === 'between-two-pages')!;
+  const markup = renderToStaticMarkup(
+    <FriendBookGameOverlay
+      activeGame={activeGame}
+      stage="game-active"
+      prompt="Find the three quiet differences before the page closes."
+    >
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_248px]">
+        <div className="mx-auto grid w-full max-w-[980px] gap-4 md:grid-cols-2">Scene</div>
+        <aside>Sidebar</aside>
+      </div>
+    </FriendBookGameOverlay>,
+  );
+
+  assert.match(markup, /max-w-\[1280px\]/);
+  assert.match(markup, /lg:grid-cols-\[minmax\(0,1fr\)_248px\]/);
+  assert.match(markup, /max-w-\[980px\]/);
 });
