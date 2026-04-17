@@ -106,19 +106,19 @@ type FriendBookBetweenTwoPagesTargetFrame = {
  */
 export const FRIEND_BOOK_BETWEEN_TWO_PAGES_TARGET_POSITIONING = {
   'moon-cottage': {
-    'moon-stamp': { x: 17, y: 15, width: 18, height: 18 },
-    'cat-tail': { x: 77, y: 75, width: 17, height: 15 },
-    'page-fold': { x: 83, y: 19, width: 10, height: 12 },
+    'moon-stamp': { x: 17, y: 15, width: 15.75, height: 25.37 },
+    'cat-tail': { x: 69.76, y: 67.62, width: 17, height: 15 },
+    'page-fold': { x: 78.71, y: 8.34, width: 14.66, height: 18.59 },
   },
   'moon-bridge': {
-    'bridge-lantern': { x: 47, y: 58, width: 10, height: 20 },
-    'tea-cup': { x: 53, y: 80, width: 15, height: 17 },
-    'bamboo-cluster': { x: 61, y: 36, width: 15, height: 18 },
+    'bridge-lantern': { x: 38.52, y: 42.02, width: 10.05, height: 33.76 },
+    'tea-cup': { x: 56.93, y: 70.09, width: 9.61, height: 17.04 },
+    'bamboo-cluster': { x: 57.57, y: 26.76, width: 13.76, height: 21.55 },
   },
   'moon-shrine': {
-    'torii-plaque': { x: 41, y: 36, width: 11, height: 11 },
-    'blossom-branch': { x: 58, y: 38, width: 15, height: 16 },
-    'cushion-tassel': { x: 92, y: 82, width: 8, height: 15 },
+    'torii-plaque': { x: 22.93, y: 34.09, width: 8.82, height: 11.67 },
+    'blossom-branch': { x: 56, y: 28.67, width: 12.24, height: 16.89 },
+    'cushion-tassel': { x: 80.8, y: 55.17, width: 9.05, height: 21.54 },
   },
 } as const satisfies Record<string, Record<string, FriendBookBetweenTwoPagesTargetFrame>>;
 
@@ -609,9 +609,7 @@ function getGuestbookGameTag(gameId: FriendBookGameId | null): {
 export function getBetweenTwoPagesTargetButtonClassName(isFound: boolean): string {
   return [
     'absolute z-20 rounded-[0.95rem] border transition',
-    isFound
-      ? 'border-transparent bg-transparent'
-      : 'border-[#d95c55] bg-[rgba(217,92,85,0.12)] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.35)]',
+    isFound ? 'border-transparent bg-transparent' : 'border-transparent bg-transparent',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8f715c]/40',
   ].join(' ');
 }
@@ -1376,7 +1374,7 @@ export default function FriendBookFinalSection({
                         {page.label}
                       </span>
 
-                      {betweenTwoPagesScene.targets.map((target, targetIndex) => {
+                      {betweenTwoPagesScene.targets.map((target) => {
                         const frame = getBetweenTwoPagesTargetFrame(
                           betweenTwoPagesScene.id,
                           target,
@@ -1418,20 +1416,7 @@ export default function FriendBookFinalSection({
                               width: `${frame.width}%`,
                               height: `${frame.height}%`,
                             }}
-                          >
-                            <span
-                              data-friend-book-difference-debug-outline={`${page.id}-${target.id}`}
-                              aria-hidden="true"
-                              className="pointer-events-none absolute inset-0 rounded-[0.95rem] border border-[#d95c55] border-dashed"
-                            />
-                            <span
-                              data-friend-book-difference-debug-badge={`${page.id}-${target.id}`}
-                              aria-hidden="true"
-                              className="pointer-events-none absolute left-2 top-2 inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-[#d95c55] px-1.5 text-[0.65rem] font-semibold leading-none text-white shadow-[0_6px_14px_rgba(120,42,34,0.24)]"
-                            >
-                              {targetIndex + 1}
-                            </span>
-                          </button>
+                          />
                         );
                       })}
                     </div>

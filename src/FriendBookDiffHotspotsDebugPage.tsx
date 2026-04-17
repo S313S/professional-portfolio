@@ -53,6 +53,10 @@ export default function FriendBookDiffHotspotsDebugPage() {
   const activeScene = scenes.find((scene) => scene.id === activeSceneId) ?? scenes[0] ?? null;
   const [activeTargetId, setActiveTargetId] = useState(activeScene?.targets[0]?.id ?? '');
   const [interaction, setInteraction] = useState<DragInteractionState | null>(null);
+  const [isConfirming, setIsConfirming] = useState(false);
+  const [confirmMessage, setConfirmMessage] = useState(
+    'Confirm will save the current parameters into tmp/friend-book-diff-hotspots.json.',
+  );
   const previewRefs = useRef<Record<PreviewPageId, HTMLDivElement | null>>({
     left: null,
     right: null,
@@ -174,6 +178,45 @@ export default function FriendBookDiffHotspotsDebugPage() {
 
   const resetAllScenes = () => {
     setDraftPositioning(createEditableHotspotPositioning());
+  };
+
+  const handleConfirm = async () => {
+    setIsConfirming(true);
+    setConfirmMessage('Saving current hotspot parameters...');
+
+    try {
+      const response = await fetch('/__friend-book-debug/confirm-hotspots', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          positioning: draftPositioning,
+          codeBlock,
+          activeSceneId,
+          activeTargetId,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Request failed with ${response.status}`);
+      }
+
+      const result = (await response.json()) as {
+        filePath?: string;
+        updatedAt?: string;
+      };
+
+      setConfirmMessage(
+        `Saved to ${result.filePath ?? 'tmp/friend-book-diff-hotspots.json'}${result.updatedAt ? ` at ${result.updatedAt}` : ''}. Reply "已确认" and I can apply it to the source.`,
+      );
+    } catch (error) {
+      setConfirmMessage(
+        `Save failed. ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    } finally {
+      setIsConfirming(false);
+    }
   };
 
   return (
@@ -364,11 +407,21 @@ export default function FriendBookDiffHotspotsDebugPage() {
               <p className="font-mono text-[0.72rem] uppercase tracking-[0.24em] text-[#7a5d4d]">
                 Copyable Output
               </p>
+              <p className="mt-2 text-sm leading-6 text-[#5b473d]">{confirmMessage}</p>
+              <button
+                type="button"
+                data-friend-book-diff-debug-confirm-button
+                onClick={handleConfirm}
+                disabled={isConfirming}
+                className="mt-3 inline-flex items-center rounded-full border border-[#8f715c] bg-[#6a4f3c] px-4 py-2 text-sm text-[#fff9f4] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isConfirming ? 'Confirming...' : 'Confirm'}
+              </button>
               <textarea
                 data-friend-book-diff-debug-copy-output
                 readOnly
                 value={codeBlock}
-                className="mt-2 min-h-[320px] w-full rounded-[1.15rem] border border-[#d4bea5] bg-[#fffaf3] p-3 font-mono text-[0.75rem] leading-6 text-[#4f3e35]"
+                className="mt-3 min-h-[320px] w-full rounded-[1.15rem] border border-[#d4bea5] bg-[#fffaf3] p-3 font-mono text-[0.75rem] leading-6 text-[#4f3e35]"
               />
             </div>
           </div>

@@ -14,6 +14,8 @@ test('renders a dedicated debug page for between two pages hotspot editing', () 
   assert.match(markup, /data-friend-book-diff-debug-preview="left"/);
   assert.match(markup, /data-friend-book-diff-debug-preview="right"/);
   assert.match(markup, /data-friend-book-diff-debug-copy-output=/);
+  assert.match(markup, /data-friend-book-diff-debug-confirm-button=/);
+  assert.match(markup, /tmp\/friend-book-diff-hotspots\.json/);
   assert.doesNotMatch(markup, /id="career-detail-section"/);
   assert.doesNotMatch(markup, /id="works-detail-section"/);
 });

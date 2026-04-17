@@ -151,13 +151,13 @@ test('exports centralized target positioning for between two pages hotspots', ()
   );
   assert.equal(
     FRIEND_BOOK_BETWEEN_TWO_PAGES_TARGET_POSITIONING['moon-cottage']['moon-stamp'].height,
-    18,
+    25.37,
   );
   assert.deepEqual(frame, {
     x: 17,
     y: 15,
-    width: 18,
-    height: 18,
+    width: 15.75,
+    height: 25.37,
   });
 });
 
@@ -357,7 +357,7 @@ test('renders between two pages as page-local transparent hotspots with fixed ma
   assert.match(markup, /data-friend-book-difference-miss-zone="left"/);
   assert.match(markup, /data-friend-book-difference-miss-zone="right"/);
 
-  for (const [index, target] of scene.targets.entries()) {
+  for (const target of scene.targets) {
     const markerPattern = new RegExp(
       `data-friend-book-difference-marker="left-${target.id}"`,
     );
@@ -372,22 +372,6 @@ test('renders between two pages as page-local transparent hotspots with fixed ma
     assert.match(
       markup,
       new RegExp(`data-friend-book-difference-hotspot="right-${target.id}"`),
-    );
-    assert.match(
-      markup,
-      new RegExp(`data-friend-book-difference-debug-outline="left-${target.id}"`),
-    );
-    assert.match(
-      markup,
-      new RegExp(`data-friend-book-difference-debug-outline="right-${target.id}"`),
-    );
-    assert.match(
-      markup,
-      new RegExp(`data-friend-book-difference-debug-badge="left-${target.id}"[^>]*>${index + 1}<`),
-    );
-    assert.match(
-      markup,
-      new RegExp(`data-friend-book-difference-debug-badge="right-${target.id}"[^>]*>${index + 1}<`),
     );
     assert.match(markup, new RegExp(`aria-label="${target.label}"`));
     assert.doesNotMatch(markup, markerPattern);
@@ -436,14 +420,13 @@ test('renders fixed markers on both pages after a difference has already been fo
   );
 });
 
-test('between two pages target buttons expose visible debug outlines until a difference is found', () => {
+test('between two pages target buttons stay visually silent until a difference is found', () => {
   const idleClassName = getBetweenTwoPagesTargetButtonClassName(false);
   const foundClassName = getBetweenTwoPagesTargetButtonClassName(true);
 
   assert.doesNotMatch(idleClassName, /hover:border/);
   assert.doesNotMatch(idleClassName, /hover:bg/);
-  assert.match(idleClassName, /border-\[#d95c55\]/);
-  assert.match(idleClassName, /bg-\[rgba\(217,92,85,0\.12\)\]/);
+  assert.match(idleClassName, /border-transparent/);
   assert.match(foundClassName, /border-transparent/);
 });
 
