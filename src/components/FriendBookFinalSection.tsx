@@ -12,9 +12,7 @@ import {
   type FriendBookAvatarId,
   type FriendBookGameId,
   type FriendBookGameSessionState,
-  type FriendBookMoonRunInputState,
   type FriendBookStage,
-  FRIEND_BOOK_DIFFERENCE_TARGETS,
   answerFriendBookQuizQuestion,
   advanceFriendBookQuizQuestion,
   completeBetweenTwoPagesRound,
@@ -25,12 +23,11 @@ import {
   getAvailableFriendBookAvatarIds,
   getFriendBookGameStartStage,
   getFriendBookMedalIdForGame,
-  getMoonRunRoundSummary,
+  getNextBetweenTwoPagesSceneRotation,
   hydrateFriendBookProgress,
   persistFriendBookProgress,
   resolveBetweenTwoPagesSpotSelection,
   selectFriendBookAvatar,
-  stepMoonRunSession,
 } from './FriendBookFinalSection.logic';
 import FriendBookGameOverlay from './FriendBookGameOverlay';
 import FriendBookMoonRunStage from './FriendBookMoonRunStage';
@@ -51,6 +48,31 @@ type FriendBookCopyOffsetGroup = {
   description: FriendBookButtonOffset;
 };
 
+type FriendBookOffsetWithScale = FriendBookButtonOffset & {
+  scale: number;
+};
+
+type FriendBookArchiveSampleEntryId = 'spring-wind' | 'book-sea-diver' | 'night-watcher';
+
+type FriendBookArchiveSampleEntryPositioning = {
+  avatar: FriendBookButtonOffset;
+  title: FriendBookButtonOffset;
+  seal: FriendBookButtonOffset;
+  excerpt: FriendBookButtonOffset;
+  medal: FriendBookOffsetWithScale;
+};
+
+type FriendBookArchiveUserSlotPositioning = {
+  container: FriendBookButtonOffset;
+  copy: FriendBookButtonOffset;
+  label: FriendBookButtonOffset;
+  note: FriendBookButtonOffset;
+  meta: FriendBookButtonOffset;
+  avatar: FriendBookOffsetWithScale;
+  medal: FriendBookOffsetWithScale;
+  date: FriendBookButtonOffset;
+};
+
 type FriendBookAbsoluteLayout = {
   left: string;
   top: string;
@@ -65,6 +87,114 @@ export const FRIEND_BOOK_ARCHIVE_SAMPLE_STACK_NUDGE = {
   x: 0,
   y: -18,
 } as const;
+
+export const FRIEND_BOOK_ARCHIVE_SAMPLE_ROW_POSITIONING = {
+  shared: { x: 0, y: 0 },
+  perEntry: {
+    'spring-wind': { x: 0, y: 0 },
+    'book-sea-diver': { x: 0, y: 0 },
+    'night-watcher': { x: 0, y: 0 },
+  },
+} as const satisfies {
+  shared: FriendBookButtonOffset;
+  perEntry: Record<FriendBookArchiveSampleEntryId, FriendBookButtonOffset>;
+};
+
+/**
+ * Friend Book Finale 左页样例记录内部元素位置参数（仅桌面端预览板）
+ *
+ * 所有数值单位都是像素：
+ * - avatar / title / seal / excerpt: x / y
+ * - medal: x / y / scale
+ *
+ * 规则：
+ * - `shared` 用于三条样例统一偏移
+ * - `perEntry` 用于单条样例单独微调
+ * - `medal.scale` 为缩放倍数，`1` 表示原尺寸
+ */
+export const FRIEND_BOOK_ARCHIVE_SAMPLE_ENTRY_POSITIONING = {
+  shared: {
+    avatar: { x: 0, y: 0 },
+    title: { x: 0, y: 0 },
+    seal: { x: 0, y: 0 },
+    excerpt: { x: 0, y: 0 },
+    medal: { x: 0, y: 0, scale: 1 },
+  },
+  perEntry: {
+    'spring-wind': {
+      avatar: { x: 0, y: 0 },
+      title: { x: 0, y: 0 },
+      seal: { x: 0, y: 0 },
+      excerpt: { x: 0, y: 0 },
+      medal: { x: -1, y: 10, scale: 1.12 },
+    },
+    'book-sea-diver': {
+      avatar: { x: 0, y: 0 },
+      title: { x: 0, y: 0 },
+      seal: { x: 0, y: 0 },
+      excerpt: { x: 0, y: 0 },
+      medal: { x: 0, y: 0, scale: 1 },
+    },
+    'night-watcher': {
+      avatar: { x: 0, y: 0 },
+      title: { x: 0, y: 0 },
+      seal: { x: 0, y: 0 },
+      excerpt: { x: 0, y: 0 },
+      medal: { x: 0, y: 0, scale: 1 },
+    },
+  },
+} as const satisfies {
+  shared: FriendBookArchiveSampleEntryPositioning;
+  perEntry: Record<FriendBookArchiveSampleEntryId, FriendBookArchiveSampleEntryPositioning>;
+};
+
+export const FRIEND_BOOK_ARCHIVE_USER_SLOT_POSITIONING = {
+  shared: {
+    container: { x: 0, y: 0 },
+    copy: { x: 0, y: 0 },
+    label: { x: 0, y: 0 },
+    note: { x: 0, y: 0 },
+    meta: { x: 0, y: 0 },
+    avatar: { x: 0, y: 0, scale: 1 },
+    medal: { x: 0, y: 0, scale: 1 },
+    date: { x: 0, y: 0 },
+  },
+  perSlot: {
+    'between-two-pages': {
+      container: { x: 0, y: 0 },
+      copy: { x: 0, y: 0 },
+      label: { x: 0, y: 0 },
+      note: { x: 0, y: 0 },
+      meta: { x: 0, y: 0 },
+      avatar: { x: 0, y: 0, scale: 1 },
+      medal: { x: 0, y: 0, scale: 1 },
+      date: { x: 0, y: 0 },
+    },
+    'moon-run': {
+      container: { x: 0, y: 0 },
+      copy: { x: 0, y: 0 },
+      label: { x: 0, y: 0 },
+      note: { x: 0, y: 0 },
+      meta: { x: 0, y: 0 },
+      avatar: { x: 0, y: 0, scale: 1 },
+      medal: { x: 0, y: 0, scale: 1 },
+      date: { x: 0, y: 0 },
+    },
+    'one-stroke-mark': {
+      container: { x: 0, y: 0 },
+      copy: { x: 0, y: 0 },
+      label: { x: 0, y: 0 },
+      note: { x: 0, y: 0 },
+      meta: { x: 0, y: 0 },
+      avatar: { x: 0, y: 0, scale: 1 },
+      medal: { x: 0, y: 0, scale: 1 },
+      date: { x: 0, y: 0 },
+    },
+  },
+} as const satisfies {
+  shared: FriendBookArchiveUserSlotPositioning;
+  perSlot: Record<FriendBookGameId, FriendBookArchiveUserSlotPositioning>;
+};
 
 const FRIEND_BOOK_SAMPLE_ENTRY_GRID = {
   outer: {
@@ -248,6 +378,12 @@ function getOffsetStyle(offset: FriendBookButtonOffset): CSSProperties {
   };
 }
 
+function getOffsetScaleStyle(offset: FriendBookButtonOffset, scale: number): CSSProperties {
+  return {
+    transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
+  };
+}
+
 function getAbsoluteLayoutStyle(layout: FriendBookAbsoluteLayout): CSSProperties {
   return {
     left: layout.left,
@@ -274,6 +410,17 @@ function combineOffsets(
   return {
     x: baseOffset.x + overrideOffset.x,
     y: baseOffset.y + overrideOffset.y,
+  };
+}
+
+function combineOffsetWithScale(
+  baseOffset: FriendBookOffsetWithScale,
+  overrideOffset: FriendBookOffsetWithScale,
+): FriendBookOffsetWithScale {
+  return {
+    x: baseOffset.x + overrideOffset.x,
+    y: baseOffset.y + overrideOffset.y,
+    scale: baseOffset.scale * overrideOffset.scale,
   };
 }
 
@@ -354,6 +501,32 @@ function getGamePrompt(gameId: FriendBookGameId): string {
   }
 }
 
+export function getBetweenTwoPagesTargetButtonClassName(isFound: boolean): string {
+  return [
+    'absolute -translate-x-1/2 -translate-y-1/2 rounded-full border transition',
+    isFound ? 'border-transparent bg-transparent' : 'border-transparent bg-transparent',
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8f715c]/40',
+  ].join(' ');
+}
+
+export function getBetweenTwoPagesHintsVisibility(
+  status: 'active' | 'success' | 'failed',
+  showHintsRequested: boolean,
+): { showHintsToggle: boolean; showHintsList: boolean } {
+  return {
+    showHintsToggle: status !== 'active',
+    showHintsList: status !== 'active' && showHintsRequested,
+  };
+}
+
+export function getBetweenTwoPagesTimerEffectKey(
+  stage: FriendBookStage,
+  activeGameId: FriendBookGameId | null,
+  status: 'active' | 'success' | 'failed' | undefined,
+): string {
+  return `${stage}:${activeGameId ?? 'none'}:${status ?? 'none'}`;
+}
+
 export default function FriendBookFinalSection() {
   const [progress, setProgress] = useState(createDefaultFriendBookProgress);
   const [stage, setStage] = useState<FriendBookStage>('landing');
@@ -364,12 +537,8 @@ export default function FriendBookFinalSection() {
   const [gameSession, setGameSession] = useState<FriendBookGameSessionState | null>(null);
   const [roundSummary, setRoundSummary] = useState('');
   const [isHydrated, setIsHydrated] = useState(false);
-  const moonRunInputRef = useRef<FriendBookMoonRunInputState>({
-    moveLeft: false,
-    moveRight: false,
-    jumpPressed: false,
-  });
-  const moonRunLastFrameRef = useRef<number | null>(null);
+  const [showBetweenTwoPagesHints, setShowBetweenTwoPagesHints] = useState(false);
+  const [seenBetweenTwoPagesSceneIds, setSeenBetweenTwoPagesSceneIds] = useState<string[]>([]);
 
   const avatarById = Object.fromEntries(
     friendBookFinalSectionData.avatars.map((avatar) => [avatar.id, avatar]),
@@ -378,7 +547,15 @@ export default function FriendBookFinalSection() {
     ? friendBookFinalSectionData.gameCards.find((game) => game.id === activeGameId) ?? null
     : null;
   const availableAvatarIds = getAvailableFriendBookAvatarIds(progress);
-  const betweenTwoPagesScene = friendBookFinalSectionData.betweenTwoPagesScene;
+  const betweenTwoPagesScene =
+    friendBookFinalSectionData.betweenTwoPagesScenes.find(
+      (scene) => scene.id === gameSession?.betweenTwoPages?.sceneId,
+    ) ?? friendBookFinalSectionData.betweenTwoPagesScenes[0];
+  const betweenTwoPagesTimerEffectKey = getBetweenTwoPagesTimerEffectKey(
+    stage,
+    activeGameId,
+    gameSession?.betweenTwoPages?.status,
+  );
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -459,141 +636,31 @@ export default function FriendBookFinalSection() {
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [stage, activeGameId, gameSession]);
-
-  useEffect(() => {
-    if (
-      stage !== 'game-active' ||
-      activeGameId !== 'moon-run' ||
-      gameSession?.moonRun?.status !== 'active' ||
-      typeof window === 'undefined'
-    ) {
-      return;
-    }
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'ArrowLeft' || event.key === 'a' || event.key === 'A') {
-        moonRunInputRef.current.moveLeft = true;
-        event.preventDefault();
-      }
-      if (event.key === 'ArrowRight' || event.key === 'd' || event.key === 'D') {
-        moonRunInputRef.current.moveRight = true;
-        event.preventDefault();
-      }
-      if (
-        event.key === ' ' ||
-        event.key === 'ArrowUp' ||
-        event.key === 'w' ||
-        event.key === 'W'
-      ) {
-        moonRunInputRef.current.jumpPressed = true;
-        event.preventDefault();
-      }
-    };
-
-    const handleKeyUp = (event: KeyboardEvent) => {
-      if (event.key === 'ArrowLeft' || event.key === 'a' || event.key === 'A') {
-        moonRunInputRef.current.moveLeft = false;
-      }
-      if (event.key === 'ArrowRight' || event.key === 'd' || event.key === 'D') {
-        moonRunInputRef.current.moveRight = false;
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
-      resetMoonRunInputState();
-    };
-  }, [stage, activeGameId, gameSession?.moonRun?.status]);
-
-  useEffect(() => {
-    if (
-      stage !== 'game-active' ||
-      activeGameId !== 'moon-run' ||
-      gameSession?.moonRun?.status !== 'active' ||
-      typeof window === 'undefined'
-    ) {
-      return;
-    }
-
-    moonRunLastFrameRef.current = null;
-
-    let frameId = window.requestAnimationFrame(function step(timestamp) {
-      const previousTimestamp = moonRunLastFrameRef.current ?? timestamp;
-      const deltaMs = timestamp - previousTimestamp;
-      moonRunLastFrameRef.current = timestamp;
-
-      setGameSession((currentSession) => {
-        if (
-          !currentSession?.moonRun ||
-          currentSession.gameId !== 'moon-run' ||
-          currentSession.moonRun.status !== 'active'
-        ) {
-          return currentSession;
-        }
-
-        const nextSession = stepMoonRunSession(
-          currentSession,
-          moonRunInputRef.current,
-          deltaMs,
-        );
-        moonRunInputRef.current.jumpPressed = false;
-        return nextSession;
-      });
-
-      frameId = window.requestAnimationFrame(step);
-    });
-
-    return () => {
-      window.cancelAnimationFrame(frameId);
-      moonRunLastFrameRef.current = null;
-    };
-  }, [stage, activeGameId, gameSession?.moonRun?.status]);
-
-  useEffect(() => {
-    if (
-      stage !== 'game-active' ||
-      activeGameId !== 'moon-run' ||
-      gameSession?.moonRun?.status !== 'success'
-    ) {
-      return;
-    }
-
-    moveIntoNoteStage('moon-run', getMoonRunRoundSummary(gameSession));
-  }, [stage, activeGameId, gameSession]);
+  }, [betweenTwoPagesTimerEffectKey]);
 
   function resetGameState(gameId: FriendBookGameId) {
+    let nextGameSession: FriendBookGameSessionState;
+
+    if (gameId === 'between-two-pages') {
+      const nextRotation = getNextBetweenTwoPagesSceneRotation(seenBetweenTwoPagesSceneIds);
+      setSeenBetweenTwoPagesSceneIds(nextRotation.seenSceneIds);
+      nextGameSession = createFriendBookGameSession(
+        gameId,
+        friendBookFinalSectionData.quizQuestionBank,
+        Math.random,
+        { betweenTwoPagesSceneId: nextRotation.sceneId },
+      );
+    } else {
+      nextGameSession = createFriendBookGameSession(gameId);
+    }
+
     setActiveGameId(gameId);
-    setGameSession(createFriendBookGameSession(gameId));
+    setGameSession(nextGameSession);
     setPendingMedalId(null);
     setRoundSummary('');
+    setShowBetweenTwoPagesHints(false);
     setSelectedAvatarCandidate(progress.selectedAvatarId);
-    resetMoonRunInputState();
     setNoteDraft(progress.games[gameId].latestNote);
-  }
-
-  function resetMoonRunInputState() {
-    moonRunInputRef.current = {
-      moveLeft: false,
-      moveRight: false,
-      jumpPressed: false,
-    };
-    moonRunLastFrameRef.current = null;
-  }
-
-  function setMoonRunMove(
-    direction: Extract<keyof FriendBookMoonRunInputState, 'moveLeft' | 'moveRight'>,
-    isPressed: boolean,
-  ) {
-    moonRunInputRef.current[direction] = isPressed;
-  }
-
-  function queueMoonRunJump() {
-    moonRunInputRef.current.jumpPressed = true;
   }
 
   function scrollToTarget(id: string) {
@@ -630,6 +697,14 @@ export default function FriendBookFinalSection() {
     setStage('note-entry');
   }
 
+  function handleMoonRunComplete(result: { score: number }) {
+    const snackLabel = result.score === 1 ? 'snack' : 'snacks';
+    moveIntoNoteStage(
+      'moon-run',
+      `Reached the moon gate after collecting ${result.score} midnight ${snackLabel}.`,
+    );
+  }
+
   function handleDifferenceMiss() {
     if (
       !gameSession?.betweenTwoPages ||
@@ -660,6 +735,7 @@ export default function FriendBookFinalSection() {
     const nextState = resolveBetweenTwoPagesSpotSelection(
       gameSession.betweenTwoPages.foundSpotIds,
       spotId,
+      gameSession.betweenTwoPages.targetIds,
     );
     const nextSession: FriendBookGameSessionState = {
       ...gameSession,
@@ -677,7 +753,7 @@ export default function FriendBookFinalSection() {
       if (result.isSuccess) {
         moveIntoNoteStage(
           'between-two-pages',
-          `${nextState.foundSpotIds.length} / ${FRIEND_BOOK_DIFFERENCE_TARGETS.length} details found with ${result.score}s left.`,
+          `${nextState.foundSpotIds.length} / ${gameSession.betweenTwoPages.targetIds.length} details found with ${result.score}s left.`,
         );
       }
     }
@@ -754,10 +830,14 @@ export default function FriendBookFinalSection() {
   const overlayProgressLabel = gameSession?.quiz
     ? `${Math.min(gameSession.quiz.currentQuestionIndex + 1, gameSession.quiz.questions.length)} / ${gameSession.quiz.questions.length}`
     : gameSession?.betweenTwoPages
-      ? `${gameSession.betweenTwoPages.foundSpotIds.length} / ${FRIEND_BOOK_DIFFERENCE_TARGETS.length} found`
-      : gameSession?.moonRun
-        ? `${gameSession.moonRun.heartsRemaining} / 3 hearts`
-        : null;
+      ? `${gameSession.betweenTwoPages.foundSpotIds.length} / ${gameSession.betweenTwoPages.targetIds.length} found`
+      : null;
+  const betweenTwoPagesHintsVisibility = gameSession?.betweenTwoPages
+    ? getBetweenTwoPagesHintsVisibility(
+      gameSession.betweenTwoPages.status,
+      showBetweenTwoPagesHints,
+    )
+    : { showHintsToggle: false, showHintsList: false };
 
   return (
     <section
@@ -940,7 +1020,6 @@ export default function FriendBookFinalSection() {
             prompt={overlayPrompt}
             progressLabel={stage === 'game-active' ? overlayProgressLabel : null}
             onClose={() => {
-              resetMoonRunInputState();
               setStage('landing');
               setActiveGameId(null);
               setGameSession(null);
@@ -961,11 +1040,10 @@ export default function FriendBookFinalSection() {
                         type="button"
                         onClick={() => isAvailable && setSelectedAvatarCandidate(avatar.id)}
                         disabled={!isAvailable}
-                        className={`flex items-center gap-4 rounded-[1.4rem] border px-4 py-4 text-left transition ${
-                          isSelected
-                            ? 'border-[#6f4d3d] bg-[rgba(255,247,239,0.96)] shadow-[0_14px_24px_rgba(84,56,36,0.12)]'
-                            : 'border-[#d8c5ae] bg-[rgba(255,250,245,0.82)]'
-                        } ${!isAvailable ? 'opacity-55' : 'hover:-translate-y-0.5'}`}
+                        className={`flex items-center gap-4 rounded-[1.4rem] border px-4 py-4 text-left transition ${isSelected
+                          ? 'border-[#6f4d3d] bg-[rgba(255,247,239,0.96)] shadow-[0_14px_24px_rgba(84,56,36,0.12)]'
+                          : 'border-[#d8c5ae] bg-[rgba(255,250,245,0.82)]'
+                          } ${!isAvailable ? 'opacity-55' : 'hover:-translate-y-0.5'}`}
                       >
                         <img
                           src={avatar.asset}
@@ -1027,8 +1105,8 @@ export default function FriendBookFinalSection() {
             ) : null}
 
             {stage === 'game-active' && activeGame.id === 'between-two-pages' && gameSession?.betweenTwoPages ? (
-              <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_248px]">
-                <div className="mx-auto grid w-full max-w-[560px] grid-cols-1 gap-3 self-start">
+              <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">
+                <div className="mx-auto grid w-full max-w-[640px] grid-cols-1 gap-2 self-start">
                   {[
                     { id: 'left', label: 'Left page', image: betweenTwoPagesScene.baseImage },
                     { id: 'right', label: 'Right page', image: betweenTwoPagesScene.variantImage },
@@ -1061,11 +1139,7 @@ export default function FriendBookFinalSection() {
                               event.stopPropagation();
                               handleDifferenceSpotSelect(target.id);
                             }}
-                            className={`absolute -translate-x-1/2 -translate-y-1/2 rounded-full border transition ${
-                              isFound
-                                ? 'border-transparent bg-transparent'
-                                : 'border-transparent bg-transparent hover:border-[rgba(126,92,67,0.32)] hover:bg-[rgba(255,248,242,0.12)]'
-                            }`}
+                            className={getBetweenTwoPagesTargetButtonClassName(isFound)}
                             style={{
                               left: `${target.x}%`,
                               top: `${target.y}%`,
@@ -1085,7 +1159,7 @@ export default function FriendBookFinalSection() {
                   ))}
                 </div>
 
-                <div className="rounded-[1.5rem] border border-[#dcc9b1] bg-[rgba(255,249,242,0.84)] p-5">
+                <div className="rounded-[1.5rem] border border-[#dcc9b1] bg-[rgba(255,249,242,0.84)] p-4">
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <p className="font-mono text-[0.68rem] uppercase tracking-[0.28em] text-[#7a5d4d]">
@@ -1112,20 +1186,34 @@ export default function FriendBookFinalSection() {
                       }}
                     />
                   </div>
-                  <ul className="mt-5 grid gap-2 text-sm text-[#5a473d]">
-                    {betweenTwoPagesScene.targets.map((target) => (
-                      <li key={target.id} className="flex items-center gap-2">
-                        <span
-                          className={`h-2.5 w-2.5 rounded-full ${
-                            gameSession.betweenTwoPages!.foundSpotIds.includes(target.id)
+                  {betweenTwoPagesHintsVisibility.showHintsToggle ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowBetweenTwoPagesHints((current) => !current)}
+                      className="mt-5 inline-flex items-center gap-2 rounded-full border border-[#cbb59f] bg-[rgba(255,248,241,0.92)] px-3 py-2 text-sm text-[#5a473d]"
+                    >
+                      <span>
+                        {betweenTwoPagesHintsVisibility.showHintsList
+                          ? 'Hide difference hints'
+                          : 'Show difference hints'}
+                      </span>
+                    </button>
+                  ) : null}
+                  {betweenTwoPagesHintsVisibility.showHintsList ? (
+                    <ul className="mt-4 grid gap-2 text-sm text-[#5a473d]">
+                      {betweenTwoPagesScene.targets.map((target) => (
+                        <li key={target.id} className="flex items-center gap-2">
+                          <span
+                            className={`h-2.5 w-2.5 rounded-full ${gameSession.betweenTwoPages!.foundSpotIds.includes(target.id)
                               ? 'bg-[#6e5443]'
                               : 'bg-[#d5c0ab]'
-                          }`}
-                        />
-                        <span>{target.label}</span>
-                      </li>
-                    ))}
-                  </ul>
+                              }`}
+                          />
+                          <span>{target.label}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
                   <p className="mt-4 text-sm leading-7 text-[#503e35]">
                     Mistakes: {gameSession.betweenTwoPages.mistakes}
                   </p>
@@ -1143,25 +1231,21 @@ export default function FriendBookFinalSection() {
               </div>
             ) : null}
 
-            {stage === 'game-active' && activeGame.id === 'moon-run' && gameSession?.moonRun ? (
+            {stage === 'game-active' && activeGame.id === 'moon-run' && gameSession?.gameId === 'moon-run' ? (
               <FriendBookMoonRunStage
-                level={friendBookFinalSectionData.moonRunLevel}
-                session={gameSession.moonRun}
-                onMoveChange={setMoonRunMove}
-                onJump={queueMoonRunJump}
-                onReplay={handleReplayActiveGame}
+                onComplete={handleMoonRunComplete}
               />
             ) : null}
 
             {stage === 'game-active' && activeGame.id === 'one-stroke-mark' && gameSession?.quiz && currentQuizQuestion ? (
-              <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-                <div className="rounded-[1.6rem] border border-[#c9b198] bg-[rgba(255,250,245,0.76)] p-4">
-                  <div className="overflow-hidden rounded-[1.35rem] border border-[#d8c2ab] bg-[rgba(255,248,242,0.92)]">
+              <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
+                <div className="rounded-[1.6rem] border border-[#c9b198] bg-[rgba(255,250,245,0.76)] p-4 lg:p-5">
+                  <div className="flex min-h-[430px] items-center justify-center overflow-hidden rounded-[1.35rem] border border-[#d8c2ab] bg-[#202532] p-3 lg:min-h-[540px]">
                     <img
                       src={currentQuizQuestion.silhouetteImage}
                       alt=""
                       aria-hidden="true"
-                      className="block h-[360px] w-full object-cover"
+                      className="block max-h-[72vh] w-full object-contain"
                     />
                   </div>
                   <p className="mt-4 text-sm leading-7 text-[#503e35]">
@@ -1169,7 +1253,7 @@ export default function FriendBookFinalSection() {
                   </p>
                 </div>
 
-                <div className="rounded-[1.5rem] border border-[#dcc9b1] bg-[rgba(255,249,242,0.84)] p-5">
+                <div className="rounded-[1.5rem] border border-[#dcc9b1] bg-[rgba(255,249,242,0.84)] p-4 lg:p-5">
                   <p className="font-mono text-[0.68rem] uppercase tracking-[0.28em] text-[#7a5d4d]">
                     Guess the silhouette
                   </p>
@@ -1185,13 +1269,12 @@ export default function FriendBookFinalSection() {
                           type="button"
                           onClick={() => handleQuizAnswer(option)}
                           disabled={isLocked}
-                          className={`rounded-[1.2rem] border px-4 py-3 text-left text-sm leading-6 transition ${
-                            isLocked && isCorrect
-                              ? 'border-[#6f4d3d] bg-[rgba(243,236,223,0.96)] text-[#3f312b]'
-                              : isLocked && isSelected
-                                ? 'border-[#b9997d] bg-[rgba(255,244,234,0.9)] text-[#5b473d]'
-                                : 'border-[#d8c5ae] bg-[rgba(255,250,245,0.82)] text-[#4b392f] hover:-translate-y-0.5'
-                          }`}
+                          className={`rounded-[1.2rem] border px-4 py-3 text-left text-sm leading-6 transition ${isLocked && isCorrect
+                            ? 'border-[#6f4d3d] bg-[rgba(243,236,223,0.96)] text-[#3f312b]'
+                            : isLocked && isSelected
+                              ? 'border-[#b9997d] bg-[rgba(255,244,234,0.9)] text-[#5b473d]'
+                              : 'border-[#d8c5ae] bg-[rgba(255,250,245,0.82)] text-[#4b392f] hover:-translate-y-0.5'
+                            }`}
                         >
                           {option}
                         </button>
@@ -1204,6 +1287,15 @@ export default function FriendBookFinalSection() {
                       <p className="font-serif text-[1.4rem] leading-none text-[#2f2320]">
                         {gameSession.quiz.answerState === 'correct' ? 'Right page.' : 'Not this one.'}
                       </p>
+                      {currentQuizQuestion.referenceImage ? (
+                        <div className="mt-4 overflow-hidden rounded-[1rem] border border-[#d8c2ab] bg-[rgba(255,248,242,0.92)]">
+                          <img
+                            src={currentQuizQuestion.referenceImage}
+                            alt={currentQuizQuestion.correctAnswer}
+                            className="block h-44 w-full object-contain bg-[rgba(34,38,50,0.04)]"
+                          />
+                        </div>
+                      ) : null}
                       <p className="mt-2 text-sm leading-7 text-[#503e35]">
                         {currentQuizQuestion.resultCopy}
                       </p>
@@ -1362,68 +1454,113 @@ export default function FriendBookFinalSection() {
             <div
               data-friend-book-preview-sample-stack="true"
               className="absolute inset-0"
-              style={{ transform: `translateY(${FRIEND_BOOK_ARCHIVE_SAMPLE_STACK_NUDGE.y}px)` }}
+              style={{
+                transform: `translate(${FRIEND_BOOK_ARCHIVE_SAMPLE_STACK_NUDGE.x}px, ${FRIEND_BOOK_ARCHIVE_SAMPLE_STACK_NUDGE.y}px)`,
+              }}
             >
-              {friendBookFinalSectionData.entries.map((entry) => (
-                <article
-                  key={entry.id}
-                  data-friend-book-sample-entry-desktop={entry.id}
-                  className="absolute"
-                  style={getAbsoluteLayoutStyle(FRIEND_BOOK_ARCHIVE_DESKTOP_LAYOUT.sampleEntries[entry.id])}
-                >
-                  <div
-                    className={`grid h-full ${FRIEND_BOOK_SAMPLE_ENTRY_GRID.outer.base} gap-3 px-4 py-3 ${FRIEND_BOOK_SAMPLE_ENTRY_GRID.outer.xl} xl:px-5 xl:py-4`}
+              {friendBookFinalSectionData.entries.map((entry) => {
+                const rowOffset = combineOffsets(
+                  FRIEND_BOOK_ARCHIVE_SAMPLE_ROW_POSITIONING.shared,
+                  FRIEND_BOOK_ARCHIVE_SAMPLE_ROW_POSITIONING.perEntry[
+                  entry.id as FriendBookArchiveSampleEntryId
+                  ],
+                );
+                const entryPositioning = FRIEND_BOOK_ARCHIVE_SAMPLE_ENTRY_POSITIONING.perEntry[
+                  entry.id as FriendBookArchiveSampleEntryId
+                ];
+                const avatarOffset = combineOffsets(
+                  FRIEND_BOOK_ARCHIVE_SAMPLE_ENTRY_POSITIONING.shared.avatar,
+                  entryPositioning.avatar,
+                );
+                const titleOffset = combineOffsets(
+                  FRIEND_BOOK_ARCHIVE_SAMPLE_ENTRY_POSITIONING.shared.title,
+                  entryPositioning.title,
+                );
+                const sealOffset = combineOffsets(
+                  FRIEND_BOOK_ARCHIVE_SAMPLE_ENTRY_POSITIONING.shared.seal,
+                  entryPositioning.seal,
+                );
+                const excerptOffset = combineOffsets(
+                  FRIEND_BOOK_ARCHIVE_SAMPLE_ENTRY_POSITIONING.shared.excerpt,
+                  entryPositioning.excerpt,
+                );
+                const medalOffset = combineOffsetWithScale(
+                  FRIEND_BOOK_ARCHIVE_SAMPLE_ENTRY_POSITIONING.shared.medal,
+                  entryPositioning.medal,
+                );
+
+                return (
+                  <article
+                    key={entry.id}
+                    data-friend-book-sample-entry-desktop={entry.id}
+                    data-friend-book-sample-entry-row-desktop={entry.id}
+                    className="absolute"
+                    style={{
+                      ...getAbsoluteLayoutStyle(FRIEND_BOOK_ARCHIVE_DESKTOP_LAYOUT.sampleEntries[entry.id]),
+                      ...getOffsetStyle(rowOffset),
+                    }}
                   >
-                    <img
-                      src={entry.avatarImage}
-                      alt=""
-                      aria-hidden="true"
-                      className="mt-1 h-15 w-15 rounded-full object-cover xl:h-[4.6rem] xl:w-[4.6rem]"
-                    />
                     <div
-                      data-friend-book-sample-entry-copy-desktop={entry.id}
-                      className={FRIEND_BOOK_SAMPLE_ENTRY_GRID.copy}
+                      className={`grid h-full ${FRIEND_BOOK_SAMPLE_ENTRY_GRID.outer.base} gap-3 px-4 py-3 ${FRIEND_BOOK_SAMPLE_ENTRY_GRID.outer.xl} xl:px-5 xl:py-4`}
                     >
-                      <div
-                        data-friend-book-sample-entry-header-desktop={entry.id}
-                        className={FRIEND_BOOK_SAMPLE_ENTRY_GRID.header}
-                      >
-                        <h4
-                          data-friend-book-sample-entry-title={entry.id}
-                          className="shrink-0 min-w-0 font-serif text-[1.62rem] leading-none tracking-[-0.04em] text-[#2d2221] xl:text-[2rem]"
-                        >
-                          {entry.nickname}
-                        </h4>
-                        <span
-                          data-friend-book-sample-entry-seal-desktop={entry.id}
-                          className={FRIEND_BOOK_SAMPLE_ENTRY_GRID.seal}
-                          style={{
-                            backgroundColor: entry.seal.backgroundColor,
-                            borderColor: entry.seal.borderColor,
-                            color: entry.seal.textColor,
-                          }}
-                        >
-                          {entry.seal.label}
-                        </span>
-                      </div>
-                      <p
-                        data-friend-book-sample-entry-excerpt={entry.id}
-                        className={FRIEND_BOOK_SAMPLE_ENTRY_GRID.excerpt}
-                      >
-                        {entry.excerpt}
-                      </p>
-                    </div>
-                    <div className="flex h-full items-center justify-end pb-1 pt-1">
                       <img
-                        src={entry.medalImage}
+                        src={entry.avatarImage}
                         alt=""
                         aria-hidden="true"
-                        className={`${FRIEND_BOOK_SAMPLE_ENTRY_GRID.medalSize.base} rounded-[1rem] object-cover ${FRIEND_BOOK_SAMPLE_ENTRY_GRID.medalSize.xl}`}
+                        data-friend-book-sample-entry-avatar-desktop={entry.id}
+                        style={getOffsetStyle(avatarOffset)}
+                        className="mt-1 h-15 w-15 rounded-full object-cover xl:h-[4.6rem] xl:w-[4.6rem]"
                       />
+                      <div
+                        data-friend-book-sample-entry-copy-desktop={entry.id}
+                        className={FRIEND_BOOK_SAMPLE_ENTRY_GRID.copy}
+                      >
+                        <div
+                          data-friend-book-sample-entry-header-desktop={entry.id}
+                          className={FRIEND_BOOK_SAMPLE_ENTRY_GRID.header}
+                        >
+                          <h4
+                            data-friend-book-sample-entry-title={entry.id}
+                            style={getOffsetStyle(titleOffset)}
+                            className="shrink-0 min-w-0 font-serif text-[1.62rem] leading-none tracking-[-0.04em] text-[#2d2221] xl:text-[2rem]"
+                          >
+                            {entry.nickname}
+                          </h4>
+                          <span
+                            data-friend-book-sample-entry-seal-desktop={entry.id}
+                            className={FRIEND_BOOK_SAMPLE_ENTRY_GRID.seal}
+                            style={{
+                              ...getOffsetStyle(sealOffset),
+                              backgroundColor: entry.seal.backgroundColor,
+                              borderColor: entry.seal.borderColor,
+                              color: entry.seal.textColor,
+                            }}
+                          >
+                            {entry.seal.label}
+                          </span>
+                        </div>
+                        <p
+                          data-friend-book-sample-entry-excerpt={entry.id}
+                          style={getOffsetStyle(excerptOffset)}
+                          className={FRIEND_BOOK_SAMPLE_ENTRY_GRID.excerpt}
+                        >
+                          {entry.excerpt}
+                        </p>
+                      </div>
+                      <div className="flex h-full items-center justify-end pb-1 pt-1">
+                        <img
+                          src={entry.medalImage}
+                          alt=""
+                          aria-hidden="true"
+                          data-friend-book-sample-entry-medal-desktop={entry.id}
+                          style={getOffsetScaleStyle(medalOffset, medalOffset.scale)}
+                          className={`${FRIEND_BOOK_SAMPLE_ENTRY_GRID.medalSize.base} rounded-[1rem] object-cover ${FRIEND_BOOK_SAMPLE_ENTRY_GRID.medalSize.xl}`}
+                        />
+                      </div>
                     </div>
-                  </div>
-                </article>
-              ))}
+                  </article>
+                );
+              })}
             </div>
 
             {friendBookFinalSectionData.userSlots.map((slot) => {
@@ -1431,6 +1568,39 @@ export default function FriendBookFinalSection() {
               const slotAvatar = slotProgress.latestAvatarId
                 ? avatarById[slotProgress.latestAvatarId]
                 : null;
+              const slotPositioning = FRIEND_BOOK_ARCHIVE_USER_SLOT_POSITIONING.perSlot[slot.gameId];
+              const containerOffset = combineOffsets(
+                FRIEND_BOOK_ARCHIVE_USER_SLOT_POSITIONING.shared.container,
+                slotPositioning.container,
+              );
+              const copyOffset = combineOffsets(
+                FRIEND_BOOK_ARCHIVE_USER_SLOT_POSITIONING.shared.copy,
+                slotPositioning.copy,
+              );
+              const labelOffset = combineOffsets(
+                FRIEND_BOOK_ARCHIVE_USER_SLOT_POSITIONING.shared.label,
+                slotPositioning.label,
+              );
+              const noteOffset = combineOffsets(
+                FRIEND_BOOK_ARCHIVE_USER_SLOT_POSITIONING.shared.note,
+                slotPositioning.note,
+              );
+              const metaOffset = combineOffsets(
+                FRIEND_BOOK_ARCHIVE_USER_SLOT_POSITIONING.shared.meta,
+                slotPositioning.meta,
+              );
+              const avatarOffset = combineOffsetWithScale(
+                FRIEND_BOOK_ARCHIVE_USER_SLOT_POSITIONING.shared.avatar,
+                slotPositioning.avatar,
+              );
+              const medalOffset = combineOffsetWithScale(
+                FRIEND_BOOK_ARCHIVE_USER_SLOT_POSITIONING.shared.medal,
+                slotPositioning.medal,
+              );
+              const dateOffset = combineOffsets(
+                FRIEND_BOOK_ARCHIVE_USER_SLOT_POSITIONING.shared.date,
+                slotPositioning.date,
+              );
 
               return (
                 <article
@@ -1439,17 +1609,37 @@ export default function FriendBookFinalSection() {
                   className="absolute"
                   style={getAbsoluteLayoutStyle(FRIEND_BOOK_ARCHIVE_DESKTOP_LAYOUT.userSlots[slot.gameId])}
                 >
-                  <div className="flex h-full justify-between gap-4 px-5 py-4 xl:px-6 xl:py-5">
-                    <div className="min-w-0">
+                  <div
+                    data-friend-book-user-record-container-desktop={slot.gameId}
+                    className="flex h-full justify-between gap-4 px-5 py-4 xl:px-6 xl:py-5"
+                    style={getOffsetStyle(containerOffset)}
+                  >
+                    <div
+                      data-friend-book-user-record-copy-desktop={slot.gameId}
+                      className="min-w-0"
+                      style={getOffsetStyle(copyOffset)}
+                    >
                       {slotProgress.latestNote ? (
                         <>
-                          <p className="font-mono text-[0.62rem] uppercase tracking-[0.28em] text-[#7a5d4d] xl:text-[0.68rem]">
+                          <p
+                            data-friend-book-user-record-label-desktop={slot.gameId}
+                            style={getOffsetStyle(labelOffset)}
+                            className="font-mono text-[0.62rem] uppercase tracking-[0.28em] text-[#7a5d4d] xl:text-[0.68rem]"
+                          >
                             {slot.label}
                           </p>
-                          <p className="mt-3 text-[0.92rem] leading-6 text-[#3f312b] xl:text-[1rem]">
+                          <p
+                            data-friend-book-user-record-note-desktop={slot.gameId}
+                            style={getOffsetStyle(noteOffset)}
+                            className="mt-3 text-[0.92rem] leading-6 text-[#3f312b] xl:text-[1rem]"
+                          >
                             {slotProgress.latestNote}
                           </p>
-                          <p className="mt-2 text-[0.78rem] leading-5 text-[#6b5650]">
+                          <p
+                            data-friend-book-user-record-meta-desktop={slot.gameId}
+                            style={getOffsetStyle(metaOffset)}
+                            className="mt-2 text-[0.78rem] leading-5 text-[#6b5650]"
+                          >
                             {slotProgress.completionCount} completion{slotProgress.completionCount > 1 ? 's' : ''} saved in this slot.
                           </p>
                         </>
@@ -1462,6 +1652,8 @@ export default function FriendBookFinalSection() {
                           src={slotAvatar.asset}
                           alt=""
                           aria-hidden="true"
+                          data-friend-book-user-record-avatar-desktop={slot.gameId}
+                          style={getOffsetScaleStyle(avatarOffset, avatarOffset.scale)}
                           className="h-14 w-14 rounded-full border border-[#d4bea8] object-cover"
                         />
                       ) : null}
@@ -1470,10 +1662,16 @@ export default function FriendBookFinalSection() {
                           src={slotProgress.latestMedalId}
                           alt=""
                           aria-hidden="true"
+                          data-friend-book-user-record-medal-desktop={slot.gameId}
+                          style={getOffsetScaleStyle(medalOffset, medalOffset.scale)}
                           className="h-14 w-14 rounded-[0.9rem] border border-[#d4bea8] object-cover"
                         />
                       ) : null}
-                      <p className="font-mono text-[0.64rem] uppercase tracking-[0.18em] text-[#6d5546] xl:text-[0.72rem]">
+                      <p
+                        data-friend-book-user-record-date-desktop={slot.gameId}
+                        style={getOffsetStyle(dateOffset)}
+                        className="font-mono text-[0.64rem] uppercase tracking-[0.18em] text-[#6d5546] xl:text-[0.72rem]"
+                      >
                         {slotProgress.latestDate ?? slot.previewDate}
                       </p>
                     </div>

@@ -16,6 +16,7 @@ import {
   createFriendBookQuizRound,
   getAvailableFriendBookAvatarIds,
   getFriendBookGameStartStage,
+  getNextBetweenTwoPagesSceneRotation,
   hydrateFriendBookProgress,
   persistFriendBookProgress,
   resolveBetweenTwoPagesSpotSelection,
@@ -181,9 +182,10 @@ test('completing a game does not persist invalid avatar ids back into progress',
 });
 
 test('difference game completes after all hidden spots are found', () => {
-  const first = resolveBetweenTwoPagesSpotSelection([], 'moon-stamp');
-  const second = resolveBetweenTwoPagesSpotSelection(first.foundSpotIds, 'cat-tail');
-  const third = resolveBetweenTwoPagesSpotSelection(second.foundSpotIds, 'page-fold');
+  const targetIds = ['moon-stamp', 'cat-tail', 'page-fold'];
+  const first = resolveBetweenTwoPagesSpotSelection([], 'moon-stamp', targetIds);
+  const second = resolveBetweenTwoPagesSpotSelection(first.foundSpotIds, 'cat-tail', targetIds);
+  const third = resolveBetweenTwoPagesSpotSelection(second.foundSpotIds, 'page-fold', targetIds);
 
   assert.equal(first.isComplete, false);
   assert.equal(second.isComplete, false);
@@ -191,48 +193,108 @@ test('difference game completes after all hidden spots are found', () => {
   assert.equal(third.isComplete, true);
 });
 
-test('between two pages scene exposes paired illustrations and the three true targets', () => {
-  const scene = Reflect.get(friendBookFinalSectionData, 'betweenTwoPagesScene') as
-    | {
+test('between two pages scene bank exposes at least two paired illustrations with valid targets', () => {
+  const scenes = Reflect.get(friendBookFinalSectionData, 'betweenTwoPagesScenes') as
+    | Array<{
+        id?: string;
         baseImage?: string;
         variantImage?: string;
         aspectRatio?: number;
         targets?: Array<{ id?: string; label?: string; width?: number; height?: number }>;
-      }
+      }>
     | undefined;
 
-  assert.equal(typeof scene?.baseImage, 'string');
-  assert.equal(typeof scene?.variantImage, 'string');
-  assert.equal(scene?.aspectRatio, 2752 / 1536);
+  assert.equal(Array.isArray(scenes), true);
+  assert.equal((scenes?.length ?? 0) >= 3, true);
+  assert.equal(new Set(scenes?.map((scene) => scene.id)).size, scenes?.length);
+
+  for (const scene of scenes ?? []) {
+    assert.equal(typeof scene.baseImage, 'string');
+    assert.equal(typeof scene.variantImage, 'string');
+    assert.equal(typeof scene.aspectRatio, 'number');
+    assert.equal(scene.targets?.length, 3);
+    assert.equal(new Set(scene.targets?.map((target) => target.id)).size, 3);
+    assert.equal(new Set(scene.targets?.map((target) => target.label)).size, 3);
+    assert.equal(
+      scene.targets?.every(
+        (target) =>
+          typeof target.width === 'number' &&
+          typeof target.height === 'number' &&
+          target.width <= 18 &&
+          target.height <= 18,
+      ),
+      true,
+    );
+    assert.equal(
+      existsSync(path.join(process.cwd(), 'public', scene.baseImage!.slice(1))),
+      true,
+    );
+    assert.equal(
+      existsSync(path.join(process.cwd(), 'public', scene.variantImage!.slice(1))),
+      true,
+    );
+  }
+
+  const targetIdSignatures = (scenes ?? []).map((scene) =>
+    scene.targets?.map((target) => target.id).join('|'),
+  );
+  assert.equal(new Set(targetIdSignatures).size, scenes?.length);
+});
+
+test('between two pages scene-specific target coordinates stay aligned to the calibrated v2 and v3 difference areas', () => {
+  const sceneById = Object.fromEntries(
+    friendBookFinalSectionData.betweenTwoPagesScenes.map((scene) => [scene.id, scene]),
+  );
+
   assert.deepEqual(
-    scene?.targets?.map((target) => target.id),
-    ['moon-stamp', 'cat-tail', 'page-fold'],
+    sceneById['moon-bridge']?.targets.map(({ id, x, y, width, height }) => ({
+      id,
+      x,
+      y,
+      width,
+      height,
+    })),
+    [
+      { id: 'bridge-lantern', x: 74, y: 56, width: 11, height: 18 },
+      { id: 'tea-cup', x: 63, y: 80, width: 10, height: 12 },
+      { id: 'bamboo-cluster', x: 61, y: 36, width: 15, height: 18 },
+    ],
   );
   assert.deepEqual(
-    scene?.targets?.map((target) => target.label),
-    ['moon seal', 'cat tail', 'page fold'],
+    sceneById['moon-shrine']?.targets.map(({ id, x, y, width, height }) => ({
+      id,
+      x,
+      y,
+      width,
+      height,
+    })),
+    [
+      { id: 'torii-plaque', x: 39, y: 34, width: 10, height: 10 },
+      { id: 'blossom-branch', x: 58, y: 38, width: 15, height: 16 },
+      { id: 'cushion-tassel', x: 88, y: 79, width: 10, height: 15 },
+    ],
   );
-  const catTail = scene?.targets?.find((target) => target.id === 'cat-tail');
-  assert.equal(catTail?.width !== undefined && catTail.width >= 15, true);
-  assert.equal(catTail?.height !== undefined && catTail.height >= 13, true);
-  assert.equal(
-    scene?.targets?.every(
-      (target) =>
-        typeof target.width === 'number' &&
-        typeof target.height === 'number' &&
-        target.width <= 18 &&
-        target.height <= 18,
-    ),
-    true,
+});
+
+test('between two pages rotation does not repeat scenes until every scene has appeared once', () => {
+  const sceneIds = friendBookFinalSectionData.betweenTwoPagesScenes.map((scene) => scene.id);
+  let seenSceneIds: string[] = [];
+
+  const first = getNextBetweenTwoPagesSceneRotation(seenSceneIds, () => 0);
+  seenSceneIds = first.seenSceneIds;
+  const second = getNextBetweenTwoPagesSceneRotation(seenSceneIds, () => 0);
+  seenSceneIds = second.seenSceneIds;
+  const third = getNextBetweenTwoPagesSceneRotation(seenSceneIds, () => 0);
+  seenSceneIds = third.seenSceneIds;
+  const fourth = getNextBetweenTwoPagesSceneRotation(seenSceneIds, () => 0);
+
+  assert.deepEqual(
+    [first.sceneId, second.sceneId, third.sceneId].sort(),
+    [...sceneIds].sort(),
   );
-  assert.equal(
-    existsSync(path.join(process.cwd(), 'public', scene!.baseImage!.slice(1))),
-    true,
-  );
-  assert.equal(
-    existsSync(path.join(process.cwd(), 'public', scene!.variantImage!.slice(1))),
-    true,
-  );
+  assert.deepEqual(seenSceneIds.sort(), [...sceneIds].sort());
+  assert.equal(fourth.sceneId, sceneIds[0]);
+  assert.deepEqual(fourth.seenSceneIds, [sceneIds[0]]);
 });
 
 test('moon run level data exposes a short side-scrolling course', () => {
@@ -270,13 +332,14 @@ test('moon run level data exposes a short side-scrolling course', () => {
   );
 });
 
-test('friend-book quiz bank exposes fifteen questions with unique answer sets', () => {
-  assert.equal(friendBookFinalSectionData.quizQuestionBank.length, 15);
+test('friend-book quiz bank exposes the four replacement painting questions with valid assets', () => {
+  assert.equal(friendBookFinalSectionData.quizQuestionBank.length, 1);
 
   const ids = friendBookFinalSectionData.quizQuestionBank.map((question) => question.id);
-  assert.equal(new Set(ids).size, 15);
+  assert.deepEqual(ids, ['napoleon-crossing-the-alps']);
+  assert.equal(new Set(ids).size, 1);
   assert.equal(
-    friendBookFinalSectionData.quizQuestionBank.every((question) => question.options.length >= 3),
+    friendBookFinalSectionData.quizQuestionBank.every((question) => question.options.length === 4),
     true,
   );
   assert.equal(
@@ -291,13 +354,38 @@ test('friend-book quiz bank exposes fifteen questions with unique answer sets', 
     ),
     true,
   );
+
+  const napoleonQuestion = friendBookFinalSectionData.quizQuestionBank.find(
+    (question) => question.id === 'napoleon-crossing-the-alps',
+  );
+  assert.equal(
+    napoleonQuestion?.silhouetteImage,
+    '/images/friend-book-quiz/Painting exam/拿破仑-剪影图.png',
+  );
+  assert.equal(
+    Reflect.get(napoleonQuestion ?? {}, 'referenceImage'),
+    '/images/friend-book-quiz/Painting exam/拿破仑.jpg',
+  );
+  assert.equal(
+    existsSync(
+      path.join(
+        process.cwd(),
+        'public',
+        String(Reflect.get(napoleonQuestion ?? {}, 'referenceImage')).slice(1),
+      ),
+    ),
+    true,
+  );
 });
 
-test('friend-book quiz helper returns five unique questions from the bank', () => {
+test('friend-book quiz helper returns a unique round capped by the available bank size', () => {
   const round = createFriendBookQuizRound(friendBookFinalSectionData.quizQuestionBank, 5, () => 0.15);
 
-  assert.equal(round.length, 5);
-  assert.equal(new Set(round.map((question) => question.id)).size, 5);
+  assert.equal(round.length, friendBookFinalSectionData.quizQuestionBank.length);
+  assert.equal(
+    new Set(round.map((question) => question.id)).size,
+    friendBookFinalSectionData.quizQuestionBank.length,
+  );
   assert.ok(
     round.every((question) =>
       friendBookFinalSectionData.quizQuestionBank.some((bankQuestion) => bankQuestion.id === question.id),
@@ -315,7 +403,7 @@ test('friend-book game session initializes only the relevant state slice for eac
   const moonRunSession = createFriendBookGameSession('moon-run');
 
   assert.equal(quizSession.gameId, 'one-stroke-mark');
-  assert.equal(quizSession.quiz?.questions.length, 5);
+  assert.equal(quizSession.quiz?.questions.length, friendBookFinalSectionData.quizQuestionBank.length);
   assert.equal(quizSession.quiz?.currentQuestionIndex, 0);
   assert.equal(quizSession.quiz?.correctAnswerCount, 0);
   assert.equal(quizSession.quiz?.selectedAnswer, null);
@@ -325,9 +413,16 @@ test('friend-book game session initializes only the relevant state slice for eac
   assert.equal(quizSession.moonRun, undefined);
 
   assert.equal(differenceSession.betweenTwoPages?.foundSpotIds.length, 0);
+  assert.equal(differenceSession.betweenTwoPages?.targetIds.length, 3);
   assert.equal(differenceSession.betweenTwoPages?.remainingSeconds, 12);
   assert.equal(differenceSession.betweenTwoPages?.mistakes, 0);
   assert.equal(differenceSession.betweenTwoPages?.status, 'active');
+  assert.equal(
+    friendBookFinalSectionData.betweenTwoPagesScenes.some(
+      (scene) => scene.id === differenceSession.betweenTwoPages?.sceneId,
+    ),
+    true,
+  );
   assert.equal(differenceSession.quiz, undefined);
   assert.equal(differenceSession.moonRun, undefined);
 
@@ -346,18 +441,23 @@ test('friend-book game session falls back to the embedded quiz bank when one is 
   const session = createFriendBookGameSession('one-stroke-mark');
 
   assert.equal(session.gameId, 'one-stroke-mark');
-  assert.equal(session.quiz?.questions.length, 5);
-  assert.equal(new Set(session.quiz?.questions.map((question) => question.id)).size, 5);
+  assert.equal(session.quiz?.questions.length, friendBookFinalSectionData.quizQuestionBank.length);
+  assert.equal(
+    new Set(session.quiz?.questions.map((question) => question.id)).size,
+    friendBookFinalSectionData.quizQuestionBank.length,
+  );
 });
 
-test('quiz answers only score once per question and round completion is explicit after the fifth question', () => {
+test('quiz answers only score once per question and round completion is explicit after the final question', () => {
   let session = createFriendBookGameSession(
     'one-stroke-mark',
     friendBookFinalSectionData.quizQuestionBank,
     () => 0,
   );
 
-  for (let index = 0; index < 4; index += 1) {
+  const questionCount = session.quiz!.questions.length;
+
+  for (let index = 0; index < questionCount - 1; index += 1) {
     const question = session.quiz!.questions[session.quiz!.currentQuestionIndex]!;
     session = answerFriendBookQuizQuestion(session, question.correctAnswer);
     const repeatedAnswer = answerFriendBookQuizQuestion(session, question.correctAnswer);
@@ -376,10 +476,10 @@ test('quiz answers only score once per question and round completion is explicit
   session = answerFriendBookQuizQuestion(session, finalQuestion.correctAnswer);
   session = advanceFriendBookQuizQuestion(session);
 
-  assert.equal(session.quiz?.correctAnswerCount, 5);
+  assert.equal(session.quiz?.correctAnswerCount, questionCount);
   assert.equal(session.quiz?.completed, true);
   assert.equal(session.quiz?.answerState, 'completed');
-  assert.equal(session.quiz?.currentQuestionIndex, 4);
+  assert.equal(session.quiz?.currentQuestionIndex, questionCount - 1);
 });
 
 test('between two pages only succeeds when all targets are found before the timer expires', () => {
@@ -389,6 +489,7 @@ test('between two pages only succeeds when all targets are found before the time
     ...session,
     betweenTwoPages: {
       ...session.betweenTwoPages!,
+      targetIds: ['moon-stamp', 'cat-tail', 'page-fold'],
       foundSpotIds: ['moon-stamp', 'cat-tail', 'page-fold'],
       remainingSeconds: 8,
     },
@@ -397,6 +498,7 @@ test('between two pages only succeeds when all targets are found before the time
     ...session,
     betweenTwoPages: {
       ...session.betweenTwoPages!,
+      targetIds: ['moon-stamp', 'cat-tail', 'page-fold'],
       foundSpotIds: ['moon-stamp', 'cat-tail', 'page-fold'],
       remainingSeconds: 0,
     },

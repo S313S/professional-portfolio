@@ -28,6 +28,8 @@ export interface FriendBookPoint {
 }
 
 export interface FriendBookBetweenTwoPagesSessionState {
+  sceneId: string;
+  targetIds: string[];
   foundSpotIds: string[];
   remainingSeconds: number;
   mistakes: number;
@@ -78,6 +80,7 @@ export interface FriendBookMoonRunInputState {
 export interface FriendBookQuizQuestion {
   id: string;
   silhouetteImage: string;
+  referenceImage?: string;
   prompt: string;
   options: string[];
   correctAnswer: string;
@@ -123,11 +126,6 @@ interface StorageLike {
 
 export const FRIEND_BOOK_STORAGE_KEY = 'friend-book-progress:v1';
 export const FRIEND_BOOK_HIDDEN_AVATAR_ID = 'hidden-cat';
-export const FRIEND_BOOK_DIFFERENCE_TARGETS = [
-  'moon-stamp',
-  'cat-tail',
-  'page-fold',
-] as const;
 export const FRIEND_BOOK_QUIZ_ROUND_SIZE = 5;
 
 const MOON_RUN_PLAYER_WIDTH = 44;
@@ -186,6 +184,24 @@ function clampRandomValue(randomValue: number): number {
   }
 
   return Math.min(Math.max(randomValue, 0), 0.999999);
+}
+
+export function getNextBetweenTwoPagesSceneRotation(
+  seenSceneIds: readonly string[],
+  randomValue: () => number = Math.random,
+): { sceneId: string; seenSceneIds: string[] } {
+  const scenes = friendBookFinalSectionData.betweenTwoPagesScenes;
+  const unseenScenes = scenes.filter((scene) => !seenSceneIds.includes(scene.id));
+  const availableScenes = unseenScenes.length > 0 ? unseenScenes : scenes;
+  const nextIndex = Math.floor(clampRandomValue(randomValue()) * availableScenes.length);
+  const nextScene = availableScenes[nextIndex] ?? availableScenes[0] ?? scenes[0];
+  const nextSeenSceneIds =
+    unseenScenes.length > 0 ? [...seenSceneIds, nextScene.id] : [nextScene.id];
+
+  return {
+    sceneId: nextScene.id,
+    seenSceneIds: nextSeenSceneIds,
+  };
 }
 
 function uniqueAvatarIds(
@@ -347,20 +363,43 @@ export function createFriendBookQuizSession(
   };
 }
 
+function createBetweenTwoPagesSession(
+  sceneId?: string,
+  randomValue: () => number = Math.random,
+): FriendBookBetweenTwoPagesSessionState {
+  const scenes = friendBookFinalSectionData.betweenTwoPagesScenes;
+  const scene =
+    (sceneId
+      ? scenes.find((candidateScene) => candidateScene.id === sceneId)
+      : undefined) ??
+    scenes[Math.floor(clampRandomValue(randomValue()) * scenes.length)] ??
+    scenes[0];
+
+  return {
+    sceneId: scene.id,
+    targetIds: scene.targets.map((target) => target.id),
+    foundSpotIds: [],
+    remainingSeconds: 12,
+    mistakes: 0,
+    status: 'active',
+  };
+}
+
 export function createFriendBookGameSession(
   gameId: FriendBookGameId,
   quizQuestions: readonly FriendBookQuizQuestion[] = friendBookFinalSectionData.quizQuestionBank,
   randomValue: () => number = Math.random,
+  options?: {
+    betweenTwoPagesSceneId?: string;
+  },
 ): FriendBookGameSessionState {
   if (gameId === 'between-two-pages') {
     return {
       gameId,
-      betweenTwoPages: {
-        foundSpotIds: [],
-        remainingSeconds: 12,
-        mistakes: 0,
-        status: 'active',
-      },
+      betweenTwoPages: createBetweenTwoPagesSession(
+        options?.betweenTwoPagesSceneId,
+        randomValue,
+      ),
     };
   }
 
@@ -449,7 +488,7 @@ export function completeBetweenTwoPagesRound(
   const isSuccess =
     Boolean(betweenTwoPages) &&
     betweenTwoPages.remainingSeconds > 0 &&
-    FRIEND_BOOK_DIFFERENCE_TARGETS.every((targetId) =>
+    betweenTwoPages.targetIds.every((targetId) =>
       betweenTwoPages.foundSpotIds.includes(targetId),
     );
 
@@ -635,18 +674,15 @@ export function completeFriendBookGameSession(
 export function resolveBetweenTwoPagesSpotSelection(
   foundSpotIds: string[],
   spotId: string,
+  targetIds: readonly string[],
 ): { foundSpotIds: string[]; isComplete: boolean } {
-  const nextSpotIds = FRIEND_BOOK_DIFFERENCE_TARGETS.includes(
-    spotId as (typeof FRIEND_BOOK_DIFFERENCE_TARGETS)[number],
-  )
+  const nextSpotIds = targetIds.includes(spotId)
     ? Array.from(new Set([...foundSpotIds, spotId]))
     : [...foundSpotIds];
 
   return {
     foundSpotIds: nextSpotIds,
-    isComplete: FRIEND_BOOK_DIFFERENCE_TARGETS.every((targetId) =>
-      nextSpotIds.includes(targetId),
-    ),
+    isComplete: targetIds.every((targetId) => nextSpotIds.includes(targetId)),
   };
 }
 

@@ -46,7 +46,7 @@ export interface FriendBookFinalGameCard {
 }
 
 export interface FriendBookBetweenTwoPagesTarget {
-  id: 'moon-stamp' | 'cat-tail' | 'page-fold';
+  id: string;
   label: string;
   x: number;
   y: number;
@@ -55,6 +55,7 @@ export interface FriendBookBetweenTwoPagesTarget {
 }
 
 export interface FriendBookBetweenTwoPagesScene {
+  id: string;
   baseImage: string;
   variantImage: string;
   aspectRatio: number;
@@ -433,37 +434,104 @@ const codingProjects: Record<CodingCategoryId, CodingProjectCard[]> = {
   ],
 };
 
-const friendBookBetweenTwoPagesScene: FriendBookBetweenTwoPagesScene = {
-  baseImage: '/images/friend-book-between-two-pages/base-scene-v1.png',
-  variantImage: '/images/friend-book-between-two-pages/variant-scene-v1.png',
-  aspectRatio: 2752 / 1536,
-  targets: [
-    {
-      id: 'moon-stamp',
-      label: 'moon seal',
-      x: 32,
-      y: 26,
-      width: 12,
-      height: 12,
-    },
-    {
-      id: 'cat-tail',
-      label: 'cat tail',
-      x: 77,
-      y: 75,
-      width: 17,
-      height: 15,
-    },
-    {
-      id: 'page-fold',
-      label: 'page fold',
-      x: 83,
-      y: 19,
-      width: 10,
-      height: 12,
-    },
-  ],
-};
+const friendBookBetweenTwoPagesScenes: FriendBookBetweenTwoPagesScene[] = [
+  {
+    id: 'moon-cottage',
+    baseImage: '/images/friend-book-between-two-pages/base-scene-v1.png',
+    variantImage: '/images/friend-book-between-two-pages/variant-scene-v1.png',
+    aspectRatio: 2752 / 1536,
+    targets: [
+      {
+        id: 'moon-stamp',
+        label: 'moon seal',
+        x: 32,
+        y: 26,
+        width: 12,
+        height: 12,
+      },
+      {
+        id: 'cat-tail',
+        label: 'cat tail',
+        x: 77,
+        y: 75,
+        width: 17,
+        height: 15,
+      },
+      {
+        id: 'page-fold',
+        label: 'page fold',
+        x: 83,
+        y: 19,
+        width: 10,
+        height: 12,
+      },
+    ],
+  },
+  {
+    id: 'moon-bridge',
+    baseImage: '/images/friend-book-between-two-pages/base-scene-v2.png',
+    variantImage: '/images/friend-book-between-two-pages/variant-scene-v2.png',
+    aspectRatio: 2752 / 1536,
+    targets: [
+      {
+        id: 'bridge-lantern',
+        label: 'bridge lantern',
+        x: 74,
+        y: 56,
+        width: 11,
+        height: 18,
+      },
+      {
+        id: 'tea-cup',
+        label: 'tea cup',
+        x: 63,
+        y: 80,
+        width: 10,
+        height: 12,
+      },
+      {
+        id: 'bamboo-cluster',
+        label: 'bamboo cluster',
+        x: 61,
+        y: 36,
+        width: 15,
+        height: 18,
+      },
+    ],
+  },
+  {
+    id: 'moon-shrine',
+    baseImage: '/images/friend-book-between-two-pages/base-scene-v3.png',
+    variantImage: '/images/friend-book-between-two-pages/variant-scene-v3.png',
+    aspectRatio: 2752 / 1536,
+    targets: [
+      {
+        id: 'torii-plaque',
+        label: 'torii plaque',
+        x: 39,
+        y: 34,
+        width: 10,
+        height: 10,
+      },
+      {
+        id: 'blossom-branch',
+        label: 'blossom branch',
+        x: 58,
+        y: 38,
+        width: 15,
+        height: 16,
+      },
+      {
+        id: 'cushion-tassel',
+        label: 'cushion tassel',
+        x: 88,
+        y: 79,
+        width: 10,
+        height: 15,
+      },
+    ],
+  },
+];
 
 const friendBookMoonRunLevel: FriendBookMoonRunLevel = {
   viewportWidth: 860,
@@ -530,124 +598,18 @@ const friendBookMoonRunLevel: FriendBookMoonRunLevel = {
 
 const friendBookQuizQuestionBank: FriendBookQuizQuestion[] = [
   {
-    id: 'mona-lisa',
-    silhouetteImage: '/images/friend-book-quiz/mona-lisa-shadow.svg',
+    id: 'napoleon-crossing-the-alps',
+    silhouetteImage: '/images/friend-book-quiz/Painting exam/拿破仑-剪影图.png',
+    referenceImage: '/images/friend-book-quiz/Painting exam/拿破仑.jpg',
     prompt: 'Observe the silhouette and guess who it is.',
-    options: ['Mona Lisa', 'The Scream', 'The Birth of Venus', 'Girl with a Pearl Earring'],
-    correctAnswer: 'Mona Lisa',
-    resultCopy: 'The quiet smile belongs to Mona Lisa.',
-  },
-  {
-    id: 'the-scream',
-    silhouetteImage: '/images/friend-book-quiz/the-scream-shadow.svg',
-    prompt: 'Observe the silhouette and guess who it is.',
-    options: ['The Scream', 'The Kiss', 'Guernica', 'The Night Watch'],
-    correctAnswer: 'The Scream',
-    resultCopy: 'That stretched figure is The Scream.',
-  },
-  {
-    id: 'girl-with-pearl-earring',
-    silhouetteImage: '/images/friend-book-quiz/girl-with-pearl-earring-shadow.svg',
-    prompt: 'Observe the silhouette and guess who it is.',
-    options: ['Girl with a Pearl Earring', 'The Last Supper', 'American Gothic', 'The Birth of Venus'],
-    correctAnswer: 'Girl with a Pearl Earring',
-    resultCopy: 'The turned head and pearl fit Girl with a Pearl Earring.',
-  },
-  {
-    id: 'starry-night',
-    silhouetteImage: '/images/friend-book-quiz/starry-night-shadow.svg',
-    prompt: 'Observe the silhouette and guess who it is.',
-    options: ['Starry Night', 'The Scream', 'The Night Watch', 'Guernica'],
-    correctAnswer: 'Starry Night',
-    resultCopy: 'The swirling sky points to Starry Night.',
-  },
-  {
-    id: 'the-kiss',
-    silhouetteImage: '/images/friend-book-quiz/the-kiss-shadow.svg',
-    prompt: 'Observe the silhouette and guess who it is.',
-    options: ['The Kiss', 'Mona Lisa', 'The Birth of Venus', 'American Gothic'],
-    correctAnswer: 'The Kiss',
-    resultCopy: 'The close embrace belongs to The Kiss.',
-  },
-  {
-    id: 'american-gothic',
-    silhouetteImage: '/images/friend-book-quiz/american-gothic-shadow.svg',
-    prompt: 'Observe the silhouette and guess who it is.',
-    options: ['American Gothic', 'The Last Supper', 'Guernica', 'The Night Watch'],
-    correctAnswer: 'American Gothic',
-    resultCopy: 'The stern pair is American Gothic.',
-  },
-  {
-    id: 'birth-of-venus',
-    silhouetteImage: '/images/friend-book-quiz/birth-of-venus-shadow.svg',
-    prompt: 'Observe the silhouette and guess who it is.',
-    options: ['The Birth of Venus', 'The Scream', 'Mona Lisa', 'Girl with a Pearl Earring'],
-    correctAnswer: 'The Birth of Venus',
-    resultCopy: 'The shell-born figure is The Birth of Venus.',
-  },
-  {
-    id: 'the-persistence-of-memory',
-    silhouetteImage: '/images/friend-book-quiz/persistence-of-memory-shadow.svg',
-    prompt: 'Observe the silhouette and guess who it is.',
-    options: ['The Persistence of Memory', 'Starry Night', 'The Kiss', 'Guernica'],
-    correctAnswer: 'The Persistence of Memory',
-    resultCopy: 'The soft clocks belong to The Persistence of Memory.',
-  },
-  {
-    id: 'the-night-watch',
-    silhouetteImage: '/images/friend-book-quiz/the-night-watch-shadow.svg',
-    prompt: 'Observe the silhouette and guess who it is.',
-    options: ['The Night Watch', 'American Gothic', 'The Last Supper', 'Mona Lisa'],
-    correctAnswer: 'The Night Watch',
-    resultCopy: 'That bold group scene points to The Night Watch.',
-  },
-  {
-    id: 'guernica',
-    silhouetteImage: '/images/friend-book-quiz/guernica-shadow.svg',
-    prompt: 'Observe the silhouette and guess who it is.',
-    options: ['Guernica', 'The Scream', 'The Kiss', 'The Birth of Venus'],
-    correctAnswer: 'Guernica',
-    resultCopy: 'The fractured forms match Guernica.',
-  },
-  {
-    id: 'the-last-supper',
-    silhouetteImage: '/images/friend-book-quiz/the-last-supper-shadow.svg',
-    prompt: 'Observe the silhouette and guess who it is.',
-    options: ['The Last Supper', 'Mona Lisa', 'The Night Watch', 'Starry Night'],
-    correctAnswer: 'The Last Supper',
-    resultCopy: 'The long table belongs to The Last Supper.',
-  },
-  {
-    id: 'liberty-leading-the-people',
-    silhouetteImage: '/images/friend-book-quiz/liberty-leading-the-people-shadow.svg',
-    prompt: 'Observe the silhouette and guess who it is.',
-    options: ['Liberty Leading the People', 'The Kiss', 'American Gothic', 'Guernica'],
-    correctAnswer: 'Liberty Leading the People',
-    resultCopy: 'The raised flag makes this Liberty Leading the People.',
-  },
-  {
-    id: 'self-portrait-thorn-necklace',
-    silhouetteImage: '/images/friend-book-quiz/self-portrait-thorn-necklace-shadow.svg',
-    prompt: 'Observe the silhouette and guess who it is.',
-    options: ['Self-Portrait with Thorn Necklace and Hummingbird', 'Mona Lisa', 'Girl with a Pearl Earring', 'The Scream'],
-    correctAnswer: 'Self-Portrait with Thorn Necklace and Hummingbird',
-    resultCopy: 'The floral crown and thorn necklace point to Frida Kahlo.',
-  },
-  {
-    id: 'campbells-soup-cans',
-    silhouetteImage: '/images/friend-book-quiz/campbells-soup-cans-shadow.svg',
-    prompt: 'Observe the silhouette and guess who it is.',
-    options: ["Campbell's Soup Cans", 'The Night Watch', 'The Last Supper', 'Guernica'],
-    correctAnswer: "Campbell's Soup Cans",
-    resultCopy: 'The repeating labels belong to Campbell\'s Soup Cans.',
-  },
-  {
-    id: 'the-great-wave',
-    silhouetteImage: '/images/friend-book-quiz/the-great-wave-shadow.svg',
-    prompt: 'Observe the silhouette and guess who it is.',
-    options: ['The Great Wave off Kanagawa', 'Starry Night', 'The Scream', 'The Birth of Venus'],
-    correctAnswer: 'The Great Wave off Kanagawa',
-    resultCopy: 'The cresting arc is The Great Wave off Kanagawa.',
+    options: [
+      'Benjamin Franklin',
+      'Richard Feynman',
+      'Napoleon Crossing the Alps',
+      'Mona Lisa',
+    ],
+    correctAnswer: 'Napoleon Crossing the Alps',
+    resultCopy: 'The rearing horse and cloak point to Napoleon Crossing the Alps.',
   },
 ];
 
@@ -711,7 +673,7 @@ export const friendBookFinalSectionData = {
       backgroundImage: '/images/BookofFriends_Bg_CatBook_Right.png',
     },
   ] satisfies FriendBookFinalGameCard[],
-  betweenTwoPagesScene: friendBookBetweenTwoPagesScene,
+  betweenTwoPagesScenes: friendBookBetweenTwoPagesScenes,
   moonRunLevel: friendBookMoonRunLevel,
   quizQuestionBank: friendBookQuizQuestionBank,
   avatars: [
