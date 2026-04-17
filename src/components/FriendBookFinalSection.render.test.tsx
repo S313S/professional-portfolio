@@ -214,13 +214,18 @@ test('renders the moon run overlay as a side-scrolling platform stage with heart
   assert.match(markup, /data-moon-run-viewport="true"/);
   assert.match(markup, /data-moon-run-player="true"/);
   assert.match(markup, /data-moon-run-finish="true"/);
+  assert.match(markup, /\/images\/friend-book-moon-run\/moon-runner-cat\.svg/);
+  assert.match(markup, /\/images\/friend-book-moon-run\/ink-mouse\.svg/);
+  assert.match(markup, /\/images\/friend-book-moon-run\/paper-platform\.svg/);
+  assert.match(markup, /\/images\/friend-book-moon-run\/moon-gate\.svg/);
+  assert.match(markup, /\/images\/friend-book-moon-run\/heart-token\.svg/);
   assert.match(markup, /Arrow Keys or A\/D/);
   assert.match(markup, /Space, W, or ↑ to jump/);
   assert.doesNotMatch(markup, /Quiet band/);
   assert.doesNotMatch(markup, /Stop this beat/);
 });
 
-test('between two pages overlay gives the image stage more room than the sidebar', () => {
+test('between two pages overlay stacks the compared pages vertically to prioritize image reading', () => {
   const activeGame =
     friendBookFinalSectionData.gameCards.find((game) => game.id === 'between-two-pages')!;
   const markup = renderToStaticMarkup(
@@ -229,14 +234,18 @@ test('between two pages overlay gives the image stage more room than the sidebar
       stage="game-active"
       prompt="Find the three quiet differences before the page closes."
     >
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_248px]">
-        <div className="mx-auto grid w-full max-w-[980px] gap-4 md:grid-cols-2">Scene</div>
+      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_248px]">
+        <div className="mx-auto grid w-full max-w-[560px] grid-cols-1 gap-3 self-start">Scene</div>
         <aside>Sidebar</aside>
       </div>
     </FriendBookGameOverlay>,
   );
 
   assert.match(markup, /max-w-\[1280px\]/);
+  assert.match(markup, /items-start/);
   assert.match(markup, /lg:grid-cols-\[minmax\(0,1fr\)_248px\]/);
-  assert.match(markup, /max-w-\[980px\]/);
+  assert.match(markup, /max-w-\[560px\]/);
+  assert.match(markup, /grid-cols-1/);
+  assert.doesNotMatch(markup, /md:grid-cols-2/);
+  assert.match(markup, /gap-3/);
 });

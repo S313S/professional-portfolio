@@ -1,0 +1,21 @@
+<svg width="180" height="280" viewBox="0 0 180 280" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gatePole" x1="90" y1="18" x2="90" y2="262" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#B48B68"/>
+      <stop offset="1" stop-color="#7A5841"/>
+    </linearGradient>
+    <radialGradient id="moonFlag" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(91 63) rotate(90) scale(38 44)">
+      <stop stop-color="#FFFDF6"/>
+      <stop offset=".55" stop-color="#F0DFC1"/>
+      <stop offset="1" stop-color="#D7B584"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="91" cy="264" rx="48" ry="12" fill="#8A6B58" fill-opacity=".18"/>
+  <rect x="84" y="22" width="12" height="218" rx="6" fill="url(#gatePole)"/>
+  <rect x="57" y="238" width="68" height="12" rx="6" fill="#87624A"/>
+  <path d="M90 33C112 33 130 49.864 130 70.664C130 91.463 112 108.327 90 108.327C67.909 108.327 50 91.463 50 70.664C50 49.864 67.909 33 90 33Z" fill="url(#moonFlag)" stroke="#BA9471" stroke-width="4"/>
+  <path d="M100 49C87 53 80 66 84 79C88 92 102 99 116 95C108 90 102 82 100 71C98 62 98 54 100 49Z" fill="#D5B07C" fill-opacity=".62"/>
+  <path d="M51 75L36 93" stroke="#C3A078" stroke-width="5" stroke-linecap="round" opacity=".7"/>
+  <path d="M129 75L144 93" stroke="#C3A078" stroke-width="5" stroke-linecap="round" opacity=".7"/>
+  <circle cx="90" cy="18" r="10" fill="#F6E8CF" stroke="#B7926D" stroke-width="4"/>
+</svg>

@@ -100,6 +100,13 @@ export interface FriendBookMoonRunLevel {
   worldWidth: number;
   worldHeight: number;
   groundY: number;
+  artwork: {
+    player: string;
+    enemy: string;
+    platform: string;
+    finish: string;
+    heart: string;
+  };
   start: {
     x: number;
     y: number;
@@ -463,6 +470,13 @@ const friendBookMoonRunLevel: FriendBookMoonRunLevel = {
   worldWidth: 2220,
   worldHeight: 380,
   groundY: 304,
+  artwork: {
+    player: '/images/friend-book-moon-run/moon-runner-cat.svg',
+    enemy: '/images/friend-book-moon-run/ink-mouse.svg',
+    platform: '/images/friend-book-moon-run/paper-platform.svg',
+    finish: '/images/friend-book-moon-run/moon-gate.svg',
+    heart: '/images/friend-book-moon-run/heart-token.svg',
+  },
   start: {
     x: 88,
     y: 258,

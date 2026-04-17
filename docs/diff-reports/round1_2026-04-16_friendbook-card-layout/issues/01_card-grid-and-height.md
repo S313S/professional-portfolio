@@ -1,114 +1,126 @@
-# 问题 #1: 卡片外层 grid 比例 + 高度不足导致内容溢出
+# 问题 #1: 勋章图尺寸过大 + 记录越界
 
 - **严重程度**: 🔴严重
 - **类别**: 布局
-- **问题层级**: 结构性（grid 列比例 + 绝对定位高度）
-- **精度要求**: 近似即可
+- **问题层级**: 数值性（尺寸和列宽需调整）
+- **精度要求**: 像素级精确（用户已通过区域选择器确认目标位置和大小）
 - **文件**: `src/components/FriendBookFinalSection.tsx`
-- **代码位置**: 第 125-143 行（布局配置）、第 1404 行（外层 grid）、第 1444-1451 行（勋章图）
+- **代码位置**: 第 69-83 行（`FRIEND_BOOK_SAMPLE_ENTRY_GRID` 配置）、第 85-103 行（`FRIEND_BOOK_ARCHIVE_DESKTOP_LAYOUT` 配置）
 
 ## 根因分析
 
-两个互相关联的结构性问题：
-
-1. **外层 grid 勋章列太窄**：`grid-cols-[58px_minmax(0,1fr)_88px]`（xl: `[68px_1fr_98px]`）中第三列仅 98px，勋章图只有 70×70px。期望设计中勋章图显著更大（~110-120px）。
-2. **卡片绝对定位高度不足**：`FRIEND_BOOK_ARCHIVE_DESKTOP_LAYOUT.sampleEntries` 中 `height: '16.4%'` 仅产生 ~86px 高度。头像需 ~94px、文字内容需 ~132px，导致内容大量溢出。不同条目的文字长度不同，溢出量差异（47px vs 17px）造成三张卡看起来"模板不一致"。
+上一轮修复将勋章图从 70×70px 放大到了 112×112px (7rem)，**矫枉过正**。同时勋章列宽从 98px 增到 140px，也偏宽。导致：
+1. 勋章图过大，与期望设计不符
+2. 第一条记录（spring-wind）内容溢出卡片边界（"记录越界"）
 
 ## 期望效果
 
 参考设计图：`../friendbook-archive-expected-design.png`
 
-- 勋章图在卡片右侧显著更大，约 110-120px 方形
-- 卡片高度充分容纳所有内容（头像、标题、徽章、描述文字），无溢出
-- 三张卡视觉一致
+用户通过区域选择器（CDP 注入）精确标注了三个勋章图的理想位置和大小：
 
-### 元素坐标映射表
+### 用户确认的目标坐标（CSS px, absolute）
 
-| 元素 | CSS 选择器 | 当前值 | 期望值 | 说明 |
-|------|-----------|--------|--------|------|
-| 外层 grid 勋章列 | `.grid` (line 1404) | 98px (xl) | ~140px | 第三列宽度 |
-| 勋章图 | `img` (line 1446-1449) | 70×70px (xl: 4.4rem) | ~110-120px | 图片尺寸 |
-| 卡片高度 | layout config (line 129-131) | 16.4% (~86px) | ~22% (~115px) | 绝对定位高度 |
-| spring-wind top | layout config (line 129) | 24.0% | ~20% | 三卡需等间距重新分布 |
-| book-sea-diver top | layout config (line 130) | 47.3% | ~45% | 三卡需等间距重新分布 |
-| night-watcher top | layout config (line 131) | 70.4% | ~70% | 三卡需等间距重新分布 |
+| 卡片 | 期望 x | 期望 y | 期望 w | 期望 h |
+|------|--------|--------|--------|--------|
+| #1 spring-wind | 594 | 1451 | 92 | 87 |
+| #2 book-sea-diver | 593 | 1578 | 95 | 88 |
+| #3 night-watcher | 594 | 1705 | 95 | 90 |
+
+**目标尺寸**：约 **93×88px**（平均值），约等于 **5.8rem** 方形。
+
+### 元素坐标映射表（当前 vs 期望）
+
+| 元素 | 当前位置/尺寸 | 期望位置/尺寸 | 偏差 |
+|------|-------------|-------------|------|
+| #1 勋章图 | x:581 y:1431 112×112px | x:594 y:1451 92×87px | 过大 +20px, 偏左 -13px, 偏上 -20px |
+| #2 勋章图 | x:581 y:1562 112×112px | x:593 y:1578 95×88px | 过大 +17px, 偏左 -12px, 偏上 -16px |
+| #3 勋章图 | x:581 y:1692 112×112px | x:594 y:1705 95×90px | 过大 +17px, 偏左 -13px, 偏上 -13px |
 
 ## 当前问题
 
-1. 勋章图 70×70px 太小，与期望设计（~110-120px）差距明显
-2. 卡片高度 86px 严重不足，spring-wind 溢出 47px，book-sea-diver/night-watcher 溢出 17px
-3. 溢出量差异导致三张卡视觉不一致
+1. 勋章图 112×112px (`xl:h-[7rem] xl:w-[7rem]`) 过大，期望 ~93×88px (~5.8rem)
+2. 勋章列宽 140px 偏宽，应缩小到 ~110px 以匹配缩小后的勋章图
+3. 第一条记录内容溢出卡片边界
 
 ## 修复指令
 
-### 步骤 1: 修改布局配置（第 128-132 行）
+### 步骤 1: 缩小勋章图尺寸（第 79-82 行）
 
-增加卡片高度到 ~22%，调整 top 值使三卡等间距分布：
+修改 `FRIEND_BOOK_SAMPLE_ENTRY_GRID.medalSize`：
 
 ```typescript
-sampleEntries: {
-  'spring-wind': { left: '3.9%', top: '20.0%', width: '44.2%', height: '22.0%' },
-  'book-sea-diver': { left: '3.9%', top: '45.0%', width: '44.2%', height: '22.0%' },
-  'night-watcher': { left: '3.9%', top: '70.0%', width: '44.2%', height: '22.0%' },
+// 当前
+medalSize: {
+  base: 'h-20 w-20',
+  xl: 'xl:h-[7rem] xl:w-[7rem]',
+},
+
+// 改为
+medalSize: {
+  base: 'h-[4.5rem] w-[4.5rem]',
+  xl: 'xl:h-[5.8rem] xl:w-[5.8rem]',
 },
 ```
 
-> 注意：这些值是初始估算，修复后需要在浏览器中确认三张卡不互相重叠、不溢出书页底部。如果重叠，微调 top 和 height 值。
+### 步骤 2: 缩小勋章列宽（第 70-73 行）
 
-### 步骤 2: 加宽外层 grid 勋章列（第 1404 行）
+修改 `FRIEND_BOOK_SAMPLE_ENTRY_GRID.outer`：
 
+```typescript
+// 当前
+outer: {
+  base: 'grid-cols-[58px_minmax(0,1fr)_120px]',
+  xl: 'xl:grid-cols-[68px_minmax(0,1fr)_140px]',
+},
+
+// 改为
+outer: {
+  base: 'grid-cols-[58px_minmax(0,1fr)_100px]',
+  xl: 'xl:grid-cols-[68px_minmax(0,1fr)_110px]',
+},
 ```
-当前: grid-cols-[58px_minmax(0,1fr)_88px] gap-3 ... xl:grid-cols-[68px_minmax(0,1fr)_98px]
-改为: grid-cols-[58px_minmax(0,1fr)_120px] gap-3 ... xl:grid-cols-[68px_minmax(0,1fr)_140px]
-```
 
-### 步骤 3: 增大勋章图尺寸（第 1449 行）
+### 步骤 3: 检查卡片高度是否仍然足够（第 88-92 行）
 
-```
-当前: h-15 w-15 rounded-[1rem] ... xl:h-[4.4rem] xl:w-[4.4rem]
-改为: h-20 w-20 rounded-[1rem] ... xl:h-[7rem] xl:w-[7rem]
-```
-
-### 步骤 4: 验证头像尺寸（第 1409 行）
-
-当前头像 68×74px，与期望设计大致匹配。如果修改后视觉上头像偏小，可微调到 `xl:h-[5rem] xl:w-[5rem]`，但优先保持现状。
+当前卡片高度为 22%。缩小勋章列后文本区变宽，文字换行减少，卡片高度可能需要微调。在浏览器中验证：
+- 三张卡内容是否溢出
+- 三张卡是否重叠
+- 如果高度富余太多，可适当缩小到 20%
 
 ## ⚠️ 参数化要求
 
-修复时将关键布局值集中到 `FRIEND_BOOK_ARCHIVE_DESKTOP_LAYOUT` 配置对象中（已有此结构）。额外建议：
+`FRIEND_BOOK_SAMPLE_ENTRY_GRID` 配置对象已存在（第 69-83 行），所有关键值已集中管理。修改时只需改这一处配置，不需要修改 JSX 模板。
 
-```typescript
-// 在文件顶部现有配置附近添加
-const FRIEND_BOOK_SAMPLE_ENTRY_GRID = {
-  avatarCol: { base: '58px', xl: '68px' },
-  medalCol: { base: '120px', xl: '140px' },
-  medalSize: { base: '5rem', xl: '7rem' },
-  avatarSize: { base: '3.75rem', xl: '4.6rem' },
-} as const;
+可调参数位置：
 ```
-
-这样用户后续微调勋章/头像尺寸时只需改一处配置。
+第 71 行: outer.base — 外层 grid 列宽 (base breakpoint)
+第 72 行: outer.xl — 外层 grid 列宽 (xl breakpoint)
+第 80 行: medalSize.base — 勋章图尺寸 (base)
+第 81 行: medalSize.xl — 勋章图尺寸 (xl)
+第 89-91 行: sampleEntries — 三张卡的绝对定位 (top/height)
+```
 
 ## 策略提示
 
-- 增加卡片高度后，三张卡的 top 值需要重新计算以保持等间距。公式：headerBottom ≈ 20%，bookBottom ≈ 92%，可用空间 72%，三卡+间距均分。
-- 如果 22% 高度仍然不够（文字换行多），继续增加到 24%，同时压缩间距。
-- 勋章列加宽后文本区会变窄，文字自动换行更多，这是期望行为。
+- 5.8rem ≈ 92.8px，与用户标注的 92-95px 吻合
+- 勋章列宽应比勋章图本身宽约 15-20px（留内边距），110px 列宽配 93px 图 = 17px 余量
+- 如果修改后勋章位置仍偏左/偏上，通过调整勋章容器的 `justify-end` / padding 微调
 
 ## 验证方式
 
-1. 三张卡内容不溢出卡片边界（无 overflow visible 的文字/图片超出背景区域）
-2. 勋章图视觉上约为头像的 1.5-1.7 倍大小
-3. 三张卡垂直等间距分布，不重叠，不超出书页底部
+1. 三张勋章图尺寸约 93×88px（浏览器 DevTools 验证）
+2. 三张卡内容不溢出卡片边界（特别是 spring-wind）
+3. 三张卡垂直等间距，不重叠
+4. 勋章图在卡片右侧居中对齐
 
 ## 不要修改
 
-- 右侧页面的 userSlots 布局配置（第 133-137 行）
+- 右侧页面的 userSlots 布局配置（第 93-97 行）
+- `FRIEND_BOOK_SAMPLE_ENTRY_GRID` 中的 `copy`, `header`, `seal`, `excerpt` 字段
 - 卡片的背景色、圆角、阴影等视觉样式
-- 头像的圆形裁切和边框样式
-- 标题字体大小和颜色
-- 描述文字字体大小和颜色
-- 标题+徽章的内部布局（将在 issue #2 中单独处理）
+- 头像的尺寸和样式
+- 标题和描述文字的字体/颜色
 
 ---
 

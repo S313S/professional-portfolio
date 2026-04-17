@@ -1,0 +1,23 @@
+<svg width="160" height="120" viewBox="0 0 160 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="inkBody" x1="80" y1="18" x2="80" y2="102" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#5D4236"/>
+      <stop offset="1" stop-color="#2F1F19"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="88" cy="106" rx="34" ry="8" fill="#7F675A" fill-opacity=".26"/>
+  <path d="M26 76C26 48.386 48.386 26 76 26H96C118.091 26 136 43.909 136 66V68C136 87.882 119.882 104 100 104H76C48.386 104 26 81.614 26 54V76Z" fill="url(#inkBody)" stroke="#65493D" stroke-width="3"/>
+  <path d="M44 43L54 16L70 40" fill="#4A342B" stroke="#65493D" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M104 41L114 13L130 39" fill="#4A342B" stroke="#65493D" stroke-width="3" stroke-linejoin="round"/>
+  <ellipse cx="68" cy="61" rx="6" ry="7.5" fill="#FFF7EC"/>
+  <ellipse cx="98" cy="61" rx="6" ry="7.5" fill="#FFF7EC"/>
+  <ellipse cx="68" cy="61" rx="2.4" ry="2.8" fill="#3C2A22"/>
+  <ellipse cx="98" cy="61" rx="2.4" ry="2.8" fill="#3C2A22"/>
+  <path d="M84 71C88.4183 71 92 67.4183 92 63C92 58.5817 88.4183 55 84 55C79.5817 55 76 58.5817 76 63C76 67.4183 79.5817 71 84 71Z" fill="#DDBB93"/>
+  <path d="M10 73C22 67 30 68 42 76" stroke="#7A5A47" stroke-width="6" stroke-linecap="round"/>
+  <path d="M22 89L11 106" stroke="#4D342A" stroke-width="7" stroke-linecap="round"/>
+  <path d="M56 95L49 111" stroke="#4D342A" stroke-width="7" stroke-linecap="round"/>
+  <path d="M102 95L95 111" stroke="#4D342A" stroke-width="7" stroke-linecap="round"/>
+  <path d="M132 89L125 109" stroke="#4D342A" stroke-width="7" stroke-linecap="round"/>
+  <path d="M132 74C148 76 156 84 154 97" stroke="#7E5D4B" stroke-width="6" stroke-linecap="round"/>
+</svg>

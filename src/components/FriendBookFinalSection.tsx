@@ -4,7 +4,6 @@ import {
   CheckCircle2,
   RotateCcw,
   Sparkles,
-  MoonStar,
   PenLine,
 } from 'lucide-react';
 
@@ -13,6 +12,7 @@ import {
   type FriendBookAvatarId,
   type FriendBookGameId,
   type FriendBookGameSessionState,
+  type FriendBookMoonRunInputState,
   type FriendBookStage,
   FRIEND_BOOK_DIFFERENCE_TARGETS,
   answerFriendBookQuizQuestion,
@@ -25,13 +25,15 @@ import {
   getAvailableFriendBookAvatarIds,
   getFriendBookGameStartStage,
   getFriendBookMedalIdForGame,
+  getMoonRunRoundSummary,
   hydrateFriendBookProgress,
   persistFriendBookProgress,
-  registerMoonRunBeat,
   resolveBetweenTwoPagesSpotSelection,
   selectFriendBookAvatar,
+  stepMoonRunSession,
 } from './FriendBookFinalSection.logic';
 import FriendBookGameOverlay from './FriendBookGameOverlay';
+import FriendBookMoonRunStage from './FriendBookMoonRunStage';
 
 type FriendBookButtonOffset = {
   x: number;
@@ -66,8 +68,8 @@ export const FRIEND_BOOK_ARCHIVE_SAMPLE_STACK_NUDGE = {
 
 const FRIEND_BOOK_SAMPLE_ENTRY_GRID = {
   outer: {
-    base: 'grid-cols-[58px_minmax(0,1fr)_120px]',
-    xl: 'xl:grid-cols-[68px_minmax(0,1fr)_140px]',
+    base: 'grid-cols-[58px_minmax(0,1fr)_100px]',
+    xl: 'xl:grid-cols-[68px_minmax(0,1fr)_110px]',
   },
   copy: 'flex min-w-0 flex-col gap-2',
   header: 'flex flex-nowrap items-center gap-x-3',
@@ -75,8 +77,8 @@ const FRIEND_BOOK_SAMPLE_ENTRY_GRID = {
     'inline-flex shrink-0 whitespace-nowrap rounded-full border px-2.5 py-1 text-[0.64rem] uppercase tracking-[0.16em] xl:px-3 xl:text-[0.72rem]',
   excerpt: 'text-[0.96rem] leading-7 text-[#463731] xl:text-[1.18rem] xl:leading-[1.6]',
   medalSize: {
-    base: 'h-20 w-20',
-    xl: 'xl:h-[7rem] xl:w-[7rem]',
+    base: 'h-[4.5rem] w-[4.5rem]',
+    xl: 'xl:h-[5.8rem] xl:w-[5.8rem]',
   },
 } as const;
 
@@ -344,7 +346,7 @@ function getGamePrompt(gameId: FriendBookGameId): string {
     case 'between-two-pages':
       return 'Find the three quiet differences before the candle timer runs out.';
     case 'moon-run':
-      return 'Clear four short beats in a row by stopping inside the pale center band.';
+      return 'Run across the quiet pages and reach the moon gate.';
     case 'one-stroke-mark':
       return 'Observe the silhouette, guess who it belongs to, and turn to the next page.';
     default:
@@ -362,7 +364,12 @@ export default function FriendBookFinalSection() {
   const [gameSession, setGameSession] = useState<FriendBookGameSessionState | null>(null);
   const [roundSummary, setRoundSummary] = useState('');
   const [isHydrated, setIsHydrated] = useState(false);
-  const moonDirectionRef = useRef<1 | -1>(1);
+  const moonRunInputRef = useRef<FriendBookMoonRunInputState>({
+    moveLeft: false,
+    moveRight: false,
+    jumpPressed: false,
+  });
+  const moonRunLastFrameRef = useRef<number | null>(null);
 
   const avatarById = Object.fromEntries(
     friendBookFinalSectionData.avatars.map((avatar) => [avatar.id, avatar]),
@@ -458,14 +465,68 @@ export default function FriendBookFinalSection() {
     if (
       stage !== 'game-active' ||
       activeGameId !== 'moon-run' ||
-      !gameSession?.moonRun ||
-      gameSession.moonRun.status !== 'active' ||
+      gameSession?.moonRun?.status !== 'active' ||
       typeof window === 'undefined'
     ) {
       return;
     }
 
-    const intervalId = window.setInterval(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'ArrowLeft' || event.key === 'a' || event.key === 'A') {
+        moonRunInputRef.current.moveLeft = true;
+        event.preventDefault();
+      }
+      if (event.key === 'ArrowRight' || event.key === 'd' || event.key === 'D') {
+        moonRunInputRef.current.moveRight = true;
+        event.preventDefault();
+      }
+      if (
+        event.key === ' ' ||
+        event.key === 'ArrowUp' ||
+        event.key === 'w' ||
+        event.key === 'W'
+      ) {
+        moonRunInputRef.current.jumpPressed = true;
+        event.preventDefault();
+      }
+    };
+
+    const handleKeyUp = (event: KeyboardEvent) => {
+      if (event.key === 'ArrowLeft' || event.key === 'a' || event.key === 'A') {
+        moonRunInputRef.current.moveLeft = false;
+      }
+      if (event.key === 'ArrowRight' || event.key === 'd' || event.key === 'D') {
+        moonRunInputRef.current.moveRight = false;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+      resetMoonRunInputState();
+    };
+  }, [stage, activeGameId, gameSession?.moonRun?.status]);
+
+  useEffect(() => {
+    if (
+      stage !== 'game-active' ||
+      activeGameId !== 'moon-run' ||
+      gameSession?.moonRun?.status !== 'active' ||
+      typeof window === 'undefined'
+    ) {
+      return;
+    }
+
+    moonRunLastFrameRef.current = null;
+
+    let frameId = window.requestAnimationFrame(function step(timestamp) {
+      const previousTimestamp = moonRunLastFrameRef.current ?? timestamp;
+      const deltaMs = timestamp - previousTimestamp;
+      moonRunLastFrameRef.current = timestamp;
+
       setGameSession((currentSession) => {
         if (
           !currentSession?.moonRun ||
@@ -475,30 +536,34 @@ export default function FriendBookFinalSection() {
           return currentSession;
         }
 
-        let nextPosition =
-          currentSession.moonRun.markerPosition + 0.018 * moonDirectionRef.current;
-
-        if (nextPosition >= 0.92) {
-          nextPosition = 0.92;
-          moonDirectionRef.current = -1;
-        } else if (nextPosition <= 0.08) {
-          nextPosition = 0.08;
-          moonDirectionRef.current = 1;
-        }
-
-        return {
-          ...currentSession,
-          moonRun: {
-            ...currentSession.moonRun,
-            markerPosition: nextPosition,
-          },
-        };
+        const nextSession = stepMoonRunSession(
+          currentSession,
+          moonRunInputRef.current,
+          deltaMs,
+        );
+        moonRunInputRef.current.jumpPressed = false;
+        return nextSession;
       });
-    }, 18);
+
+      frameId = window.requestAnimationFrame(step);
+    });
 
     return () => {
-      window.clearInterval(intervalId);
+      window.cancelAnimationFrame(frameId);
+      moonRunLastFrameRef.current = null;
     };
+  }, [stage, activeGameId, gameSession?.moonRun?.status]);
+
+  useEffect(() => {
+    if (
+      stage !== 'game-active' ||
+      activeGameId !== 'moon-run' ||
+      gameSession?.moonRun?.status !== 'success'
+    ) {
+      return;
+    }
+
+    moveIntoNoteStage('moon-run', getMoonRunRoundSummary(gameSession));
   }, [stage, activeGameId, gameSession]);
 
   function resetGameState(gameId: FriendBookGameId) {
@@ -507,8 +572,28 @@ export default function FriendBookFinalSection() {
     setPendingMedalId(null);
     setRoundSummary('');
     setSelectedAvatarCandidate(progress.selectedAvatarId);
-    moonDirectionRef.current = 1;
+    resetMoonRunInputState();
     setNoteDraft(progress.games[gameId].latestNote);
+  }
+
+  function resetMoonRunInputState() {
+    moonRunInputRef.current = {
+      moveLeft: false,
+      moveRight: false,
+      jumpPressed: false,
+    };
+    moonRunLastFrameRef.current = null;
+  }
+
+  function setMoonRunMove(
+    direction: Extract<keyof FriendBookMoonRunInputState, 'moveLeft' | 'moveRight'>,
+    isPressed: boolean,
+  ) {
+    moonRunInputRef.current[direction] = isPressed;
+  }
+
+  function queueMoonRunJump() {
+    moonRunInputRef.current.jumpPressed = true;
   }
 
   function scrollToTarget(id: string) {
@@ -598,44 +683,6 @@ export default function FriendBookFinalSection() {
     }
   }
 
-  function handleMoonRunStop() {
-    if (!gameSession?.moonRun || gameSession.gameId !== 'moon-run') {
-      return;
-    }
-
-    const nextSession = registerMoonRunBeat(
-      gameSession,
-      gameSession.moonRun.markerPosition,
-    );
-
-    if (nextSession.moonRun?.status === 'success') {
-      setGameSession(nextSession);
-      moveIntoNoteStage(
-        'moon-run',
-        `${nextSession.moonRun.successes} / ${nextSession.moonRun.totalSegments} beats held in time.`,
-      );
-      return;
-    }
-
-    if (nextSession.moonRun?.status === 'failed') {
-      setGameSession(nextSession);
-      return;
-    }
-
-    const nextSegmentIndex = nextSession.moonRun?.segmentIndex ?? 0;
-    const startFromLeft = nextSegmentIndex % 2 === 0;
-    moonDirectionRef.current = startFromLeft ? 1 : -1;
-    setGameSession({
-      ...nextSession,
-      moonRun: nextSession.moonRun
-        ? {
-            ...nextSession.moonRun,
-            markerPosition: startFromLeft ? 0.12 : 0.88,
-          }
-        : undefined,
-    });
-  }
-
   function handleReplayActiveGame() {
     if (!activeGameId) {
       return;
@@ -709,7 +756,7 @@ export default function FriendBookFinalSection() {
     : gameSession?.betweenTwoPages
       ? `${gameSession.betweenTwoPages.foundSpotIds.length} / ${FRIEND_BOOK_DIFFERENCE_TARGETS.length} found`
       : gameSession?.moonRun
-        ? `${Math.min(gameSession.moonRun.segmentIndex + 1, gameSession.moonRun.totalSegments)} / ${gameSession.moonRun.totalSegments} beat`
+        ? `${gameSession.moonRun.heartsRemaining} / 3 hearts`
         : null;
 
   return (
@@ -893,6 +940,7 @@ export default function FriendBookFinalSection() {
             prompt={overlayPrompt}
             progressLabel={stage === 'game-active' ? overlayProgressLabel : null}
             onClose={() => {
+              resetMoonRunInputState();
               setStage('landing');
               setActiveGameId(null);
               setGameSession(null);
@@ -979,8 +1027,8 @@ export default function FriendBookFinalSection() {
             ) : null}
 
             {stage === 'game-active' && activeGame.id === 'between-two-pages' && gameSession?.betweenTwoPages ? (
-              <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_248px]">
-                <div className="mx-auto grid w-full max-w-[980px] gap-4 md:grid-cols-2">
+              <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_248px]">
+                <div className="mx-auto grid w-full max-w-[560px] grid-cols-1 gap-3 self-start">
                   {[
                     { id: 'left', label: 'Left page', image: betweenTwoPagesScene.baseImage },
                     { id: 'right', label: 'Right page', image: betweenTwoPagesScene.variantImage },
@@ -1096,81 +1144,13 @@ export default function FriendBookFinalSection() {
             ) : null}
 
             {stage === 'game-active' && activeGame.id === 'moon-run' && gameSession?.moonRun ? (
-              <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
-                <div className="rounded-[1.6rem] border border-[#c9b198] bg-[rgba(255,250,245,0.76)] px-5 py-8">
-                  <div
-                    className="relative overflow-hidden rounded-[1.3rem] border border-[#d8c2ab] px-6 py-10"
-                    style={getIllustratedBackgroundStyle(activeGame.backgroundImage)}
-                  >
-                    <div className="absolute inset-x-[44%] top-0 h-full w-[12%] bg-[rgba(248,234,199,0.56)]" />
-                    <div className="relative h-4 rounded-full bg-[rgba(119,90,67,0.14)]">
-                      <div
-                        className="absolute top-1/2 h-9 w-9 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#6f5143] bg-[rgba(255,247,239,0.92)] shadow-[0_8px_14px_rgba(70,43,29,0.16)]"
-                        style={{
-                          left: `${gameSession.moonRun.markerPosition * 100}%`,
-                        }}
-                      />
-                    </div>
-                    <div className="relative mt-8 flex items-center justify-between text-xs uppercase tracking-[0.24em] text-[#6d5546]">
-                      <span>Too soon</span>
-                      <span>Quiet band</span>
-                      <span>Too late</span>
-                    </div>
-                  </div>
-
-                  <p className="mt-4 text-sm leading-7 text-[#503e35]" aria-live="polite">
-                    {gameSession.moonRun.status === 'failed'
-                      ? 'One beat slipped away. Start the run again and try to keep all four in time.'
-                      : gameSession.moonRun.feedback === 'hit'
-                        ? 'Beat held. Breathe once, then catch the next one.'
-                        : gameSession.moonRun.feedback === 'miss'
-                          ? 'That beat drifted off center. The run still continues.'
-                          : 'Tap stop when the marker glides through the pale band.'}
-                  </p>
-                </div>
-
-                <div className="rounded-[1.5rem] border border-[#dcc9b1] bg-[rgba(255,249,242,0.84)] p-5">
-                  <p className="font-mono text-[0.68rem] uppercase tracking-[0.28em] text-[#7a5d4d]">
-                    Rhythm run
-                  </p>
-                  <p className="mt-4 text-sm leading-7 text-[#503e35]">
-                    Hold the center line for four short beats in a row. Every beat matters in this run.
-                  </p>
-                  <div className="mt-4 flex gap-2">
-                    {Array.from({ length: gameSession.moonRun.totalSegments }).map((_, index) => (
-                      <span
-                        key={`moon-run-beat-${index}`}
-                        className={`h-2.5 flex-1 rounded-full ${
-                          index < gameSession.moonRun.successes
-                            ? 'bg-[#6e5443]'
-                            : index < gameSession.moonRun.segmentIndex
-                              ? 'bg-[#c9b49f]'
-                              : 'bg-[#eadccd]'
-                        }`}
-                      />
-                    ))}
-                  </div>
-                  {gameSession.moonRun.status === 'failed' ? (
-                    <button
-                      type="button"
-                      onClick={handleReplayActiveGame}
-                      className="mt-6 inline-flex items-center gap-2 rounded-full border border-[#8f715c] bg-[rgba(255,248,240,0.82)] px-4 py-2 text-sm text-[#4b392f]"
-                    >
-                      <RotateCcw className="h-4 w-4" strokeWidth={1.8} />
-                      <span>Restart the run</span>
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={handleMoonRunStop}
-                      className="mt-6 inline-flex items-center gap-2 rounded-full border border-[#7d604c] bg-[#6a4f3c] px-5 py-3 text-sm font-medium text-[#fff8f2]"
-                    >
-                      <MoonStar className="h-4 w-4" strokeWidth={1.8} />
-                      <span>Stop this beat</span>
-                    </button>
-                  )}
-                </div>
-              </div>
+              <FriendBookMoonRunStage
+                level={friendBookFinalSectionData.moonRunLevel}
+                session={gameSession.moonRun}
+                onMoveChange={setMoonRunMove}
+                onJump={queueMoonRunJump}
+                onReplay={handleReplayActiveGame}
+              />
             ) : null}
 
             {stage === 'game-active' && activeGame.id === 'one-stroke-mark' && gameSession?.quiz && currentQuizQuestion ? (
@@ -1438,7 +1418,7 @@ export default function FriendBookFinalSection() {
                         src={entry.medalImage}
                         alt=""
                         aria-hidden="true"
-                        className={`${FRIEND_BOOK_SAMPLE_ENTRY_GRID.medalSize.base} rounded-[1rem] border border-[#d4bea8] object-cover ${FRIEND_BOOK_SAMPLE_ENTRY_GRID.medalSize.xl}`}
+                        className={`${FRIEND_BOOK_SAMPLE_ENTRY_GRID.medalSize.base} rounded-[1rem] object-cover ${FRIEND_BOOK_SAMPLE_ENTRY_GRID.medalSize.xl}`}
                       />
                     </div>
                   </div>
@@ -1556,7 +1536,7 @@ export default function FriendBookFinalSection() {
                         src={entry.medalImage}
                         alt=""
                         aria-hidden="true"
-                        className="h-16 w-16 rounded-[1rem] border border-[#d4bea8] object-cover"
+                        className="h-16 w-16 rounded-[1rem] object-cover"
                       />
                       <p className="font-mono text-[0.72rem] uppercase tracking-[0.2em] text-[#6d5546]">
                         {entry.date}

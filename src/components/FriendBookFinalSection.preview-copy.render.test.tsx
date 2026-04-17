@@ -68,7 +68,7 @@ test('renders empty archive slots as date-only placeholders without the old help
   );
   assert.match(
     desktopSpringWind,
-    /class="grid h-full grid-cols-\[58px_minmax\(0,1fr\)_120px\] gap-3 px-4 py-3 xl:grid-cols-\[68px_minmax\(0,1fr\)_140px\] xl:px-5 xl:py-4"/,
+    /class="grid h-full grid-cols-\[58px_minmax\(0,1fr\)_100px\] gap-3 px-4 py-3 xl:grid-cols-\[68px_minmax\(0,1fr\)_110px\] xl:px-5 xl:py-4"/,
   );
   assert.match(
     desktopSpringWind,
@@ -100,7 +100,11 @@ test('renders empty archive slots as date-only placeholders without the old help
   );
   assert.match(
     desktopSpringWind,
-    /class="h-20 w-20 rounded-\[1rem\] border border-\[#d4bea8\] object-cover xl:h-\[7rem\] xl:w-\[7rem\]"/,
+    /src="\/images\/PurpleMedal01\.png"[^>]*class="h-\[4\.5rem\] w-\[4\.5rem\] rounded-\[1rem\] object-cover xl:h-\[5\.8rem\] xl:w-\[5\.8rem\]"/,
+  );
+  assert.doesNotMatch(
+    desktopSpringWind,
+    /src="\/images\/PurpleMedal01\.png"[^>]*border-\[#d4bea8\]/,
   );
   assert.match(
     desktopSpringWind,

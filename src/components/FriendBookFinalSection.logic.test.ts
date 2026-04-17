@@ -243,6 +243,31 @@ test('moon run level data exposes a short side-scrolling course', () => {
   assert.equal(level.pitZones.length >= 2, true);
   assert.equal(level.enemies.length, 2);
   assert.equal(level.finish.x > level.start.x, true);
+  assert.equal(typeof level.artwork.player, 'string');
+  assert.equal(typeof level.artwork.enemy, 'string');
+  assert.equal(typeof level.artwork.platform, 'string');
+  assert.equal(typeof level.artwork.finish, 'string');
+  assert.equal(typeof level.artwork.heart, 'string');
+  assert.equal(
+    existsSync(path.join(process.cwd(), 'public', level.artwork.player.slice(1))),
+    true,
+  );
+  assert.equal(
+    existsSync(path.join(process.cwd(), 'public', level.artwork.enemy.slice(1))),
+    true,
+  );
+  assert.equal(
+    existsSync(path.join(process.cwd(), 'public', level.artwork.platform.slice(1))),
+    true,
+  );
+  assert.equal(
+    existsSync(path.join(process.cwd(), 'public', level.artwork.finish.slice(1))),
+    true,
+  );
+  assert.equal(
+    existsSync(path.join(process.cwd(), 'public', level.artwork.heart.slice(1))),
+    true,
+  );
 });
 
 test('friend-book quiz bank exposes fifteen questions with unique answer sets', () => {
@@ -410,7 +435,7 @@ test('moon run supports enemy stomps, damage resets, and failure after the last 
   const baseSession = createFriendBookGameSession('moon-run');
   const enemy = baseSession.moonRun!.enemies[0]!;
 
-  let stompedSession = {
+  let stompedSession: ReturnType<typeof createFriendBookGameSession> = {
     ...baseSession,
     moonRun: {
       ...baseSession.moonRun!,
@@ -433,7 +458,7 @@ test('moon run supports enemy stomps, damage resets, and failure after the last 
   assert.equal(stompedSession.moonRun?.enemies[0]?.defeated, true);
   assert.equal((stompedSession.moonRun?.player.vy ?? 0) < 0, true);
 
-  let damagedSession = {
+  let damagedSession: ReturnType<typeof createFriendBookGameSession> = {
     ...baseSession,
     moonRun: {
       ...baseSession.moonRun!,
