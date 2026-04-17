@@ -2,6 +2,7 @@ import {StrictMode} from 'react';
 import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
 import FriendBookFinaleDebugPage from './FriendBookFinaleDebugPage.tsx';
+import FriendBookDiffHotspotsDebugPage from './FriendBookDiffHotspotsDebugPage.tsx';
 import {
   getCurrentNavigationType,
   getDevStandaloneRoute,
@@ -22,7 +23,12 @@ const initialScrollResetState = getInitialScrollResetState(
   getCurrentNavigationType(),
   initialFocusTarget,
 );
-const RootComponent = standaloneRoute === 'friend-book-finale' ? FriendBookFinaleDebugPage : App;
+const RootComponent =
+  standaloneRoute === 'friend-book-finale'
+    ? FriendBookFinaleDebugPage
+    : standaloneRoute === 'friend-book-diff-hotspots'
+      ? FriendBookDiffHotspotsDebugPage
+      : App;
 
 if (typeof window !== 'undefined') {
   window.history.scrollRestoration = initialScrollResetState.scrollRestoration;

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { CSSProperties } from 'react';
+import type { CSSProperties, MouseEvent } from 'react';
 import {
   CheckCircle2,
   RotateCcw,
@@ -9,10 +9,14 @@ import {
 
 import { friendBookFinalSectionData } from '../data';
 import {
+  deleteFriendBookGuestbookEntry,
   type FriendBookAvatarId,
+  type FriendBookGuestbookEntry,
   type FriendBookGameId,
   type FriendBookGameSessionState,
+  type FriendBookProgress,
   type FriendBookStage,
+  FRIEND_BOOK_GUESTBOOK_PAGE_SIZE,
   answerFriendBookQuizQuestion,
   advanceFriendBookQuizQuestion,
   completeBetweenTwoPagesRound,
@@ -21,6 +25,7 @@ import {
   createFriendBookGameSession,
   formatFriendBookArchiveDate,
   getAvailableFriendBookAvatarIds,
+  getFriendBookGuestbookPage,
   getFriendBookGameStartStage,
   getFriendBookMedalIdForGame,
   getNextBetweenTwoPagesSceneRotation,
@@ -28,6 +33,7 @@ import {
   persistFriendBookProgress,
   resolveBetweenTwoPagesSpotSelection,
   selectFriendBookAvatar,
+  upsertFriendBookGuestbookEntry,
 } from './FriendBookFinalSection.logic';
 import FriendBookGameOverlay from './FriendBookGameOverlay';
 import FriendBookMoonRunStage from './FriendBookMoonRunStage';
@@ -79,6 +85,60 @@ type FriendBookAbsoluteLayout = {
   width: string;
   height?: string;
 };
+
+type FriendBookBetweenTwoPagesTargetFrame = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
+/**
+ * Between Two Pages 命中区定位参数。
+ *
+ * 这里控制的是：
+ * - 调试可视框的位置
+ * - 实际可点击 hotspot 的位置
+ * - 找到之后固定标记的落点区域
+ *
+ * 单位都是相对图片容器的百分比，直接手改即可。
+ * 如果某个 scene / target 没配到，会自动回退到 `src/data.tsx` 里的默认值。
+ */
+export const FRIEND_BOOK_BETWEEN_TWO_PAGES_TARGET_POSITIONING = {
+  'moon-cottage': {
+    'moon-stamp': { x: 17, y: 15, width: 18, height: 18 },
+    'cat-tail': { x: 77, y: 75, width: 17, height: 15 },
+    'page-fold': { x: 83, y: 19, width: 10, height: 12 },
+  },
+  'moon-bridge': {
+    'bridge-lantern': { x: 47, y: 58, width: 10, height: 20 },
+    'tea-cup': { x: 53, y: 80, width: 15, height: 17 },
+    'bamboo-cluster': { x: 61, y: 36, width: 15, height: 18 },
+  },
+  'moon-shrine': {
+    'torii-plaque': { x: 41, y: 36, width: 11, height: 11 },
+    'blossom-branch': { x: 58, y: 38, width: 15, height: 16 },
+    'cushion-tassel': { x: 92, y: 82, width: 8, height: 15 },
+  },
+} as const satisfies Record<string, Record<string, FriendBookBetweenTwoPagesTargetFrame>>;
+
+export function getBetweenTwoPagesTargetFrame(
+  sceneId: string,
+  target: {
+    id: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  },
+): FriendBookBetweenTwoPagesTargetFrame {
+  return FRIEND_BOOK_BETWEEN_TWO_PAGES_TARGET_POSITIONING[sceneId]?.[target.id] ?? {
+    x: target.x,
+    y: target.y,
+    width: target.width,
+    height: target.height,
+  };
+}
 
 // 中文注释：用于整体微调左页三条样例记录。
 // x 为水平位移，负数向左、正数向右；y 为垂直位移，负数向上、正数向下。
@@ -231,6 +291,18 @@ const FRIEND_BOOK_ARCHIVE_DESKTOP_LAYOUT = {
   sampleEntries: Record<'spring-wind' | 'book-sea-diver' | 'night-watcher', FriendBookAbsoluteLayout>;
   userSlots: Record<FriendBookGameId, FriendBookAbsoluteLayout>;
 };
+
+const FRIEND_BOOK_GUESTBOOK_LEFT_ROW_ORDER = [
+  'spring-wind',
+  'book-sea-diver',
+  'night-watcher',
+] as const;
+
+const FRIEND_BOOK_GUESTBOOK_RIGHT_ROW_ORDER: FriendBookGameId[] = [
+  'between-two-pages',
+  'moon-run',
+  'one-stroke-mark',
+];
 
 /**
  * Friend Book Finale 按钮位置参数
@@ -501,10 +573,45 @@ function getGamePrompt(gameId: FriendBookGameId): string {
   }
 }
 
+function getGuestbookGameTag(gameId: FriendBookGameId | null): {
+  label: string;
+  backgroundColor: string;
+  borderColor: string;
+  textColor: string;
+} | null {
+  switch (gameId) {
+    case 'between-two-pages':
+      return {
+        label: 'Two Pages',
+        backgroundColor: 'rgba(238,205,206,0.72)',
+        borderColor: '#d7a7a6',
+        textColor: '#7a5450',
+      };
+    case 'moon-run':
+      return {
+        label: 'Moon Run',
+        backgroundColor: 'rgba(214,225,194,0.84)',
+        borderColor: '#b4c69a',
+        textColor: '#66724a',
+      };
+    case 'one-stroke-mark':
+      return {
+        label: "Who's This",
+        backgroundColor: 'rgba(221,210,225,0.78)',
+        borderColor: '#c0b0c7',
+        textColor: '#6b5e74',
+      };
+    default:
+      return null;
+  }
+}
+
 export function getBetweenTwoPagesTargetButtonClassName(isFound: boolean): string {
   return [
-    'absolute -translate-x-1/2 -translate-y-1/2 rounded-full border transition',
-    isFound ? 'border-transparent bg-transparent' : 'border-transparent bg-transparent',
+    'absolute z-20 rounded-[0.95rem] border transition',
+    isFound
+      ? 'border-transparent bg-transparent'
+      : 'border-[#d95c55] bg-[rgba(217,92,85,0.12)] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.35)]',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8f715c]/40',
   ].join(' ');
 }
@@ -527,18 +634,71 @@ export function getBetweenTwoPagesTimerEffectKey(
   return `${stage}:${activeGameId ?? 'none'}:${status ?? 'none'}`;
 }
 
-export default function FriendBookFinalSection() {
-  const [progress, setProgress] = useState(createDefaultFriendBookProgress);
-  const [stage, setStage] = useState<FriendBookStage>('landing');
-  const [activeGameId, setActiveGameId] = useState<FriendBookGameId | null>(null);
+interface FriendBookFinalSectionProps {
+  initialProgress?: FriendBookProgress;
+  initialStage?: FriendBookStage;
+  initialActiveGameId?: FriendBookGameId | null;
+  initialGameSession?: FriendBookGameSessionState | null;
+  initialGuestbookPage?: number;
+  initialNicknameDraft?: string;
+  initialIdentityIntroDraft?: string;
+  initialPortfolioReviewDraft?: string;
+}
+
+function createInitialFriendBookGameSession(
+  initialStage: FriendBookStage,
+  initialActiveGameId: FriendBookGameId | null,
+): FriendBookGameSessionState | null {
+  if (initialStage !== 'game-active' || !initialActiveGameId) {
+    return null;
+  }
+
+  if (initialActiveGameId === 'between-two-pages') {
+    return createFriendBookGameSession(
+      initialActiveGameId,
+      friendBookFinalSectionData.quizQuestionBank,
+      Math.random,
+      {
+        betweenTwoPagesSceneId:
+          friendBookFinalSectionData.betweenTwoPagesScenes[0]?.id,
+      },
+    );
+  }
+
+  return createFriendBookGameSession(
+    initialActiveGameId,
+    friendBookFinalSectionData.quizQuestionBank,
+  );
+}
+
+export default function FriendBookFinalSection({
+  initialProgress,
+  initialStage = 'landing',
+  initialActiveGameId = null,
+  initialGameSession,
+  initialGuestbookPage = 0,
+  initialNicknameDraft = '',
+  initialIdentityIntroDraft = '',
+  initialPortfolioReviewDraft = '',
+}: FriendBookFinalSectionProps = {}) {
+  const [progress, setProgress] = useState(() => initialProgress ?? createDefaultFriendBookProgress());
+  const [stage, setStage] = useState<FriendBookStage>(initialStage);
+  const [activeGameId, setActiveGameId] = useState<FriendBookGameId | null>(initialActiveGameId);
   const [selectedAvatarCandidate, setSelectedAvatarCandidate] = useState<FriendBookAvatarId | null>(null);
   const [pendingMedalId, setPendingMedalId] = useState<string | null>(null);
-  const [noteDraft, setNoteDraft] = useState('');
-  const [gameSession, setGameSession] = useState<FriendBookGameSessionState | null>(null);
+  const [nicknameDraft, setNicknameDraft] = useState(initialNicknameDraft);
+  const [identityIntroDraft, setIdentityIntroDraft] = useState(initialIdentityIntroDraft);
+  const [portfolioReviewDraft, setPortfolioReviewDraft] = useState(initialPortfolioReviewDraft);
+  const [gameSession, setGameSession] = useState<FriendBookGameSessionState | null>(
+    () =>
+      initialGameSession ??
+      createInitialFriendBookGameSession(initialStage, initialActiveGameId),
+  );
   const [roundSummary, setRoundSummary] = useState('');
   const [isHydrated, setIsHydrated] = useState(false);
   const [showBetweenTwoPagesHints, setShowBetweenTwoPagesHints] = useState(false);
   const [seenBetweenTwoPagesSceneIds, setSeenBetweenTwoPagesSceneIds] = useState<string[]>([]);
+  const [currentGuestbookPage, setCurrentGuestbookPage] = useState(initialGuestbookPage);
 
   const avatarById = Object.fromEntries(
     friendBookFinalSectionData.avatars.map((avatar) => [avatar.id, avatar]),
@@ -546,6 +706,10 @@ export default function FriendBookFinalSection() {
   const activeGame = activeGameId
     ? friendBookFinalSectionData.gameCards.find((game) => game.id === activeGameId) ?? null
     : null;
+  const latestGuestbookEntry = progress.guestbookEntries[progress.guestbookEntries.length - 1] ?? null;
+  const matchingGuestbookEntry =
+    progress.guestbookEntries.find((entry) => entry.nickname === nicknameDraft.trim()) ?? null;
+  const guestbookPage = getFriendBookGuestbookPage(progress.guestbookEntries, currentGuestbookPage);
   const availableAvatarIds = getAvailableFriendBookAvatarIds(progress);
   const betweenTwoPagesScene =
     friendBookFinalSectionData.betweenTwoPagesScenes.find(
@@ -577,6 +741,12 @@ export default function FriendBookFinalSection() {
   useEffect(() => {
     setSelectedAvatarCandidate(progress.selectedAvatarId);
   }, [progress.selectedAvatarId]);
+
+  useEffect(() => {
+    setCurrentGuestbookPage((page) =>
+      getFriendBookGuestbookPage(progress.guestbookEntries, page).pageIndex,
+    );
+  }, [progress.guestbookEntries]);
 
   useEffect(() => {
     if (typeof document === 'undefined') {
@@ -638,6 +808,12 @@ export default function FriendBookFinalSection() {
     };
   }, [betweenTwoPagesTimerEffectKey]);
 
+  function populateGuestbookDrafts(entry: FriendBookGuestbookEntry | null) {
+    setNicknameDraft(entry?.nickname ?? '');
+    setIdentityIntroDraft(entry?.identityIntro ?? '');
+    setPortfolioReviewDraft(entry?.portfolioReview ?? '');
+  }
+
   function resetGameState(gameId: FriendBookGameId) {
     let nextGameSession: FriendBookGameSessionState;
 
@@ -660,7 +836,6 @@ export default function FriendBookFinalSection() {
     setRoundSummary('');
     setShowBetweenTwoPagesHints(false);
     setSelectedAvatarCandidate(progress.selectedAvatarId);
-    setNoteDraft(progress.games[gameId].latestNote);
   }
 
   function scrollToTarget(id: string) {
@@ -694,6 +869,7 @@ export default function FriendBookFinalSection() {
     const medalId = getFriendBookMedalIdForGame(gameId, Math.random());
     setPendingMedalId(medalId);
     setRoundSummary(summary);
+    populateGuestbookDrafts(latestGuestbookEntry);
     setStage('note-entry');
   }
 
@@ -759,6 +935,14 @@ export default function FriendBookFinalSection() {
     }
   }
 
+  function handleBetweenTwoPagesHotspotClick(
+    event: MouseEvent<HTMLButtonElement>,
+    spotId: string,
+  ) {
+    event.stopPropagation();
+    handleDifferenceSpotSelect(spotId);
+  }
+
   function handleReplayActiveGame() {
     if (!activeGameId) {
       return;
@@ -793,20 +977,80 @@ export default function FriendBookFinalSection() {
   }
 
   function handleNoteSubmit() {
-    if (!activeGameId || !pendingMedalId || !noteDraft.trim()) {
+    if (
+      !activeGameId ||
+      !pendingMedalId ||
+      !nicknameDraft.trim() ||
+      !identityIntroDraft.trim() ||
+      !portfolioReviewDraft.trim()
+    ) {
       return;
     }
 
     const displayDate = formatFriendBookArchiveDate(new Date());
+    let nextGuestbookPageIndex = 0;
 
-    setProgress((currentProgress) =>
-      completeFriendBookGameSession(currentProgress, {
+    setProgress((currentProgress) => {
+      const nextProgress = completeFriendBookGameSession(currentProgress, {
         gameId: activeGameId,
-        note: noteDraft,
         displayDate,
         medalId: pendingMedalId,
-      }),
-    );
+      });
+      const nextProgressWithGuestbook = upsertFriendBookGuestbookEntry(nextProgress, {
+        nickname: nicknameDraft,
+        identityIntro: identityIntroDraft,
+        portfolioReview: portfolioReviewDraft,
+        latestGameId: activeGameId,
+        avatarId: nextProgress.selectedAvatarId,
+        medalId: pendingMedalId,
+        displayDate,
+      });
+
+      nextGuestbookPageIndex = getFriendBookGuestbookPage(
+        nextProgressWithGuestbook.guestbookEntries,
+        Number.MAX_SAFE_INTEGER,
+      ).pageIndex;
+
+      return nextProgressWithGuestbook;
+    });
+    setCurrentGuestbookPage(nextGuestbookPageIndex);
+    setStage('landing');
+    setPendingMedalId(null);
+    setActiveGameId(null);
+    setGameSession(null);
+    setRoundSummary('');
+    scrollToTarget('friend-book-preview');
+  }
+
+  function handleDeleteRecord() {
+    const targetNickname = nicknameDraft.trim();
+
+    if (!targetNickname || !matchingGuestbookEntry) {
+      return;
+    }
+
+    const shouldDelete =
+      typeof window === 'undefined'
+        ? true
+        : window.confirm(`Delete guestbook record for ${targetNickname}?`);
+
+    if (!shouldDelete) {
+      return;
+    }
+
+    let nextGuestbookPageIndex = 0;
+    setProgress((currentProgress) => {
+      const nextProgress = deleteFriendBookGuestbookEntry(currentProgress, targetNickname);
+      nextGuestbookPageIndex = getFriendBookGuestbookPage(
+        nextProgress.guestbookEntries,
+        Math.min(currentGuestbookPage, Number.MAX_SAFE_INTEGER),
+      ).pageIndex;
+      return nextProgress;
+    });
+    setCurrentGuestbookPage(nextGuestbookPageIndex);
+    setNicknameDraft('');
+    setIdentityIntroDraft('');
+    setPortfolioReviewDraft('');
     setStage('landing');
     setPendingMedalId(null);
     setActiveGameId(null);
@@ -1113,45 +1357,80 @@ export default function FriendBookFinalSection() {
                   ].map((page) => (
                     <div
                       key={page.id}
-                      onClick={handleDifferenceMiss}
+                      data-friend-book-difference-page={page.id}
                       className="group relative overflow-hidden rounded-[1.35rem] border border-[#c9b198] bg-[rgba(255,249,242,0.76)] text-left shadow-[0_10px_24px_rgba(70,43,29,0.08)]"
                       style={{ aspectRatio: `${betweenTwoPagesScene.aspectRatio}` }}
                     >
+                      <div
+                        data-friend-book-difference-miss-zone={page.id}
+                        onClick={handleDifferenceMiss}
+                        className="absolute inset-0 z-10"
+                      />
                       <img
                         src={page.image}
                         alt={page.label}
-                        className="block h-full w-full object-contain"
+                        className="pointer-events-none block h-full w-full object-contain"
                       />
                       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,247,237,0.08),rgba(255,247,237,0.03)_36%,rgba(54,38,29,0.08)_100%)]" />
                       <span className="pointer-events-none absolute left-4 top-4 rounded-full border border-[rgba(122,93,77,0.22)] bg-[rgba(255,248,241,0.9)] px-3 py-1 text-[0.68rem] uppercase tracking-[0.24em] text-[#6f5243]">
                         {page.label}
                       </span>
 
-                      {betweenTwoPagesScene.targets.map((target) => {
+                      {betweenTwoPagesScene.targets.map((target, targetIndex) => {
+                        const frame = getBetweenTwoPagesTargetFrame(
+                          betweenTwoPagesScene.id,
+                          target,
+                        );
                         const isFound = gameSession.betweenTwoPages!.foundSpotIds.includes(target.id);
 
-                        return (
+                        return isFound ? (
+                          <span
+                            key={`${page.id}-${target.id}`}
+                            data-friend-book-difference-marker={`${page.id}-${target.id}`}
+                            aria-hidden="true"
+                            className="pointer-events-none absolute z-30"
+                            style={{
+                              left: `${frame.x}%`,
+                              top: `${frame.y}%`,
+                              width: `${frame.width}%`,
+                              height: `${frame.height}%`,
+                            }}
+                          >
+                            <span className="absolute inset-0 flex items-center justify-center rounded-[0.95rem] border border-[#c9b198] bg-[rgba(255,248,242,0.06)]">
+                              <span className="flex h-6 w-6 items-center justify-center rounded-full border border-[#7d604c] bg-[rgba(255,248,242,0.92)] text-[#5d4032] shadow-[0_8px_12px_rgba(69,43,29,0.12)]">
+                                <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2} />
+                              </span>
+                            </span>
+                          </span>
+                        ) : (
                           <button
                             key={`${page.id}-${target.id}`}
                             type="button"
-                            aria-label={`Find ${target.label} on ${page.label.toLowerCase()}`}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              handleDifferenceSpotSelect(target.id);
-                            }}
-                            className={getBetweenTwoPagesTargetButtonClassName(isFound)}
+                            aria-label={target.label}
+                            data-friend-book-difference-hotspot={`${page.id}-${target.id}`}
+                            onClick={(event) =>
+                              handleBetweenTwoPagesHotspotClick(event, target.id)
+                            }
+                            className={getBetweenTwoPagesTargetButtonClassName(false)}
                             style={{
-                              left: `${target.x}%`,
-                              top: `${target.y}%`,
-                              width: `${target.width}%`,
-                              height: `${target.height}%`,
+                              left: `${frame.x}%`,
+                              top: `${frame.y}%`,
+                              width: `${frame.width}%`,
+                              height: `${frame.height}%`,
                             }}
                           >
-                            {isFound ? (
-                              <span className="pointer-events-none absolute left-1/2 top-1/2 flex h-6 w-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-[#7d604c] bg-[rgba(255,248,242,0.92)] text-[#5d4032] shadow-[0_8px_12px_rgba(69,43,29,0.12)]">
-                                <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2} />
-                              </span>
-                            ) : null}
+                            <span
+                              data-friend-book-difference-debug-outline={`${page.id}-${target.id}`}
+                              aria-hidden="true"
+                              className="pointer-events-none absolute inset-0 rounded-[0.95rem] border border-[#d95c55] border-dashed"
+                            />
+                            <span
+                              data-friend-book-difference-debug-badge={`${page.id}-${target.id}`}
+                              aria-hidden="true"
+                              className="pointer-events-none absolute left-2 top-2 inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-[#d95c55] px-1.5 text-[0.65rem] font-semibold leading-none text-white shadow-[0_6px_14px_rgba(120,42,34,0.24)]"
+                            >
+                              {targetIndex + 1}
+                            </span>
                           </button>
                         );
                       })}
@@ -1333,37 +1612,81 @@ export default function FriendBookFinalSection() {
               <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
                 <div className="rounded-[1.5rem] border border-[#dcc9b1] bg-[rgba(255,250,245,0.88)] p-5">
                   <p className="font-mono text-[0.68rem] uppercase tracking-[0.28em] text-[#7a5d4d]">
-                    Leave an echo in the Friend Book
+                    Leave a page in the guestbook
                   </p>
                   <h3 className="mt-2 font-serif text-[2rem] leading-[0.98] tracking-[-0.04em] text-[#2c2220]">
-                    Your line for {activeGame.title}
+                    Sign after {activeGame.title}
                   </h3>
                   <p className="mt-2 max-w-[42rem] text-[0.98rem] leading-7 text-[#4c3b32]">
-                    {roundSummary || 'Your medal is ready. Write one short line, then let it settle into the right-hand page.'}
+                    {roundSummary || 'This round unlocks one guestbook update. Write who you are, then leave one view of the whole portfolio.'}
                   </p>
                   <label
-                    htmlFor="friend-book-note"
+                    htmlFor="friend-book-nickname"
                     className="mt-5 block font-mono text-[0.68rem] uppercase tracking-[0.28em] text-[#7a5d4d]"
                   >
-                    Tonight&apos;s note
+                    Nickname
+                  </label>
+                  <input
+                    id="friend-book-nickname"
+                    value={nicknameDraft}
+                    onChange={(event) => setNicknameDraft(event.target.value)}
+                    placeholder="How should this page address you?"
+                    className="mt-4 h-12 w-full rounded-[1rem] border border-[#d9c8b3] bg-[rgba(255,251,246,0.92)] px-4 text-base text-[#3f312b] outline-none transition focus:border-[#8a654f]"
+                  />
+                  <label
+                    htmlFor="friend-book-identity-intro"
+                    className="mt-5 block font-mono text-[0.68rem] uppercase tracking-[0.28em] text-[#7a5d4d]"
+                  >
+                    How should this book remember you
                   </label>
                   <textarea
-                    id="friend-book-note"
-                    value={noteDraft}
-                    onChange={(event) => setNoteDraft(event.target.value)}
-                    placeholder="Write one calm line for tonight..."
+                    id="friend-book-identity-intro"
+                    value={identityIntroDraft}
+                    onChange={(event) => setIdentityIntroDraft(event.target.value)}
+                    placeholder="A short self-introduction for the left page..."
+                    className="mt-4 h-28 w-full rounded-[1.3rem] border border-[#d9c8b3] bg-[rgba(255,251,246,0.92)] px-4 py-4 text-base leading-7 text-[#3f312b] outline-none transition focus:border-[#8a654f]"
+                  />
+                  <label
+                    htmlFor="friend-book-portfolio-review"
+                    className="mt-5 block font-mono text-[0.68rem] uppercase tracking-[0.28em] text-[#7a5d4d]"
+                  >
+                    What do you think of the portfolio as a whole
+                  </label>
+                  <textarea
+                    id="friend-book-portfolio-review"
+                    value={portfolioReviewDraft}
+                    onChange={(event) => setPortfolioReviewDraft(event.target.value)}
+                    placeholder="One thoughtful line for the right page..."
                     className="mt-4 h-36 w-full rounded-[1.3rem] border border-[#d9c8b3] bg-[rgba(255,251,246,0.92)] px-4 py-4 text-base leading-7 text-[#3f312b] outline-none transition focus:border-[#8a654f]"
                   />
                   <div className="mt-4 flex flex-wrap items-center gap-3">
                     <button
                       type="button"
                       onClick={handleNoteSubmit}
-                      disabled={!noteDraft.trim()}
+                      disabled={
+                        !nicknameDraft.trim() ||
+                        !identityIntroDraft.trim() ||
+                        !portfolioReviewDraft.trim()
+                      }
                       className="inline-flex items-center gap-2 rounded-full border border-[#7d604c] bg-[#6a4f3c] px-5 py-3 text-sm font-medium text-[#fff8f2] disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       <PenLine className="h-4 w-4" strokeWidth={1.8} />
-                      <span>Write into the archive</span>
+                      <span>Write into the guestbook</span>
                     </button>
+                    {matchingGuestbookEntry ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={handleDeleteRecord}
+                          className="inline-flex items-center gap-2 rounded-full border border-[#b17972] bg-[rgba(255,242,238,0.92)] px-4 py-2 text-sm text-[#7a3f3c]"
+                        >
+                          <span>Delete This Record</span>
+                        </button>
+                        <p className="text-sm leading-6 text-[#7a5d4d]">
+                          {`This will remove ${matchingGuestbookEntry.nickname} from the guestbook only.`}
+                        </p>
+                      </>
+                    ) : null}
                     <button
                       type="button"
                       onClick={handleReplayActiveGame}
@@ -1399,8 +1722,8 @@ export default function FriendBookFinalSection() {
                   </div>
                   <p className="mt-4 text-sm leading-7 text-[#503e35]">
                     {currentAvatar
-                      ? `${currentAvatar.label} will sign this note, and the latest medal will settle into the ${activeGame.title} slot.`
-                      : 'Your chosen avatar and medal will be saved into this game slot.'}
+                      ? `${currentAvatar.label} and the latest medal will travel with this guestbook row when you save it.`
+                      : 'Your chosen avatar and medal will be saved into this guestbook row.'}
                   </p>
                 </div>
               </div>
@@ -1444,241 +1767,138 @@ export default function FriendBookFinalSection() {
               style={getAbsoluteLayoutStyle(FRIEND_BOOK_ARCHIVE_DESKTOP_LAYOUT.headerRight)}
             >
               <p className="font-mono text-[0.7rem] uppercase tracking-[0.34em] text-[#7a5d4d] xl:text-[0.76rem]">
-                Your echoes
+                Visitor guestbook
               </p>
               <p className="mt-2 max-w-[34rem] text-[0.98rem] leading-7 text-[#5c4940] xl:text-[1.02rem]">
-                Each game keeps one slot on the right. Replaying it rewrites only that page.
+                Each visitor owns one line across the spread. Every page keeps {FRIEND_BOOK_GUESTBOOK_PAGE_SIZE} records, with the newest note settling onto the latest row.
               </p>
             </div>
 
-            <div
-              data-friend-book-preview-sample-stack="true"
-              className="absolute inset-0"
-              style={{
-                transform: `translate(${FRIEND_BOOK_ARCHIVE_SAMPLE_STACK_NUDGE.x}px, ${FRIEND_BOOK_ARCHIVE_SAMPLE_STACK_NUDGE.y}px)`,
-              }}
-            >
-              {friendBookFinalSectionData.entries.map((entry) => {
-                const rowOffset = combineOffsets(
-                  FRIEND_BOOK_ARCHIVE_SAMPLE_ROW_POSITIONING.shared,
-                  FRIEND_BOOK_ARCHIVE_SAMPLE_ROW_POSITIONING.perEntry[
-                  entry.id as FriendBookArchiveSampleEntryId
-                  ],
-                );
-                const entryPositioning = FRIEND_BOOK_ARCHIVE_SAMPLE_ENTRY_POSITIONING.perEntry[
-                  entry.id as FriendBookArchiveSampleEntryId
-                ];
-                const avatarOffset = combineOffsets(
-                  FRIEND_BOOK_ARCHIVE_SAMPLE_ENTRY_POSITIONING.shared.avatar,
-                  entryPositioning.avatar,
-                );
-                const titleOffset = combineOffsets(
-                  FRIEND_BOOK_ARCHIVE_SAMPLE_ENTRY_POSITIONING.shared.title,
-                  entryPositioning.title,
-                );
-                const sealOffset = combineOffsets(
-                  FRIEND_BOOK_ARCHIVE_SAMPLE_ENTRY_POSITIONING.shared.seal,
-                  entryPositioning.seal,
-                );
-                const excerptOffset = combineOffsets(
-                  FRIEND_BOOK_ARCHIVE_SAMPLE_ENTRY_POSITIONING.shared.excerpt,
-                  entryPositioning.excerpt,
-                );
-                const medalOffset = combineOffsetWithScale(
-                  FRIEND_BOOK_ARCHIVE_SAMPLE_ENTRY_POSITIONING.shared.medal,
-                  entryPositioning.medal,
-                );
+            {guestbookPage.entries.flatMap((entry, index) => {
+              const leftRowKey = FRIEND_BOOK_GUESTBOOK_LEFT_ROW_ORDER[index]!;
+              const rightRowKey = FRIEND_BOOK_GUESTBOOK_RIGHT_ROW_ORDER[index]!;
+              const avatar = entry?.avatarId ? avatarById[entry.avatarId] : null;
+              const gameTag = getGuestbookGameTag(entry?.latestGameId ?? null);
 
-                return (
-                  <article
-                    key={entry.id}
-                    data-friend-book-sample-entry-desktop={entry.id}
-                    data-friend-book-sample-entry-row-desktop={entry.id}
-                    className="absolute"
-                    style={{
-                      ...getAbsoluteLayoutStyle(FRIEND_BOOK_ARCHIVE_DESKTOP_LAYOUT.sampleEntries[entry.id]),
-                      ...getOffsetStyle(rowOffset),
-                    }}
-                  >
-                    <div
-                      className={`grid h-full ${FRIEND_BOOK_SAMPLE_ENTRY_GRID.outer.base} gap-3 px-4 py-3 ${FRIEND_BOOK_SAMPLE_ENTRY_GRID.outer.xl} xl:px-5 xl:py-4`}
-                    >
-                      <img
-                        src={entry.avatarImage}
-                        alt=""
-                        aria-hidden="true"
-                        data-friend-book-sample-entry-avatar-desktop={entry.id}
-                        style={getOffsetStyle(avatarOffset)}
-                        className="mt-1 h-15 w-15 rounded-full object-cover xl:h-[4.6rem] xl:w-[4.6rem]"
-                      />
-                      <div
-                        data-friend-book-sample-entry-copy-desktop={entry.id}
-                        className={FRIEND_BOOK_SAMPLE_ENTRY_GRID.copy}
-                      >
-                        <div
-                          data-friend-book-sample-entry-header-desktop={entry.id}
-                          className={FRIEND_BOOK_SAMPLE_ENTRY_GRID.header}
-                        >
-                          <h4
-                            data-friend-book-sample-entry-title={entry.id}
-                            style={getOffsetStyle(titleOffset)}
-                            className="shrink-0 min-w-0 font-serif text-[1.62rem] leading-none tracking-[-0.04em] text-[#2d2221] xl:text-[2rem]"
-                          >
+              return [
+                <article
+                  key={`guestbook-left-${leftRowKey}-${entry?.id ?? `empty-${index}`}`}
+                  data-friend-book-guestbook-row-left-desktop={index}
+                  className="absolute"
+                  style={getAbsoluteLayoutStyle(FRIEND_BOOK_ARCHIVE_DESKTOP_LAYOUT.sampleEntries[leftRowKey])}
+                >
+                  {entry ? (
+                    <div className="grid h-full grid-cols-[60px_minmax(0,1fr)_92px] gap-3 px-4 py-3 xl:grid-cols-[70px_minmax(0,1fr)_104px] xl:px-5 xl:py-4">
+                      <div className="flex items-start justify-center pt-1">
+                        {avatar ? (
+                          <img
+                            src={avatar.asset}
+                            alt=""
+                            aria-hidden="true"
+                            className="h-15 w-15 rounded-full object-cover xl:h-[4.6rem] xl:w-[4.6rem]"
+                          />
+                        ) : (
+                          <div className="h-15 w-15 rounded-full border border-dashed border-[#d4bea8]/80 bg-[rgba(255,249,242,0.45)] xl:h-[4.6rem] xl:w-[4.6rem]" />
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-3">
+                          <p className="font-serif text-[1.62rem] leading-none tracking-[-0.04em] text-[#2d2221] xl:text-[2rem]">
                             {entry.nickname}
-                          </h4>
-                          <span
-                            data-friend-book-sample-entry-seal-desktop={entry.id}
-                            className={FRIEND_BOOK_SAMPLE_ENTRY_GRID.seal}
-                            style={{
-                              ...getOffsetStyle(sealOffset),
-                              backgroundColor: entry.seal.backgroundColor,
-                              borderColor: entry.seal.borderColor,
-                              color: entry.seal.textColor,
-                            }}
-                          >
-                            {entry.seal.label}
-                          </span>
+                          </p>
+                          {gameTag ? (
+                            <span
+                              className="inline-flex shrink-0 whitespace-nowrap rounded-full border px-2.5 py-1 text-[0.64rem] uppercase tracking-[0.16em] xl:px-3 xl:text-[0.72rem]"
+                              style={{
+                                backgroundColor: gameTag.backgroundColor,
+                                borderColor: gameTag.borderColor,
+                                color: gameTag.textColor,
+                              }}
+                            >
+                              {gameTag.label}
+                            </span>
+                          ) : null}
                         </div>
-                        <p
-                          data-friend-book-sample-entry-excerpt={entry.id}
-                          style={getOffsetStyle(excerptOffset)}
-                          className={FRIEND_BOOK_SAMPLE_ENTRY_GRID.excerpt}
-                        >
-                          {entry.excerpt}
+                        <p className="mt-3 text-[0.96rem] leading-7 text-[#463731] xl:text-[1.1rem] xl:leading-[1.55]">
+                          {entry.identityIntro}
                         </p>
                       </div>
                       <div className="flex h-full items-center justify-end pb-1 pt-1">
-                        <img
-                          src={entry.medalImage}
-                          alt=""
-                          aria-hidden="true"
-                          data-friend-book-sample-entry-medal-desktop={entry.id}
-                          style={getOffsetScaleStyle(medalOffset, medalOffset.scale)}
-                          className={`${FRIEND_BOOK_SAMPLE_ENTRY_GRID.medalSize.base} rounded-[1rem] object-cover ${FRIEND_BOOK_SAMPLE_ENTRY_GRID.medalSize.xl}`}
-                        />
+                        {entry.latestMedalId ? (
+                          <img
+                            src={entry.latestMedalId}
+                            alt=""
+                            aria-hidden="true"
+                            className="h-[4.5rem] w-[4.5rem] rounded-[1rem] object-cover xl:h-[5.2rem] xl:w-[5.2rem]"
+                          />
+                        ) : (
+                          <div className="h-[4.5rem] w-[4.5rem] rounded-[1rem] border border-dashed border-[#d4bea8]/80 bg-[rgba(255,249,242,0.45)] xl:h-[5.2rem] xl:w-[5.2rem]" />
+                        )}
                       </div>
                     </div>
-                  </article>
-                );
-              })}
-            </div>
-
-            {friendBookFinalSectionData.userSlots.map((slot) => {
-              const slotProgress = progress.games[slot.gameId];
-              const slotAvatar = slotProgress.latestAvatarId
-                ? avatarById[slotProgress.latestAvatarId]
-                : null;
-              const slotPositioning = FRIEND_BOOK_ARCHIVE_USER_SLOT_POSITIONING.perSlot[slot.gameId];
-              const containerOffset = combineOffsets(
-                FRIEND_BOOK_ARCHIVE_USER_SLOT_POSITIONING.shared.container,
-                slotPositioning.container,
-              );
-              const copyOffset = combineOffsets(
-                FRIEND_BOOK_ARCHIVE_USER_SLOT_POSITIONING.shared.copy,
-                slotPositioning.copy,
-              );
-              const labelOffset = combineOffsets(
-                FRIEND_BOOK_ARCHIVE_USER_SLOT_POSITIONING.shared.label,
-                slotPositioning.label,
-              );
-              const noteOffset = combineOffsets(
-                FRIEND_BOOK_ARCHIVE_USER_SLOT_POSITIONING.shared.note,
-                slotPositioning.note,
-              );
-              const metaOffset = combineOffsets(
-                FRIEND_BOOK_ARCHIVE_USER_SLOT_POSITIONING.shared.meta,
-                slotPositioning.meta,
-              );
-              const avatarOffset = combineOffsetWithScale(
-                FRIEND_BOOK_ARCHIVE_USER_SLOT_POSITIONING.shared.avatar,
-                slotPositioning.avatar,
-              );
-              const medalOffset = combineOffsetWithScale(
-                FRIEND_BOOK_ARCHIVE_USER_SLOT_POSITIONING.shared.medal,
-                slotPositioning.medal,
-              );
-              const dateOffset = combineOffsets(
-                FRIEND_BOOK_ARCHIVE_USER_SLOT_POSITIONING.shared.date,
-                slotPositioning.date,
-              );
-
-              return (
-                <article
-                  key={slot.gameId}
-                  data-friend-book-user-record-desktop={slot.gameId}
-                  className="absolute"
-                  style={getAbsoluteLayoutStyle(FRIEND_BOOK_ARCHIVE_DESKTOP_LAYOUT.userSlots[slot.gameId])}
-                >
-                  <div
-                    data-friend-book-user-record-container-desktop={slot.gameId}
-                    className="flex h-full justify-between gap-4 px-5 py-4 xl:px-6 xl:py-5"
-                    style={getOffsetStyle(containerOffset)}
-                  >
+                  ) : (
                     <div
-                      data-friend-book-user-record-copy-desktop={slot.gameId}
-                      className="min-w-0"
-                      style={getOffsetStyle(copyOffset)}
-                    >
-                      {slotProgress.latestNote ? (
-                        <>
-                          <p
-                            data-friend-book-user-record-label-desktop={slot.gameId}
-                            style={getOffsetStyle(labelOffset)}
-                            className="font-mono text-[0.62rem] uppercase tracking-[0.28em] text-[#7a5d4d] xl:text-[0.68rem]"
-                          >
-                            {slot.label}
-                          </p>
-                          <p
-                            data-friend-book-user-record-note-desktop={slot.gameId}
-                            style={getOffsetStyle(noteOffset)}
-                            className="mt-3 text-[0.92rem] leading-6 text-[#3f312b] xl:text-[1rem]"
-                          >
-                            {slotProgress.latestNote}
-                          </p>
-                          <p
-                            data-friend-book-user-record-meta-desktop={slot.gameId}
-                            style={getOffsetStyle(metaOffset)}
-                            className="mt-2 text-[0.78rem] leading-5 text-[#6b5650]"
-                          >
-                            {slotProgress.completionCount} completion{slotProgress.completionCount > 1 ? 's' : ''} saved in this slot.
-                          </p>
-                        </>
-                      ) : null}
-                    </div>
-
-                    <div className="flex h-full min-w-[82px] flex-col items-end justify-between pt-1">
-                      {slotAvatar ? (
-                        <img
-                          src={slotAvatar.asset}
-                          alt=""
-                          aria-hidden="true"
-                          data-friend-book-user-record-avatar-desktop={slot.gameId}
-                          style={getOffsetScaleStyle(avatarOffset, avatarOffset.scale)}
-                          className="h-14 w-14 rounded-full border border-[#d4bea8] object-cover"
-                        />
-                      ) : null}
-                      {slotProgress.latestMedalId ? (
-                        <img
-                          src={slotProgress.latestMedalId}
-                          alt=""
-                          aria-hidden="true"
-                          data-friend-book-user-record-medal-desktop={slot.gameId}
-                          style={getOffsetScaleStyle(medalOffset, medalOffset.scale)}
-                          className="h-14 w-14 rounded-[0.9rem] border border-[#d4bea8] object-cover"
-                        />
-                      ) : null}
-                      <p
-                        data-friend-book-user-record-date-desktop={slot.gameId}
-                        style={getOffsetStyle(dateOffset)}
-                        className="font-mono text-[0.64rem] uppercase tracking-[0.18em] text-[#6d5546] xl:text-[0.72rem]"
-                      >
-                        {slotProgress.latestDate ?? slot.previewDate}
+                      data-friend-book-guestbook-empty="true"
+                      className="h-full rounded-[1.5rem] bg-[rgba(255,251,246,0.18)]"
+                    />
+                  )}
+                </article>,
+                <article
+                  key={`guestbook-right-${rightRowKey}-${entry?.id ?? `empty-${index}`}`}
+                  data-friend-book-guestbook-row-right-desktop={index}
+                  className="absolute"
+                  style={getAbsoluteLayoutStyle(FRIEND_BOOK_ARCHIVE_DESKTOP_LAYOUT.userSlots[rightRowKey])}
+                >
+                  {entry ? (
+                    <div className="flex h-full flex-col justify-between px-5 py-4 xl:px-6 xl:py-5">
+                      <p className="text-[0.94rem] leading-6 text-[#3f312b] xl:text-[1rem] xl:leading-[1.6]">
+                        {entry.portfolioReview}
+                      </p>
+                      <p className="self-end font-mono text-[0.64rem] uppercase tracking-[0.18em] text-[#6d5546] xl:text-[0.72rem]">
+                        {entry.latestDate}
                       </p>
                     </div>
-                  </div>
-                </article>
-              );
+                  ) : (
+                    <div
+                      data-friend-book-guestbook-empty="true"
+                      className="h-full rounded-[1.5rem] bg-[rgba(255,251,246,0.18)]"
+                    />
+                  )}
+                </article>,
+              ];
             })}
+
+            <div
+              data-friend-book-guestbook-pagination="true"
+              className="absolute bottom-[3.6%] right-[4.8%] flex items-center gap-2"
+            >
+              <button
+                type="button"
+                onClick={() => setCurrentGuestbookPage((page) => Math.max(page - 1, 0))}
+                disabled={guestbookPage.pageIndex === 0}
+                className="rounded-full border border-[#c9b198] bg-[rgba(255,251,246,0.84)] px-3 py-1.5 text-[0.72rem] uppercase tracking-[0.14em] text-[#61483b] disabled:opacity-45"
+              >
+                Prev
+              </button>
+              <span
+                data-friend-book-guestbook-page-indicator="true"
+                className="min-w-[3.5rem] text-center font-mono text-[0.72rem] uppercase tracking-[0.16em] text-[#6d5546]"
+              >
+                {guestbookPage.pageIndex + 1} / {guestbookPage.totalPages}
+              </span>
+              <button
+                type="button"
+                onClick={() =>
+                  setCurrentGuestbookPage((page) =>
+                    Math.min(page + 1, guestbookPage.totalPages - 1),
+                  )
+                }
+                disabled={guestbookPage.pageIndex >= guestbookPage.totalPages - 1}
+                className="rounded-full border border-[#c9b198] bg-[rgba(255,251,246,0.84)] px-3 py-1.5 text-[0.72rem] uppercase tracking-[0.14em] text-[#61483b] disabled:opacity-45"
+              >
+                Next
+              </button>
+            </div>
           </div>
 
           <div className="relative grid gap-5 lg:hidden">
@@ -1696,141 +1916,111 @@ export default function FriendBookFinalSection() {
               ) : null}
 
               <div className="mt-5 grid gap-3">
-                {friendBookFinalSectionData.entries.map((entry) => (
-                  <article
-                    key={entry.id}
-                    data-friend-book-sample-entry={entry.id}
-                    className="grid gap-4 rounded-[1.4rem] bg-[rgba(255,251,246,0.72)] px-4 py-4 shadow-[0_10px_18px_rgba(84,56,36,0.06)] backdrop-blur-[1px] sm:grid-cols-[auto_minmax(0,1fr)_auto]"
-                  >
-                    <img
-                      src={entry.avatarImage}
-                      alt=""
-                      aria-hidden="true"
-                      className="h-16 w-16 rounded-full object-cover"
-                    />
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h4 className="font-serif text-[1.75rem] leading-none tracking-[-0.03em] text-[#2d2221]">
-                          {entry.nickname}
-                        </h4>
-                        <span
-                          className="rounded-full border px-3 py-1 text-[0.7rem] uppercase tracking-[0.16em]"
-                          style={{
-                            backgroundColor: entry.seal.backgroundColor,
-                            borderColor: entry.seal.borderColor,
-                            color: entry.seal.textColor,
-                          }}
-                        >
-                          {entry.seal.label}
-                        </span>
-                      </div>
-                      <p className="mt-2 text-[0.98rem] leading-7 text-[#463731]">
-                        {entry.excerpt}
-                      </p>
-                      <p className="text-sm leading-7 text-[#6b5650]">{entry.note}</p>
-                    </div>
-                    <div className="flex flex-col items-start gap-3 sm:items-end">
-                      <img
-                        src={entry.medalImage}
-                        alt=""
-                        aria-hidden="true"
-                        className="h-16 w-16 rounded-[1rem] object-cover"
-                      />
-                      <p className="font-mono text-[0.72rem] uppercase tracking-[0.2em] text-[#6d5546]">
-                        {entry.date}
-                      </p>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            </div>
+                {guestbookPage.entries.map((entry, index) => {
+                  const avatar = entry?.avatarId ? avatarById[entry.avatarId] : null;
+                  const gameTag = getGuestbookGameTag(entry?.latestGameId ?? null);
 
-            <div className="flex flex-col gap-3">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="font-mono text-[0.68rem] uppercase tracking-[0.28em] text-[#7a5d4d]">
-                    Your echoes
-                  </p>
-                  <p className="mt-2 text-sm leading-7 text-[#5c4940]">
-                    Each game keeps one slot on the right. Replaying it rewrites only that page.
-                  </p>
-                </div>
-                {currentAvatar ? (
-                  <div className="rounded-full border border-[#d6bfaa] bg-[rgba(255,250,244,0.7)] px-3 py-2 backdrop-blur-[1px]">
-                    <div className="flex items-center gap-2">
-                      <img
-                        src={currentAvatar.asset}
-                        alt=""
-                        aria-hidden="true"
-                        className="h-10 w-10 rounded-full border border-[#d4bea8] object-cover"
-                      />
-                      <div>
-                        <p className="text-xs uppercase tracking-[0.2em] text-[#7a5d4d]">
-                          Signing as
-                        </p>
-                        <p className="font-serif text-lg text-[#332625]">
-                          {currentAvatar.label}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ) : null}
+                  return (
+                    <article
+                      key={entry?.id ?? `mobile-empty-${index}`}
+                      data-friend-book-guestbook-row-mobile={index}
+                      className="rounded-[1.35rem] bg-[rgba(255,251,246,0.6)] px-4 py-4 shadow-[0_10px_18px_rgba(84,56,36,0.06)] backdrop-blur-[1px]"
+                    >
+                      {entry ? (
+                        <div className="grid gap-4 sm:grid-cols-[auto_minmax(0,1fr)_auto]">
+                          <div className="flex flex-col items-center gap-3">
+                            {avatar ? (
+                              <img
+                                src={avatar.asset}
+                                alt=""
+                                aria-hidden="true"
+                                className="h-16 w-16 rounded-full object-cover"
+                              />
+                            ) : (
+                              <div className="h-16 w-16 rounded-full border border-dashed border-[#d4bea8]/80 bg-[rgba(255,249,242,0.45)]" />
+                            )}
+                            {entry.latestMedalId ? (
+                              <img
+                                src={entry.latestMedalId}
+                                alt=""
+                                aria-hidden="true"
+                                className="h-14 w-14 rounded-[1rem] object-cover"
+                              />
+                            ) : null}
+                          </div>
+                          <div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="font-serif text-[1.75rem] leading-none tracking-[-0.03em] text-[#2d2221]">
+                                {entry.nickname}
+                              </p>
+                              {gameTag ? (
+                                <span
+                                  className="inline-flex shrink-0 whitespace-nowrap rounded-full border px-2.5 py-1 text-[0.64rem] uppercase tracking-[0.16em]"
+                                  style={{
+                                    backgroundColor: gameTag.backgroundColor,
+                                    borderColor: gameTag.borderColor,
+                                    color: gameTag.textColor,
+                                  }}
+                                >
+                                  {gameTag.label}
+                                </span>
+                              ) : null}
+                            </div>
+                            <p className="mt-2 text-[0.96rem] leading-7 text-[#463731]">
+                              {entry.identityIntro}
+                            </p>
+                            <p className="mt-3 text-[0.98rem] leading-7 text-[#3f312b]">
+                              {entry.portfolioReview}
+                            </p>
+                          </div>
+                          <div className="flex items-start justify-end">
+                            <p className="font-mono text-[0.72rem] uppercase tracking-[0.22em] text-[#6d5546]">
+                              {entry.latestDate}
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div
+                          data-friend-book-guestbook-empty="true"
+                          className="h-24 rounded-[1rem] bg-[rgba(255,249,242,0.24)]"
+                        />
+                      )}
+                    </article>
+                  );
+                })}
               </div>
 
-              {friendBookFinalSectionData.userSlots.map((slot) => {
-                const slotProgress = progress.games[slot.gameId];
-                const slotAvatar = slotProgress.latestAvatarId
-                  ? avatarById[slotProgress.latestAvatarId]
-                  : null;
-
-                return (
-                  <article
-                    key={slot.gameId}
-                    data-friend-book-user-record={slot.gameId}
-                    className="rounded-[1.35rem] bg-[rgba(255,251,246,0.6)] px-4 py-4 shadow-[0_10px_18px_rgba(84,56,36,0.06)] backdrop-blur-[1px]"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        {slotProgress.latestNote ? (
-                          <>
-                            <p className="font-mono text-[0.68rem] uppercase tracking-[0.24em] text-[#7a5d4d]">
-                              {slot.label}
-                            </p>
-                            <p className="mt-2 text-[0.98rem] leading-7 text-[#3f312b]">
-                              {slotProgress.latestNote}
-                            </p>
-                            <p className="text-sm leading-7 text-[#6b5650]">
-                              {slotProgress.completionCount} completion{slotProgress.completionCount > 1 ? 's' : ''} saved in this slot.
-                            </p>
-                          </>
-                        ) : null}
-                      </div>
-
-                      <div className="flex flex-col items-end gap-3">
-                        {slotAvatar ? (
-                          <img
-                            src={slotAvatar.asset}
-                            alt=""
-                            aria-hidden="true"
-                            className="h-14 w-14 rounded-full border border-[#d4bea8] object-cover"
-                          />
-                        ) : null}
-                        {slotProgress.latestMedalId ? (
-                          <img
-                            src={slotProgress.latestMedalId}
-                            alt=""
-                            aria-hidden="true"
-                            className="h-14 w-14 rounded-[0.9rem] border border-[#d4bea8] object-cover"
-                          />
-                        ) : null}
-                        <p className="font-mono text-[0.72rem] uppercase tracking-[0.22em] text-[#6d5546]">
-                          {slotProgress.latestDate ?? slot.previewDate}
-                        </p>
-                      </div>
-                    </div>
-                  </article>
-                );
-              })}
+              <div
+                data-friend-book-guestbook-pagination="true"
+                className="flex items-center justify-center gap-3"
+              >
+                <button
+                  type="button"
+                  onClick={() => setCurrentGuestbookPage((page) => Math.max(page - 1, 0))}
+                  disabled={guestbookPage.pageIndex === 0}
+                  className="rounded-full border border-[#c9b198] bg-[rgba(255,251,246,0.84)] px-4 py-2 text-[0.72rem] uppercase tracking-[0.14em] text-[#61483b] disabled:opacity-45"
+                >
+                  Prev
+                </button>
+                <span
+                  data-friend-book-guestbook-page-indicator="true"
+                  className="font-mono text-[0.72rem] uppercase tracking-[0.16em] text-[#6d5546]"
+                >
+                  {guestbookPage.pageIndex + 1} / {guestbookPage.totalPages}
+                </span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCurrentGuestbookPage((page) =>
+                      Math.min(page + 1, guestbookPage.totalPages - 1),
+                    )
+                  }
+                  disabled={guestbookPage.pageIndex >= guestbookPage.totalPages - 1}
+                  className="rounded-full border border-[#c9b198] bg-[rgba(255,251,246,0.84)] px-4 py-2 text-[0.72rem] uppercase tracking-[0.14em] text-[#61483b] disabled:opacity-45"
+                >
+                  Next
+                </button>
+              </div>
             </div>
           </div>
         </section>

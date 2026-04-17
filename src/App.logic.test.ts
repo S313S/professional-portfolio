@@ -46,6 +46,10 @@ test('parses only supported focus query values from the url search string', () =
 
 test('matches the friend-book standalone debug route only in development', () => {
   assert.equal(getDevStandaloneRoute('/debug/friend-book-finale', true), 'friend-book-finale');
+  assert.equal(
+    getDevStandaloneRoute('/debug/friend-book-diff-hotspots', true),
+    'friend-book-diff-hotspots',
+  );
   assert.equal(getDevStandaloneRoute('/debug/friend-book-finale', false), null);
   assert.equal(getDevStandaloneRoute('/debug/works-detail', true), null);
 });

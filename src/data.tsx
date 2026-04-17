@@ -52,6 +52,10 @@ export interface FriendBookBetweenTwoPagesTarget {
   y: number;
   width: number;
   height: number;
+  hitArea: Array<{
+    x: number;
+    y: number;
+  }>;
 }
 
 export interface FriendBookBetweenTwoPagesScene {
@@ -448,6 +452,12 @@ const friendBookBetweenTwoPagesScenes: FriendBookBetweenTwoPagesScene[] = [
         y: 15,
         width: 18,
         height: 18,
+        hitArea: [
+          { x: 17, y: 15 },
+          { x: 35, y: 15 },
+          { x: 35, y: 33 },
+          { x: 17, y: 33 },
+        ],
       },
       {
         id: 'cat-tail',
@@ -456,6 +466,12 @@ const friendBookBetweenTwoPagesScenes: FriendBookBetweenTwoPagesScene[] = [
         y: 75,
         width: 17,
         height: 15,
+        hitArea: [
+          { x: 73, y: 71 },
+          { x: 90, y: 71 },
+          { x: 90, y: 86 },
+          { x: 73, y: 86 },
+        ],
       },
       {
         id: 'page-fold',
@@ -464,6 +480,12 @@ const friendBookBetweenTwoPagesScenes: FriendBookBetweenTwoPagesScene[] = [
         y: 19,
         width: 10,
         height: 12,
+        hitArea: [
+          { x: 84, y: 7 },
+          { x: 97, y: 7 },
+          { x: 97, y: 21 },
+          { x: 88, y: 21 },
+        ],
       },
     ],
   },
@@ -480,6 +502,12 @@ const friendBookBetweenTwoPagesScenes: FriendBookBetweenTwoPagesScene[] = [
         y: 58,
         width: 10,
         height: 20,
+        hitArea: [
+          { x: 44, y: 54 },
+          { x: 51, y: 54 },
+          { x: 51, y: 75 },
+          { x: 44, y: 75 },
+        ],
       },
       {
         id: 'tea-cup',
@@ -488,6 +516,12 @@ const friendBookBetweenTwoPagesScenes: FriendBookBetweenTwoPagesScene[] = [
         y: 80,
         width: 15,
         height: 17,
+        hitArea: [
+          { x: 52, y: 77 },
+          { x: 67, y: 77 },
+          { x: 67, y: 94 },
+          { x: 52, y: 94 },
+        ],
       },
       {
         id: 'bamboo-cluster',
@@ -496,6 +530,12 @@ const friendBookBetweenTwoPagesScenes: FriendBookBetweenTwoPagesScene[] = [
         y: 36,
         width: 15,
         height: 18,
+        hitArea: [
+          { x: 53, y: 27 },
+          { x: 70, y: 30 },
+          { x: 76, y: 48 },
+          { x: 58, y: 50 },
+        ],
       },
     ],
   },
@@ -512,6 +552,12 @@ const friendBookBetweenTwoPagesScenes: FriendBookBetweenTwoPagesScene[] = [
         y: 36,
         width: 11,
         height: 11,
+        hitArea: [
+          { x: 34, y: 28 },
+          { x: 53, y: 28 },
+          { x: 53, y: 51 },
+          { x: 34, y: 51 },
+        ],
       },
       {
         id: 'blossom-branch',
@@ -520,6 +566,12 @@ const friendBookBetweenTwoPagesScenes: FriendBookBetweenTwoPagesScene[] = [
         y: 38,
         width: 15,
         height: 16,
+        hitArea: [
+          { x: 53, y: 31 },
+          { x: 71, y: 31 },
+          { x: 74, y: 47 },
+          { x: 56, y: 49 },
+        ],
       },
       {
         id: 'cushion-tassel',
@@ -528,6 +580,12 @@ const friendBookBetweenTwoPagesScenes: FriendBookBetweenTwoPagesScene[] = [
         y: 82,
         width: 8,
         height: 15,
+        hitArea: [
+          { x: 86, y: 74 },
+          { x: 100, y: 74 },
+          { x: 100, y: 98 },
+          { x: 86, y: 98 },
+        ],
       },
     ],
   },

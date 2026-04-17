@@ -3,15 +3,21 @@ import assert from 'node:assert/strict';
 import { renderToStaticMarkup } from 'react-dom/server';
 
 import { friendBookFinalSectionData } from '../data';
-import { createFriendBookGameSession } from './FriendBookFinalSection.logic';
+import {
+  createDefaultFriendBookProgress,
+  createFriendBookGameSession,
+  upsertFriendBookGuestbookEntry,
+} from './FriendBookFinalSection.logic';
 import FriendBookGameOverlay from './FriendBookGameOverlay';
 import FriendBookMoonRunStage from './FriendBookMoonRunStage';
 import FriendBookFinalSection, {
+  FRIEND_BOOK_BETWEEN_TWO_PAGES_TARGET_POSITIONING,
   FRIEND_BOOK_ARCHIVE_SAMPLE_ENTRY_POSITIONING,
   FRIEND_BOOK_ARCHIVE_USER_SLOT_POSITIONING,
   FRIEND_BOOK_BUTTON_POSITIONING,
   FRIEND_BOOK_COPY_POSITIONING,
   getBetweenTwoPagesHintsVisibility,
+  getBetweenTwoPagesTargetFrame,
   getBetweenTwoPagesTimerEffectKey,
   getBetweenTwoPagesTargetButtonClassName,
 } from './FriendBookFinalSection';
@@ -134,11 +140,31 @@ test('exports centralized positioning configs for the friend-book landing contro
   );
 });
 
-test('renders the friend-book finale as a paper-book landing scene with sample archive and user slots', () => {
+test('exports centralized target positioning for between two pages hotspots', () => {
+  const scene = friendBookFinalSectionData.betweenTwoPagesScenes[0]!;
+  const target = scene.targets[0]!;
+  const frame = getBetweenTwoPagesTargetFrame(scene.id, target);
+
+  assert.equal(
+    FRIEND_BOOK_BETWEEN_TWO_PAGES_TARGET_POSITIONING['moon-cottage']['moon-stamp'].x,
+    17,
+  );
+  assert.equal(
+    FRIEND_BOOK_BETWEEN_TWO_PAGES_TARGET_POSITIONING['moon-cottage']['moon-stamp'].height,
+    18,
+  );
+  assert.deepEqual(frame, {
+    x: 17,
+    y: 15,
+    width: 18,
+    height: 18,
+  });
+});
+
+test('renders the friend-book finale as a paper-book landing scene with five seeded guestbook rows across two pages', () => {
   const markup = renderToStaticMarkup(<FriendBookFinalSection />);
   const gameCardMatches = markup.match(/data-friend-book-game-card=/g) ?? [];
-  const sampleEntryMatches = markup.match(/data-friend-book-sample-entry=/g) ?? [];
-  const userRecordMatches = markup.match(/data-friend-book-user-record=/g) ?? [];
+  const guestbookMobileMatches = markup.match(/data-friend-book-guestbook-row-mobile=/g) ?? [];
 
   assert.match(markup, /id="friend-book-finale-section"/);
   assert.match(markup, /data-friend-book-stage="landing"/);
@@ -182,17 +208,20 @@ test('renders the friend-book finale as a paper-book landing scene with sample a
   assert.match(markup, /data-friend-book-card-copy="one-stroke-mark"/);
   assert.match(markup, /data-friend-book-card-copy-title="moon-run"/);
   assert.match(markup, /data-friend-book-card-copy-description="moon-run"/);
-  assert.match(markup, /data-friend-book-sample-entry-avatar-desktop="spring-wind"/);
-  assert.match(markup, /data-friend-book-sample-entry-avatar-desktop="book-sea-diver"/);
-  assert.match(markup, /data-friend-book-sample-entry-avatar-desktop="night-watcher"/);
-  assert.match(markup, /data-friend-book-sample-entry-row-desktop="spring-wind"/);
-  assert.match(markup, /data-friend-book-sample-entry-title="spring-wind"/);
-  assert.match(markup, /data-friend-book-sample-entry-seal-desktop="book-sea-diver"/);
-  assert.match(markup, /data-friend-book-sample-entry-excerpt="night-watcher"/);
-  assert.match(markup, /data-friend-book-sample-entry-medal-desktop="spring-wind"/);
-  assert.match(markup, /data-friend-book-user-record-container-desktop="between-two-pages"/);
-  assert.match(markup, /data-friend-book-user-record-copy-desktop="between-two-pages"/);
-  assert.match(markup, /data-friend-book-user-record-date-desktop="between-two-pages"/);
+  assert.match(markup, /data-friend-book-guestbook-row-left-desktop="0"/);
+  assert.match(markup, /data-friend-book-guestbook-row-left-desktop="1"/);
+  assert.match(markup, /data-friend-book-guestbook-row-left-desktop="2"/);
+  assert.match(markup, /data-friend-book-guestbook-row-right-desktop="0"/);
+  assert.match(markup, /data-friend-book-guestbook-row-right-desktop="1"/);
+  assert.match(markup, /data-friend-book-guestbook-row-right-desktop="2"/);
+  assert.match(markup, /data-friend-book-guestbook-pagination="true"/);
+  assert.match(markup, /data-friend-book-guestbook-page-indicator="true"[^>]*>1 \/ 2</);
+  assert.match(markup, /林间拾页人/);
+  assert.match(markup, /夜航漫游者/);
+  assert.match(markup, /纸边侦探/);
+  assert.match(markup, /Two Pages/);
+  assert.match(markup, /Moon Run/);
+  assert.match(markup, /Who&#x27;s This/);
   assert.doesNotMatch(markup, /rounded-full bg-\[rgba\(255,247,238,0\.74\)\] px-3 py-1 text-\[0\.68rem\] uppercase tracking-\[0\.18em\] text-\[#62483a\]/);
   assert.doesNotMatch(markup, /inline-flex h-10 w-10 items-center justify-center rounded-full border border-\[#b99774\]/);
   assert.doesNotMatch(markup, /lucide-search h-4 w-4/);
@@ -200,18 +229,9 @@ test('renders the friend-book finale as a paper-book landing scene with sample a
   assert.doesNotMatch(markup, /lucide-pen-line h-4 w-4/);
   assert.match(markup, /ARCHIVE OF BONDS/);
   assert.match(markup, /Soft Archive of Tonight/);
-  assert.match(markup, /樱花季的风/);
-  assert.match(markup, /书海潜水员/);
-  assert.match(markup, /深夜守望者/);
+  assert.match(markup, /Visitor guestbook/);
   assert.equal(gameCardMatches.length, 3);
-  assert.equal(sampleEntryMatches.length, 3);
-  assert.equal(userRecordMatches.length, 3);
-  assert.match(markup, /data-friend-book-sample-entry-row-desktop="book-sea-diver"[^>]*style="[^"]*translate\(/);
-  assert.match(markup, /data-friend-book-sample-entry-avatar-desktop="spring-wind"[^>]*style="[^"]*translate\(/);
-  assert.match(markup, /data-friend-book-sample-entry-medal-desktop="book-sea-diver"[^>]*style="[^"]*scale\(/);
-  assert.match(markup, /data-friend-book-user-record-container-desktop="moon-run"[^>]*style="[^"]*translate\(/);
-  assert.match(markup, /data-friend-book-user-record-copy-desktop="one-stroke-mark"[^>]*style="[^"]*translate\(/);
-  assert.match(markup, /data-friend-book-user-record-date-desktop="between-two-pages"[^>]*style="[^"]*translate\(/);
+  assert.equal(guestbookMobileMatches.length, 3);
   assert.doesNotMatch(markup, /Next Chapter \/ 友人帐/);
   assert.doesNotMatch(markup, /A softer public site for work, play, and remembrance\./);
   assert.doesNotMatch(markup, /Not your identity\. The name you’d like me to remember\./);
@@ -219,6 +239,7 @@ test('renders the friend-book finale as a paper-book landing scene with sample a
   assert.doesNotMatch(markup, /MVP/);
   assert.doesNotMatch(markup, /Moonlit Echo/);
   assert.doesNotMatch(markup, /Night Keepsake/);
+  assert.doesNotMatch(markup, /Each game keeps one slot on the right\./);
 });
 
 test('renders a dedicated full-screen friend-book game overlay for active rounds', () => {
@@ -322,13 +343,107 @@ test('between two pages overlay stacks the compared pages vertically to prioriti
   assert.match(markup, /gap-2/);
 });
 
-test('between two pages target buttons stay visually silent until a difference is found', () => {
+test('renders between two pages as page-local transparent hotspots with fixed markers', () => {
+  const scene = friendBookFinalSectionData.betweenTwoPagesScenes[0]!;
+  const markup = renderToStaticMarkup(
+    <FriendBookFinalSection
+      initialStage="game-active"
+      initialActiveGameId="between-two-pages"
+    />,
+  );
+
+  assert.match(markup, /data-friend-book-difference-page="left"/);
+  assert.match(markup, /data-friend-book-difference-page="right"/);
+  assert.match(markup, /data-friend-book-difference-miss-zone="left"/);
+  assert.match(markup, /data-friend-book-difference-miss-zone="right"/);
+
+  for (const [index, target] of scene.targets.entries()) {
+    const markerPattern = new RegExp(
+      `data-friend-book-difference-marker="left-${target.id}"`,
+    );
+    const rightMarkerPattern = new RegExp(
+      `data-friend-book-difference-marker="right-${target.id}"`,
+    );
+
+    assert.match(
+      markup,
+      new RegExp(`data-friend-book-difference-hotspot="left-${target.id}"`),
+    );
+    assert.match(
+      markup,
+      new RegExp(`data-friend-book-difference-hotspot="right-${target.id}"`),
+    );
+    assert.match(
+      markup,
+      new RegExp(`data-friend-book-difference-debug-outline="left-${target.id}"`),
+    );
+    assert.match(
+      markup,
+      new RegExp(`data-friend-book-difference-debug-outline="right-${target.id}"`),
+    );
+    assert.match(
+      markup,
+      new RegExp(`data-friend-book-difference-debug-badge="left-${target.id}"[^>]*>${index + 1}<`),
+    );
+    assert.match(
+      markup,
+      new RegExp(`data-friend-book-difference-debug-badge="right-${target.id}"[^>]*>${index + 1}<`),
+    );
+    assert.match(markup, new RegExp(`aria-label="${target.label}"`));
+    assert.doesNotMatch(markup, markerPattern);
+    assert.doesNotMatch(markup, rightMarkerPattern);
+  }
+});
+
+test('renders fixed markers on both pages after a difference has already been found', () => {
+  const scene = friendBookFinalSectionData.betweenTwoPagesScenes[0]!;
+  const foundTarget = scene.targets[0]!;
+  const session = createFriendBookGameSession(
+    'between-two-pages',
+    friendBookFinalSectionData.quizQuestionBank,
+    () => 0,
+    { betweenTwoPagesSceneId: scene.id },
+  );
+
+  session.betweenTwoPages = {
+    ...session.betweenTwoPages!,
+    foundSpotIds: [foundTarget.id],
+  };
+
+  const markup = renderToStaticMarkup(
+    <FriendBookFinalSection
+      initialStage="game-active"
+      initialActiveGameId="between-two-pages"
+      initialGameSession={session}
+    />,
+  );
+
+  assert.match(
+    markup,
+    new RegExp(`data-friend-book-difference-marker="left-${foundTarget.id}"`),
+  );
+  assert.match(
+    markup,
+    new RegExp(`data-friend-book-difference-marker="right-${foundTarget.id}"`),
+  );
+  assert.doesNotMatch(
+    markup,
+    new RegExp(`data-friend-book-difference-hotspot="left-${foundTarget.id}"`),
+  );
+  assert.doesNotMatch(
+    markup,
+    new RegExp(`data-friend-book-difference-hotspot="right-${foundTarget.id}"`),
+  );
+});
+
+test('between two pages target buttons expose visible debug outlines until a difference is found', () => {
   const idleClassName = getBetweenTwoPagesTargetButtonClassName(false);
   const foundClassName = getBetweenTwoPagesTargetButtonClassName(true);
 
   assert.doesNotMatch(idleClassName, /hover:border/);
   assert.doesNotMatch(idleClassName, /hover:bg/);
-  assert.match(idleClassName, /border-transparent/);
+  assert.match(idleClassName, /border-\[#d95c55\]/);
+  assert.match(idleClassName, /bg-\[rgba\(217,92,85,0\.12\)\]/);
   assert.match(foundClassName, /border-transparent/);
 });
 
@@ -364,4 +479,119 @@ test('between two pages timer key ignores mistake-only updates so clicks do not 
 
   assert.equal(activeKey, sameActiveKey);
   assert.notEqual(activeKey, failedKey);
+});
+
+test('renders a real guestbook spread with aligned left identity cards and right portfolio reviews', () => {
+  let progress = createDefaultFriendBookProgress({ includeSeedGuestbook: false });
+  progress = upsertFriendBookGuestbookEntry(progress, {
+    nickname: 'Archive Walker',
+    identityIntro: 'A quiet builder who likes slow interfaces.',
+    portfolioReview: 'This portfolio feels unusually deliberate from start to finish.',
+    latestGameId: 'between-two-pages',
+    avatarId: 'cat',
+    medalId: '/images/PurpleMedal01.png',
+    displayDate: 'APR 17, 2026',
+    updatedAt: '2026-04-17T12:00:00.000Z',
+  });
+  progress = upsertFriendBookGuestbookEntry(progress, {
+    nickname: 'Moon Librarian',
+    identityIntro: 'A night reader who remembers texture first.',
+    portfolioReview: 'The whole site reads like a curated room instead of a grid.',
+    latestGameId: 'moon-run',
+    avatarId: 'dog',
+    medalId: '/images/GreenMedal01.png',
+    displayDate: 'APR 18, 2026',
+    updatedAt: '2026-04-18T12:00:00.000Z',
+  });
+  progress = upsertFriendBookGuestbookEntry(progress, {
+    nickname: 'Paper Signal',
+    identityIntro: 'A product operator who notices pacing.',
+    portfolioReview: 'The transitions make the work feel authored rather than stacked.',
+    latestGameId: 'one-stroke-mark',
+    avatarId: 'rabbit',
+    medalId: '/images/Animalmedals04.png',
+    displayDate: 'APR 19, 2026',
+    updatedAt: '2026-04-19T12:00:00.000Z',
+  });
+
+  const markup = renderToStaticMarkup(
+    <FriendBookFinalSection initialProgress={progress} />,
+  );
+
+  assert.match(markup, /data-friend-book-guestbook-row-left-desktop="0"/);
+  assert.match(markup, /data-friend-book-guestbook-row-right-desktop="0"/);
+  assert.match(markup, /Archive Walker/);
+  assert.match(markup, /Two Pages/);
+  assert.match(markup, /A quiet builder who likes slow interfaces\./);
+  assert.match(markup, /This portfolio feels unusually deliberate from start to finish\./);
+  assert.match(markup, /APR 17, 2026/);
+  assert.match(markup, /data-friend-book-guestbook-pagination="true"/);
+  assert.doesNotMatch(markup, /Each game keeps one slot on the right\./);
+});
+
+test('renders guestbook pagination with the newest partial page bottom-aligned', () => {
+  let progress = createDefaultFriendBookProgress({ includeSeedGuestbook: false });
+  for (const [index, nickname] of ['Aster', 'Birch', 'Cinder', 'Dawn'].entries()) {
+    progress = upsertFriendBookGuestbookEntry(progress, {
+      nickname,
+      identityIntro: `${nickname} intro`,
+      portfolioReview: `${nickname} review`,
+      latestGameId: 'moon-run',
+      updatedAt: `2026-04-1${index}T12:00:00.000Z`,
+    });
+  }
+
+  const markup = renderToStaticMarkup(
+    <FriendBookFinalSection initialProgress={progress} initialGuestbookPage={1} />,
+  );
+
+  assert.match(markup, /data-friend-book-guestbook-page-indicator="true"[^>]*>2 \/ 2</);
+  assert.match(
+    markup,
+    /data-friend-book-guestbook-row-left-desktop="0"[\s\S]*?data-friend-book-guestbook-empty="true"/,
+  );
+  assert.match(markup, /data-friend-book-guestbook-row-left-desktop="0"[\s\S]*?Dawn/);
+  assert.match(markup, /data-friend-book-guestbook-row-left-desktop="1"[\s\S]*?data-friend-book-guestbook-empty="true"/);
+  assert.match(markup, /data-friend-book-guestbook-row-left-desktop="2"[\s\S]*?data-friend-book-guestbook-empty="true"/);
+});
+
+test('renders the unified guestbook editor with nickname, identity intro, and portfolio review fields', () => {
+  const markup = renderToStaticMarkup(
+    <FriendBookFinalSection
+      initialStage="note-entry"
+      initialActiveGameId="moon-run"
+    />,
+  );
+
+  assert.match(markup, /Leave a page in the guestbook/);
+  assert.match(markup, /Nickname/);
+  assert.match(markup, /How should this book remember you/);
+  assert.match(markup, /What do you think of the portfolio as a whole/);
+  assert.doesNotMatch(markup, /Tonight&#x27;s note/);
+});
+
+test('shows a delete action in the guestbook editor when the typed nickname already exists', { concurrency: false }, () => {
+  let progress = createDefaultFriendBookProgress({ includeSeedGuestbook: false });
+  progress = upsertFriendBookGuestbookEntry(progress, {
+    nickname: '小辞',
+    identityIntro: '一个不会代码的工程师',
+    portfolioReview: '真牛逼呀，老铁',
+    latestGameId: 'moon-run',
+    avatarId: 'cat',
+    medalId: '/images/GreenMedal01.png',
+    displayDate: 'APR 17, 2026',
+    updatedAt: '2026-04-17T12:00:00.000Z',
+  });
+
+  const markup = renderToStaticMarkup(
+    <FriendBookFinalSection
+      initialProgress={progress}
+      initialStage="note-entry"
+      initialActiveGameId="moon-run"
+      initialNicknameDraft="小辞"
+    />,
+  );
+
+  assert.match(markup, /Delete This Record/);
+  assert.match(markup, /This will remove 小辞 from the guestbook only\./);
 });

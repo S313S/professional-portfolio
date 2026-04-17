@@ -5,6 +5,8 @@ import { existsSync } from 'node:fs';
 
 import { friendBookFinalSectionData } from '../data.tsx';
 import {
+  deleteFriendBookGuestbookEntry,
+  FRIEND_BOOK_GUESTBOOK_PAGE_SIZE,
   FRIEND_BOOK_HIDDEN_AVATAR_ID,
   FRIEND_BOOK_STORAGE_KEY,
   answerFriendBookQuizQuestion,
@@ -14,6 +16,7 @@ import {
   createDefaultFriendBookProgress,
   createFriendBookGameSession,
   createFriendBookQuizRound,
+  getFriendBookGuestbookPage,
   getAvailableFriendBookAvatarIds,
   getFriendBookGameStartStage,
   getNextBetweenTwoPagesSceneRotation,
@@ -22,6 +25,7 @@ import {
   resolveBetweenTwoPagesSpotSelection,
   getMoonRunRoundSummary,
   stepMoonRunSession,
+  upsertFriendBookGuestbookEntry,
 } from './FriendBookFinalSection.logic.ts';
 
 function createMemoryStorage(seed: Record<string, string> = {}) {
@@ -60,10 +64,33 @@ test('hydrate merges persisted friend-book progress with default slots and avata
   const progress = hydrateFriendBookProgress(storage);
 
   assert.equal(progress.selectedAvatarId, 'dog');
+  assert.equal(progress.version, 2);
   assert.equal(progress.games['moon-run'].completionCount, 1);
   assert.equal(progress.games['between-two-pages'].completionCount, 0);
   assert.equal(progress.games['one-stroke-mark'].latestNote, '');
+  assert.equal(progress.guestbookEntries.length, 5);
+  assert.equal(progress.guestbookEntries[0]?.nickname, '林间拾页人');
+  assert.equal(progress.guestbookEntries[1]?.nickname, '夜航漫游者');
+  assert.equal(progress.guestbookEntries[2]?.latestGameId, 'one-stroke-mark');
   assert.equal(progress.allGamesCompleted, false);
+});
+
+test('default friend-book progress starts with five seeded guestbook entries spanning all three games', () => {
+  const progress = createDefaultFriendBookProgress();
+
+  assert.equal(progress.version, 2);
+  assert.equal(progress.guestbookEntries.length, 5);
+  assert.deepEqual(
+    new Set(progress.guestbookEntries.map((entry) => entry.latestGameId)),
+    new Set(['between-two-pages', 'moon-run', 'one-stroke-mark']),
+  );
+});
+
+test('default friend-book progress can opt out of seeded guestbook entries for isolated tests', () => {
+  const progress = createDefaultFriendBookProgress({ includeSeedGuestbook: false });
+
+  assert.equal(progress.version, 2);
+  assert.deepEqual(progress.guestbookEntries, []);
 });
 
 test('hydrate drops invalid avatar ids from persisted progress instead of trusting arbitrary strings', () => {
@@ -168,6 +195,129 @@ test('replaying a game rerolls its medal and overwrites only that game slot', ()
   assert.equal(progress.games['between-two-pages'].completionCount, 0);
 });
 
+test('upsert creates a new guestbook entry for a fresh nickname', () => {
+  const progress = upsertFriendBookGuestbookEntry(createDefaultFriendBookProgress({ includeSeedGuestbook: false }), {
+    nickname: 'Archive Walker',
+    identityIntro: 'A quiet builder who likes slow interfaces.',
+    portfolioReview: 'This portfolio feels unusually deliberate from start to finish.',
+    latestGameId: 'between-two-pages',
+    avatarId: 'cat',
+    medalId: '/images/PurpleMedal01.png',
+    displayDate: 'APR 17, 2026',
+    updatedAt: '2026-04-17T12:00:00.000Z',
+  });
+
+  assert.equal(progress.guestbookEntries.length, 1);
+  assert.deepEqual(progress.guestbookEntries[0], {
+    id: 'archive-walker-2026-04-17t12-00-00-000z',
+    nickname: 'Archive Walker',
+    identityIntro: 'A quiet builder who likes slow interfaces.',
+    portfolioReview: 'This portfolio feels unusually deliberate from start to finish.',
+    latestGameId: 'between-two-pages',
+    avatarId: 'cat',
+    latestMedalId: '/images/PurpleMedal01.png',
+    latestDate: 'APR 17, 2026',
+    updatedAt: '2026-04-17T12:00:00.000Z',
+  });
+});
+
+test('upsert updates an existing nickname instead of creating a second row and moves it to the latest position', () => {
+  let progress = upsertFriendBookGuestbookEntry(createDefaultFriendBookProgress({ includeSeedGuestbook: false }), {
+    nickname: 'Archive Walker',
+    identityIntro: 'First draft identity.',
+    portfolioReview: 'First draft review.',
+    latestGameId: 'between-two-pages',
+    avatarId: 'cat',
+    medalId: '/images/PurpleMedal01.png',
+    displayDate: 'APR 17, 2026',
+    updatedAt: '2026-04-17T12:00:00.000Z',
+  });
+  progress = upsertFriendBookGuestbookEntry(progress, {
+    nickname: 'Moon Librarian',
+    identityIntro: 'Second visitor.',
+    portfolioReview: 'Second review.',
+    latestGameId: 'moon-run',
+    avatarId: 'dog',
+    medalId: '/images/GreenMedal01.png',
+    displayDate: 'APR 18, 2026',
+    updatedAt: '2026-04-18T12:00:00.000Z',
+  });
+  progress = upsertFriendBookGuestbookEntry(progress, {
+    nickname: 'Archive Walker',
+    identityIntro: 'Updated identity.',
+    portfolioReview: 'Updated review.',
+    latestGameId: 'one-stroke-mark',
+    avatarId: 'rabbit',
+    medalId: '/images/Animalmedals04.png',
+    displayDate: 'APR 19, 2026',
+    updatedAt: '2026-04-19T12:00:00.000Z',
+  });
+
+  assert.equal(progress.guestbookEntries.length, 2);
+  assert.deepEqual(
+    progress.guestbookEntries.map((entry) => entry.nickname),
+    ['Moon Librarian', 'Archive Walker'],
+  );
+  assert.equal(progress.guestbookEntries[1]?.identityIntro, 'Updated identity.');
+  assert.equal(progress.guestbookEntries[1]?.portfolioReview, 'Updated review.');
+  assert.equal(progress.guestbookEntries[1]?.latestGameId, 'one-stroke-mark');
+  assert.equal(progress.guestbookEntries[1]?.avatarId, 'rabbit');
+  assert.equal(progress.guestbookEntries[1]?.latestDate, 'APR 19, 2026');
+});
+
+test('guestbook pagination starts the partial page from the first row', () => {
+  const progress = [
+    'A',
+    'B',
+    'C',
+    'D',
+  ].reduce((currentProgress, nickname, index) =>
+    upsertFriendBookGuestbookEntry(currentProgress, {
+      nickname,
+      identityIntro: `${nickname} intro`,
+      portfolioReview: `${nickname} review`,
+      updatedAt: `2026-04-1${index}T12:00:00.000Z`,
+    }), createDefaultFriendBookProgress({ includeSeedGuestbook: false }));
+
+  const firstPage = getFriendBookGuestbookPage(progress.guestbookEntries, 0);
+  const lastPage = getFriendBookGuestbookPage(progress.guestbookEntries, 1);
+
+  assert.equal(FRIEND_BOOK_GUESTBOOK_PAGE_SIZE, 3);
+  assert.equal(firstPage.totalPages, 2);
+  assert.deepEqual(
+    firstPage.entries.map((entry) => entry?.nickname ?? null),
+    ['A', 'B', 'C'],
+  );
+  assert.deepEqual(
+    lastPage.entries.map((entry) => entry?.nickname ?? null),
+    ['D', null, null],
+  );
+});
+
+test('deleting a guestbook entry removes only that visitor row and preserves game progress', () => {
+  let progress = completeFriendBookGameSession(createDefaultFriendBookProgress({ includeSeedGuestbook: false }), {
+    gameId: 'moon-run',
+    displayDate: 'APR 17, 2026',
+    medalId: '/images/GreenMedal01.png',
+  });
+  progress = upsertFriendBookGuestbookEntry(progress, {
+    nickname: '小辞',
+    identityIntro: '一个不会代码的工程师',
+    portfolioReview: '真牛逼呀，老铁',
+    latestGameId: 'moon-run',
+    avatarId: 'cat',
+    medalId: '/images/GreenMedal01.png',
+    displayDate: 'APR 17, 2026',
+    updatedAt: '2026-04-17T12:00:00.000Z',
+  });
+
+  const nextProgress = deleteFriendBookGuestbookEntry(progress, '小辞');
+
+  assert.equal(nextProgress.guestbookEntries.length, 0);
+  assert.equal(nextProgress.games['moon-run'].completionCount, 1);
+  assert.equal(nextProgress.games['moon-run'].latestMedalId, '/images/GreenMedal01.png');
+});
+
 test('completing a game does not persist invalid avatar ids back into progress', () => {
   const progress = completeFriendBookGameSession(createDefaultFriendBookProgress(), {
     gameId: 'moon-run',
@@ -191,6 +341,19 @@ test('difference game completes after all hidden spots are found', () => {
   assert.equal(second.isComplete, false);
   assert.deepEqual(third.foundSpotIds, ['moon-stamp', 'cat-tail', 'page-fold']);
   assert.equal(third.isComplete, true);
+});
+
+test('between two pages scenes expose rectangular target bounds for hotspots and markers', () => {
+  for (const scene of friendBookFinalSectionData.betweenTwoPagesScenes) {
+    for (const target of scene.targets) {
+      assert.equal(target.x >= 0 && target.x <= 100, true);
+      assert.equal(target.y >= 0 && target.y <= 100, true);
+      assert.equal(target.width > 0, true);
+      assert.equal(target.height > 0, true);
+      assert.equal(target.x + target.width <= 110, true);
+      assert.equal(target.y + target.height <= 110, true);
+    }
+  }
 });
 
 test('between two pages scene bank exposes at least two paired illustrations with valid targets', () => {
@@ -282,14 +445,18 @@ test('between two pages first scene keeps a wider moon target so the visible lun
   );
   const moonTarget = firstScene?.targets.find((target) => target.id === 'moon-stamp');
 
-  assert.deepEqual(moonTarget, {
-    id: 'moon-stamp',
-    label: 'moon seal',
-    x: 17,
-    y: 15,
-    width: 18,
-    height: 18,
-  });
+  assert.equal(moonTarget?.id, 'moon-stamp');
+  assert.equal(moonTarget?.label, 'moon seal');
+  assert.equal(moonTarget?.x, 17);
+  assert.equal(moonTarget?.y, 15);
+  assert.equal(moonTarget?.width, 18);
+  assert.equal(moonTarget?.height, 18);
+  assert.deepEqual(moonTarget?.hitArea, [
+    { x: 17, y: 15 },
+    { x: 35, y: 15 },
+    { x: 35, y: 33 },
+    { x: 17, y: 33 },
+  ]);
 });
 
 test('between two pages rotation does not repeat scenes until every scene has appeared once', () => {

@@ -111,11 +111,24 @@ export interface FriendBookGameProgress {
   latestAvatarId: FriendBookAvatarId | null;
 }
 
+export interface FriendBookGuestbookEntry {
+  id: string;
+  nickname: string;
+  identityIntro: string;
+  portfolioReview: string;
+  latestGameId: FriendBookGameId | null;
+  avatarId: FriendBookAvatarId | null;
+  latestMedalId: string | null;
+  latestDate: string | null;
+  updatedAt: string;
+}
+
 export interface FriendBookProgress {
-  version: 1;
+  version: 2;
   selectedAvatarId: FriendBookAvatarId | null;
   unlockedAvatarIds: FriendBookAvatarId[];
   games: Record<FriendBookGameId, FriendBookGameProgress>;
+  guestbookEntries: FriendBookGuestbookEntry[];
   allGamesCompleted: boolean;
 }
 
@@ -124,9 +137,13 @@ interface StorageLike {
   setItem(key: string, value: string): void;
 }
 
-export const FRIEND_BOOK_STORAGE_KEY = 'friend-book-progress:v1';
+export const FRIEND_BOOK_STORAGE_KEY = 'friend-book-progress:v2';
 export const FRIEND_BOOK_HIDDEN_AVATAR_ID = 'hidden-cat';
+export const FRIEND_BOOK_GUESTBOOK_PAGE_SIZE = 3;
 export const FRIEND_BOOK_QUIZ_ROUND_SIZE = 5;
+export const FRIEND_BOOK_DEFAULT_GUESTBOOK_ENTRY_COUNT = 5;
+
+const FRIEND_BOOK_LEGACY_STORAGE_KEY = 'friend-book-progress:v1';
 
 const MOON_RUN_PLAYER_WIDTH = 44;
 const MOON_RUN_PLAYER_HEIGHT = 46;
@@ -210,6 +227,241 @@ function uniqueAvatarIds(
   return Array.from(new Set(ids)).filter(isFriendBookAvatarId);
 }
 
+function createSeedGuestbookEntries(): FriendBookGuestbookEntry[] {
+  return [
+    {
+      id: 'seed-forest-page-turner',
+      nickname: '林间拾页人',
+      identityIntro: '一个偏爱慢节奏产品的界面观察者，常常先记住气味和纸感。',
+      portfolioReview: 'Between Two Pages 的双页对照很克制，像把细节藏进了呼吸里。',
+      latestGameId: 'between-two-pages',
+      avatarId: 'cat',
+      latestMedalId: '/images/PurpleMedal01.png',
+      latestDate: 'APR 17, 2026',
+      updatedAt: '2026-04-17T10:00:00.000Z',
+    },
+    {
+      id: 'seed-night-walker',
+      nickname: '夜航漫游者',
+      identityIntro: '一个总在深夜上线的人，喜欢会自己留白的作品。',
+      portfolioReview: 'Moon Run 的节奏比我预想得轻，像在作品之间偷偷跑了一段夜路。',
+      latestGameId: 'moon-run',
+      avatarId: 'dog',
+      latestMedalId: '/images/GreenMedal01.png',
+      latestDate: 'APR 17, 2026',
+      updatedAt: '2026-04-17T10:10:00.000Z',
+    },
+    {
+      id: 'seed-paper-detective',
+      nickname: '纸边侦探',
+      identityIntro: '一个喜欢从边角料里读人设的普通访客，习惯先看影子再看答案。',
+      portfolioReview: 'Who’s This? 这张卡最有记忆点，猜人物的时候会顺手把整个作品区再看一遍。',
+      latestGameId: 'one-stroke-mark',
+      avatarId: 'rabbit',
+      latestMedalId: '/images/Animalmedals04.png',
+      latestDate: 'APR 17, 2026',
+      updatedAt: '2026-04-17T10:20:00.000Z',
+    },
+    {
+      id: 'seed-platform-watcher',
+      nickname: '站台风景员',
+      identityIntro: '一个会为了转场多停两秒的人，也会认真看每一段说明文字。',
+      portfolioReview: '第二次翻回来时，发现 friend book 把作品区的气质也一起收进来了。',
+      latestGameId: 'between-two-pages',
+      avatarId: 'tree',
+      latestMedalId: '/images/PurpleMedal02.png',
+      latestDate: 'APR 17, 2026',
+      updatedAt: '2026-04-17T10:30:00.000Z',
+    },
+    {
+      id: 'seed-moon-collector',
+      nickname: '月背收集者',
+      identityIntro: '一个对小机制很宽容、但对整体氛围很挑剔的深夜访客。',
+      portfolioReview: '我喜欢这里不是把内容堆出来，而是让每个作品像被认真摆在台面上。',
+      latestGameId: 'moon-run',
+      avatarId: 'cat-pi',
+      latestMedalId: '/images/GreenMedal03.png',
+      latestDate: 'APR 17, 2026',
+      updatedAt: '2026-04-17T10:40:00.000Z',
+    },
+  ];
+}
+
+function resolveSeededGuestbookEntries(
+  entries: readonly FriendBookGuestbookEntry[],
+  includeSeedGuestbook: boolean,
+): FriendBookGuestbookEntry[] {
+  if (!includeSeedGuestbook) {
+    return [...entries];
+  }
+
+  return entries.length >= FRIEND_BOOK_DEFAULT_GUESTBOOK_ENTRY_COUNT
+    ? [...entries]
+    : createSeedGuestbookEntries();
+}
+
+function createGuestbookEntryId(nickname: string, updatedAt: string): string {
+  return `${nickname}-${updatedAt}`
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function sanitizeText(value: unknown): string {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+function sanitizeGuestbookEntry(
+  value: Partial<FriendBookGuestbookEntry> | undefined,
+): FriendBookGuestbookEntry | null {
+  const nickname = sanitizeText(value?.nickname);
+  const identityIntro = sanitizeText(value?.identityIntro);
+  const portfolioReview = sanitizeText(value?.portfolioReview);
+  const updatedAt = sanitizeText(value?.updatedAt);
+
+  if (!nickname || !identityIntro || !portfolioReview || !updatedAt) {
+    return null;
+  }
+
+  return {
+    id: sanitizeText(value?.id) || createGuestbookEntryId(nickname, updatedAt),
+    nickname,
+    identityIntro,
+    portfolioReview,
+    latestGameId:
+      typeof value?.latestGameId === 'string' &&
+      FRIEND_BOOK_GAME_IDS.includes(value.latestGameId as FriendBookGameId)
+        ? (value.latestGameId as FriendBookGameId)
+        : null,
+    avatarId: sanitizeFriendBookAvatarId(value?.avatarId),
+    latestMedalId:
+      typeof value?.latestMedalId === 'string' ? value.latestMedalId : null,
+    latestDate: typeof value?.latestDate === 'string' ? value.latestDate : null,
+    updatedAt,
+  };
+}
+
+function migrateLegacyGuestbookEntries(
+  games: Record<FriendBookGameId, FriendBookGameProgress>,
+): FriendBookGuestbookEntry[] {
+  return FRIEND_BOOK_GAME_IDS.flatMap((gameId, index) => {
+    const game = games[gameId];
+    const legacyReview = game.latestNote.trim();
+
+    if (!legacyReview) {
+      return [];
+    }
+
+    const avatarLabel = game.latestAvatarId
+      ? friendBookFinalSectionData.avatars.find((avatar) => avatar.id === game.latestAvatarId)?.label
+      : null;
+    const nickname = avatarLabel ?? `Archive Visitor ${index + 1}`;
+    const updatedAt = `legacy-${String(index + 1).padStart(2, '0')}`;
+
+    return [{
+      id: createGuestbookEntryId(nickname, updatedAt),
+      nickname,
+      identityIntro: 'Recovered from an earlier Friend Book save.',
+      portfolioReview: legacyReview,
+      latestGameId: gameId,
+      avatarId: game.latestAvatarId,
+      latestMedalId: game.latestMedalId,
+      latestDate: game.latestDate,
+      updatedAt,
+    }];
+  });
+}
+
+export function getFriendBookGuestbookPage(
+  entries: readonly FriendBookGuestbookEntry[],
+  pageIndex: number,
+  pageSize = FRIEND_BOOK_GUESTBOOK_PAGE_SIZE,
+): { entries: Array<FriendBookGuestbookEntry | null>; pageIndex: number; totalPages: number } {
+  const safePageSize = Math.max(1, Math.floor(pageSize));
+  const totalPages = Math.max(1, Math.ceil(entries.length / safePageSize));
+  const safePageIndex = Math.min(Math.max(Math.floor(pageIndex), 0), totalPages - 1);
+  const start = safePageIndex * safePageSize;
+  const pageEntries = entries.slice(start, start + safePageSize);
+
+  return {
+    entries: [
+      ...pageEntries,
+      ...Array.from({ length: Math.max(safePageSize - pageEntries.length, 0) }, () => null),
+    ],
+    pageIndex: safePageIndex,
+    totalPages,
+  };
+}
+
+export function upsertFriendBookGuestbookEntry(
+  progress: FriendBookProgress,
+  options: {
+    nickname: string;
+    identityIntro: string;
+    portfolioReview: string;
+    latestGameId?: FriendBookGameId | null;
+    avatarId?: FriendBookAvatarId | null;
+    medalId?: string | null;
+    displayDate?: string | null;
+    updatedAt?: string;
+  },
+): FriendBookProgress {
+  const nickname = options.nickname.trim();
+  const identityIntro = options.identityIntro.trim();
+  const portfolioReview = options.portfolioReview.trim();
+
+  if (!nickname || !identityIntro || !portfolioReview) {
+    return progress;
+  }
+
+  const updatedAt = options.updatedAt?.trim() || new Date().toISOString();
+  const existingEntry = progress.guestbookEntries.find((entry) => entry.nickname === nickname);
+  const resolvedAvatarId =
+    sanitizeFriendBookAvatarId(options.avatarId) ??
+    sanitizeFriendBookAvatarId(progress.selectedAvatarId) ??
+    existingEntry?.avatarId ??
+    null;
+  const nextEntry: FriendBookGuestbookEntry = {
+    id: existingEntry?.id ?? createGuestbookEntryId(nickname, updatedAt),
+    nickname,
+    identityIntro,
+    portfolioReview,
+    latestGameId: options.latestGameId ?? existingEntry?.latestGameId ?? null,
+    avatarId: resolvedAvatarId,
+    latestMedalId: options.medalId ?? existingEntry?.latestMedalId ?? null,
+    latestDate: options.displayDate ?? existingEntry?.latestDate ?? null,
+    updatedAt,
+  };
+
+  return {
+    ...progress,
+    version: 2,
+    guestbookEntries: [
+      ...progress.guestbookEntries.filter((entry) => entry.nickname !== nickname),
+      nextEntry,
+    ],
+  };
+}
+
+export function deleteFriendBookGuestbookEntry(
+  progress: FriendBookProgress,
+  nickname: string,
+): FriendBookProgress {
+  const normalizedNickname = nickname.trim();
+
+  if (!normalizedNickname) {
+    return progress;
+  }
+
+  return {
+    ...progress,
+    guestbookEntries: progress.guestbookEntries.filter(
+      (entry) => entry.nickname !== normalizedNickname,
+    ),
+  };
+}
+
 function computeAllGamesCompleted(
   games: Record<FriendBookGameId, FriendBookGameProgress>,
 ): boolean {
@@ -229,12 +481,17 @@ function withUnlocks(progress: FriendBookProgress): FriendBookProgress {
   };
 }
 
-export function createDefaultFriendBookProgress(): FriendBookProgress {
+export function createDefaultFriendBookProgress(
+  options: { includeSeedGuestbook?: boolean } = {},
+): FriendBookProgress {
+  const includeSeedGuestbook = options.includeSeedGuestbook ?? true;
+
   return {
-    version: 1,
+    version: 2,
     selectedAvatarId: null,
     unlockedAvatarIds: createDefaultUnlockedAvatarIds(),
     games: createEmptyGameRecord(),
+    guestbookEntries: resolveSeededGuestbookEntries([], includeSeedGuestbook),
     allGamesCompleted: false,
   };
 }
@@ -243,7 +500,9 @@ export function hydrateFriendBookProgress(
   storage?: StorageLike | null,
 ): FriendBookProgress {
   const fallback = createDefaultFriendBookProgress();
-  const raw = storage?.getItem(FRIEND_BOOK_STORAGE_KEY);
+  const raw =
+    storage?.getItem(FRIEND_BOOK_STORAGE_KEY) ??
+    storage?.getItem(FRIEND_BOOK_LEGACY_STORAGE_KEY);
 
   if (!raw) {
     return fallback;
@@ -270,8 +529,14 @@ export function hydrateFriendBookProgress(
       };
     }
 
+    const incomingGuestbookEntries = Array.isArray(parsed.guestbookEntries)
+      ? parsed.guestbookEntries
+        .map((entry) => sanitizeGuestbookEntry(entry))
+        .filter((entry): entry is FriendBookGuestbookEntry => entry !== null)
+      : migrateLegacyGuestbookEntries(nextGames);
+
     const nextProgress: FriendBookProgress = {
-      version: 1,
+      version: 2,
       selectedAvatarId: sanitizeFriendBookAvatarId(parsed.selectedAvatarId),
       unlockedAvatarIds: Array.isArray(parsed.unlockedAvatarIds)
         ? parsed.unlockedAvatarIds.filter(
@@ -279,6 +544,7 @@ export function hydrateFriendBookProgress(
           )
         : createDefaultUnlockedAvatarIds(),
       games: nextGames,
+      guestbookEntries: resolveSeededGuestbookEntries(incomingGuestbookEntries, true),
       allGamesCompleted: computeAllGamesCompleted(nextGames),
     };
 
@@ -634,7 +900,7 @@ export function completeFriendBookGameSession(
   progress: FriendBookProgress,
   options: {
     gameId: FriendBookGameId;
-    note: string;
+    note?: string;
     displayDate: string;
     randomValue?: number;
     medalId?: string;
@@ -654,17 +920,18 @@ export function completeFriendBookGameSession(
       latestMedalId:
         options.medalId ??
         getFriendBookMedalIdForGame(options.gameId, options.randomValue ?? Math.random()),
-      latestNote: options.note.trim(),
+      latestNote: options.note?.trim() ?? progress.games[options.gameId].latestNote,
       latestDate: options.displayDate,
       latestAvatarId: resolvedAvatarId,
     },
   };
 
   const nextProgress: FriendBookProgress = {
-    version: 1,
+    version: 2,
     selectedAvatarId: resolvedAvatarId,
     unlockedAvatarIds: progress.unlockedAvatarIds,
     games: nextGames,
+    guestbookEntries: progress.guestbookEntries,
     allGamesCompleted: computeAllGamesCompleted(nextGames),
   };
 
