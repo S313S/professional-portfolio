@@ -2,6 +2,7 @@ import { Github, Linkedin, Mail, Twitter, ExternalLink, Globe } from 'lucide-rea
 import type {
   FriendBookAvatarId,
   FriendBookGameId,
+  FriendBookQuizQuestion,
 } from './components/FriendBookFinalSection.logic';
 
 export interface FeaturedWork {
@@ -42,6 +43,21 @@ export interface FriendBookFinalGameCard {
   description: string;
   ctaLabel: string;
   backgroundImage: string;
+}
+
+export interface FriendBookBetweenTwoPagesTarget {
+  id: 'moon-stamp' | 'cat-tail' | 'page-fold';
+  label: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface FriendBookBetweenTwoPagesScene {
+  baseImage: string;
+  variantImage: string;
+  targets: FriendBookBetweenTwoPagesTarget[];
 }
 
 export interface FriendBookFinalEntrySeal {
@@ -354,6 +370,160 @@ const codingProjects: Record<CodingCategoryId, CodingProjectCard[]> = {
   ],
 };
 
+const friendBookBetweenTwoPagesScene: FriendBookBetweenTwoPagesScene = {
+  baseImage: '/images/friend-book-between-two-pages/base-scene-v1.png',
+  variantImage: '/images/friend-book-between-two-pages/variant-scene-v1.png',
+  targets: [
+    {
+      id: 'moon-stamp',
+      label: 'moon seal',
+      x: 28,
+      y: 17,
+      width: 24,
+      height: 18,
+    },
+    {
+      id: 'cat-tail',
+      label: 'cat tail',
+      x: 71,
+      y: 75,
+      width: 18,
+      height: 20,
+    },
+    {
+      id: 'page-fold',
+      label: 'page fold',
+      x: 89,
+      y: 9,
+      width: 14,
+      height: 14,
+    },
+  ],
+};
+
+const friendBookQuizQuestionBank: FriendBookQuizQuestion[] = [
+  {
+    id: 'mona-lisa',
+    silhouetteImage: '/images/friend-book-quiz/mona-lisa-shadow.svg',
+    prompt: 'Observe the silhouette and guess who it is.',
+    options: ['Mona Lisa', 'The Scream', 'The Birth of Venus', 'Girl with a Pearl Earring'],
+    correctAnswer: 'Mona Lisa',
+    resultCopy: 'The quiet smile belongs to Mona Lisa.',
+  },
+  {
+    id: 'the-scream',
+    silhouetteImage: '/images/friend-book-quiz/the-scream-shadow.svg',
+    prompt: 'Observe the silhouette and guess who it is.',
+    options: ['The Scream', 'The Kiss', 'Guernica', 'The Night Watch'],
+    correctAnswer: 'The Scream',
+    resultCopy: 'That stretched figure is The Scream.',
+  },
+  {
+    id: 'girl-with-pearl-earring',
+    silhouetteImage: '/images/friend-book-quiz/girl-with-pearl-earring-shadow.svg',
+    prompt: 'Observe the silhouette and guess who it is.',
+    options: ['Girl with a Pearl Earring', 'The Last Supper', 'American Gothic', 'The Birth of Venus'],
+    correctAnswer: 'Girl with a Pearl Earring',
+    resultCopy: 'The turned head and pearl fit Girl with a Pearl Earring.',
+  },
+  {
+    id: 'starry-night',
+    silhouetteImage: '/images/friend-book-quiz/starry-night-shadow.svg',
+    prompt: 'Observe the silhouette and guess who it is.',
+    options: ['Starry Night', 'The Scream', 'The Night Watch', 'Guernica'],
+    correctAnswer: 'Starry Night',
+    resultCopy: 'The swirling sky points to Starry Night.',
+  },
+  {
+    id: 'the-kiss',
+    silhouetteImage: '/images/friend-book-quiz/the-kiss-shadow.svg',
+    prompt: 'Observe the silhouette and guess who it is.',
+    options: ['The Kiss', 'Mona Lisa', 'The Birth of Venus', 'American Gothic'],
+    correctAnswer: 'The Kiss',
+    resultCopy: 'The close embrace belongs to The Kiss.',
+  },
+  {
+    id: 'american-gothic',
+    silhouetteImage: '/images/friend-book-quiz/american-gothic-shadow.svg',
+    prompt: 'Observe the silhouette and guess who it is.',
+    options: ['American Gothic', 'The Last Supper', 'Guernica', 'The Night Watch'],
+    correctAnswer: 'American Gothic',
+    resultCopy: 'The stern pair is American Gothic.',
+  },
+  {
+    id: 'birth-of-venus',
+    silhouetteImage: '/images/friend-book-quiz/birth-of-venus-shadow.svg',
+    prompt: 'Observe the silhouette and guess who it is.',
+    options: ['The Birth of Venus', 'The Scream', 'Mona Lisa', 'Girl with a Pearl Earring'],
+    correctAnswer: 'The Birth of Venus',
+    resultCopy: 'The shell-born figure is The Birth of Venus.',
+  },
+  {
+    id: 'the-persistence-of-memory',
+    silhouetteImage: '/images/friend-book-quiz/persistence-of-memory-shadow.svg',
+    prompt: 'Observe the silhouette and guess who it is.',
+    options: ['The Persistence of Memory', 'Starry Night', 'The Kiss', 'Guernica'],
+    correctAnswer: 'The Persistence of Memory',
+    resultCopy: 'The soft clocks belong to The Persistence of Memory.',
+  },
+  {
+    id: 'the-night-watch',
+    silhouetteImage: '/images/friend-book-quiz/the-night-watch-shadow.svg',
+    prompt: 'Observe the silhouette and guess who it is.',
+    options: ['The Night Watch', 'American Gothic', 'The Last Supper', 'Mona Lisa'],
+    correctAnswer: 'The Night Watch',
+    resultCopy: 'That bold group scene points to The Night Watch.',
+  },
+  {
+    id: 'guernica',
+    silhouetteImage: '/images/friend-book-quiz/guernica-shadow.svg',
+    prompt: 'Observe the silhouette and guess who it is.',
+    options: ['Guernica', 'The Scream', 'The Kiss', 'The Birth of Venus'],
+    correctAnswer: 'Guernica',
+    resultCopy: 'The fractured forms match Guernica.',
+  },
+  {
+    id: 'the-last-supper',
+    silhouetteImage: '/images/friend-book-quiz/the-last-supper-shadow.svg',
+    prompt: 'Observe the silhouette and guess who it is.',
+    options: ['The Last Supper', 'Mona Lisa', 'The Night Watch', 'Starry Night'],
+    correctAnswer: 'The Last Supper',
+    resultCopy: 'The long table belongs to The Last Supper.',
+  },
+  {
+    id: 'liberty-leading-the-people',
+    silhouetteImage: '/images/friend-book-quiz/liberty-leading-the-people-shadow.svg',
+    prompt: 'Observe the silhouette and guess who it is.',
+    options: ['Liberty Leading the People', 'The Kiss', 'American Gothic', 'Guernica'],
+    correctAnswer: 'Liberty Leading the People',
+    resultCopy: 'The raised flag makes this Liberty Leading the People.',
+  },
+  {
+    id: 'self-portrait-thorn-necklace',
+    silhouetteImage: '/images/friend-book-quiz/self-portrait-thorn-necklace-shadow.svg',
+    prompt: 'Observe the silhouette and guess who it is.',
+    options: ['Self-Portrait with Thorn Necklace and Hummingbird', 'Mona Lisa', 'Girl with a Pearl Earring', 'The Scream'],
+    correctAnswer: 'Self-Portrait with Thorn Necklace and Hummingbird',
+    resultCopy: 'The floral crown and thorn necklace point to Frida Kahlo.',
+  },
+  {
+    id: 'campbells-soup-cans',
+    silhouetteImage: '/images/friend-book-quiz/campbells-soup-cans-shadow.svg',
+    prompt: 'Observe the silhouette and guess who it is.',
+    options: ["Campbell's Soup Cans", 'The Night Watch', 'The Last Supper', 'Guernica'],
+    correctAnswer: "Campbell's Soup Cans",
+    resultCopy: 'The repeating labels belong to Campbell\'s Soup Cans.',
+  },
+  {
+    id: 'the-great-wave',
+    silhouetteImage: '/images/friend-book-quiz/the-great-wave-shadow.svg',
+    prompt: 'Observe the silhouette and guess who it is.',
+    options: ['The Great Wave off Kanagawa', 'Starry Night', 'The Scream', 'The Birth of Venus'],
+    correctAnswer: 'The Great Wave off Kanagawa',
+    resultCopy: 'The cresting arc is The Great Wave off Kanagawa.',
+  },
+];
+
 export const friendBookFinalSectionData = {
   assets: {
     sectionBackground: '/images/BookofFriends_Bg01.png',
@@ -409,11 +579,13 @@ export const friendBookFinalSectionData = {
       id: 'one-stroke-mark',
       title: "Who’s This?",
       description:
-        'Based on the image I provided, choose the option that you think it is.',
+        'Observe a shadow, guess who it belongs to, and turn the page to the next silhouette.',
       ctaLabel: 'Begin',
       backgroundImage: '/images/BookofFriends_Bg_CatBook_Right.png',
     },
   ] satisfies FriendBookFinalGameCard[],
+  betweenTwoPagesScene: friendBookBetweenTwoPagesScene,
+  quizQuestionBank: friendBookQuizQuestionBank,
   avatars: [
     {
       id: 'cat-pi',
@@ -540,8 +712,8 @@ export const friendBookFinalSectionData = {
     {
       gameId: 'one-stroke-mark',
       label: "Who’s This?",
-      emptyTitle: 'A trace still unwritten',
-      emptyDescription: 'Draw one unbroken line to let this page remember you.',
+      emptyTitle: 'A silhouette round still unopened',
+      emptyDescription: 'Recognize five shadowed figures to let this page remember you.',
       previewDate: 'APR 06, 2026',
     },
   ] satisfies FriendBookFinalUserSlot[],

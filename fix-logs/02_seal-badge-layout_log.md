@@ -1,0 +1,7 @@
+1. **理解**：第二个问题不是单纯调字号，而是标题与 seal badge 的布局方式本身不对。当前标题和 badge 作为 grid 子项参与固定列布局，badge 被挤进过窄的 `auto` 列后折成 3 行。
+2. **分析**：我检查了 `issues/02_seal-badge-layout.md` 对应的 JSX，确认桌面 copy 区当前还是 `grid min-w-0 grid-cols-[15.8rem_auto] grid-rows-[auto_auto]`，header 用的是 `contents`，seal 上还有只在 grid 下才有意义的 `justify-self-start`。这和报告给出的根因完全一致。外层 issue #1 调整后，文本区相对更窄，因此这里必须改成 flex 才能让标题和 badge 自然同行。
+3. **方案**：按报告建议把 copy area 从二维 grid 改成纵向 flex，把 header 改成 `flex-wrap items-baseline`，让 badge 跟标题共享同一行流式布局；同时给 badge 增加 `whitespace-nowrap`，并移除 `justify-self-start` 与 excerpt 上失效的 `col-span-2`。
+4. **改动**：修改了 `src/components/FriendBookFinalSection.tsx` 中桌面 sample entry 的 copy/header/seal/excerpt class，并将这些 class 集中到 `FRIEND_BOOK_SAMPLE_ENTRY_GRID` 配置对象；同步更新 `src/components/FriendBookFinalSection.preview-copy.render.test.tsx`，新增对 `flex min-w-0 flex-col gap-2`、`flex flex-wrap items-baseline gap-x-2 gap-y-1`、`whitespace-nowrap` 以及 excerpt 新 class 的断言。
+5. **验证**：测试策略是先把 render test 改成新布局要求，再运行 `node --import tsx --test src/components/FriendBookFinalSection.preview-copy.render.test.tsx` 验证旧实现失败，随后修改组件并复跑通过。接着会跑完整 FriendBook 相关测试，确认没有引入其它回归。
+6. **遗留**：目前通过 render 结构约束保证 badge 不再被旧 grid 挤压；如果真实页面上个别中文标题和英文 badge 的基线仍需更细调，可以只微调 header gap 或 badge 的 `mt`，不需要再改回 grid。
+7. **可调参数**：已提取。位置同样在 `src/components/FriendBookFinalSection.tsx` 的 `FRIEND_BOOK_SAMPLE_ENTRY_GRID`，其中 `copy`、`header`、`seal`、`excerpt` 四项就是这轮的主要可调参数入口。

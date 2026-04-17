@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" role="img" aria-label="Silhouette placeholder">
+  <rect width="640" height="640" fill="#efe2cf"/>
+  <path d="M0 450c80-34 154-61 244-63 89-2 190 31 396 96v157H0V450Z" fill="#2a221f"/>
+  <path d="M304 522c-10-57-14-104-11-141 4-48 13-96 33-131 15-25 37-49 65-49s51 25 64 50c20 38 28 90 30 133 1 34-2 80-10 138H304Z" fill="#2a221f"/>
+  <ellipse cx="368" cy="183" rx="56" ry="78" fill="#2a221f"/>
+</svg>

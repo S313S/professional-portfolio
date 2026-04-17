@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" role="img" aria-label="Silhouette placeholder">
+  <rect width="640" height="640" fill="#efe2cf"/>
+  <path d="M146 520c32-121 73-199 130-236 38-25 76-30 110-9 35 22 65 63 89 127 17 46 29 93 44 118H146Z" fill="#2b2320"/>
+  <circle cx="248" cy="188" r="66" fill="#2b2320"/>
+  <circle cx="384" cy="202" r="70" fill="#2b2320"/>
+  <rect x="304" y="208" width="18" height="230" rx="9" fill="#2b2320"/>
+  <path d="M257 232h112v26H257zM260 294h110v24H260zM264 354h104v22H264z" fill="#2b2320"/>
+</svg>

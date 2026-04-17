@@ -64,7 +64,31 @@ test('renders empty archive slots as date-only placeholders without the old help
   assert.doesNotMatch(desktopSpringWind, /APR 12, 2024/);
   assert.match(
     desktopSpringWind,
-    /data-friend-book-sample-entry-header-desktop="spring-wind"[^>]*class="flex items-start gap-3"/,
+    /style="left:3\.9%;top:20%;width:44\.2%;height:22%"/,
+  );
+  assert.match(
+    desktopSpringWind,
+    /class="grid h-full grid-cols-\[58px_minmax\(0,1fr\)_120px\] gap-3 px-4 py-3 xl:grid-cols-\[68px_minmax\(0,1fr\)_140px\] xl:px-5 xl:py-4"/,
+  );
+  assert.match(
+    desktopSpringWind,
+    /data-friend-book-sample-entry-copy-desktop="spring-wind"[^>]*class="flex min-w-0 flex-col gap-2"/,
+  );
+  assert.match(
+    desktopSpringWind,
+    /data-friend-book-sample-entry-header-desktop="spring-wind"[^>]*class="flex flex-wrap items-baseline gap-x-2 gap-y-1"/,
+  );
+  assert.match(
+    desktopSpringWind,
+    /data-friend-book-sample-entry-seal-desktop="spring-wind"[^>]*class="mt-\[0\.16rem\] shrink-0 whitespace-nowrap rounded-full border px-2\.5 py-1 text-\[0\.64rem\] uppercase tracking-\[0\.16em\] xl:mt-\[0\.22rem\] xl:px-3 xl:text-\[0\.72rem\]"/,
+  );
+  assert.match(
+    desktopSpringWind,
+    /data-friend-book-sample-entry-excerpt="spring-wind"[^>]*class="text-\[0\.96rem\] leading-7 text-\[#463731\] xl:text-\[1\.18rem\] xl:leading-\[1\.6\]"/,
+  );
+  assert.match(
+    desktopSpringWind,
+    /class="h-20 w-20 rounded-\[1rem\] border border-\[#d4bea8\] object-cover xl:h-\[7rem\] xl:w-\[7rem\]"/,
   );
   assert.match(
     desktopSpringWind,
@@ -81,7 +105,11 @@ test('renders empty archive slots as date-only placeholders without the old help
   assert.doesNotMatch(desktopBookSeaDiver, /APR 18, 2026/);
   assert.match(
     desktopBookSeaDiver,
-    /data-friend-book-sample-entry-header-desktop="book-sea-diver"[^>]*class="flex items-start gap-3"/,
+    /style="left:3\.9%;top:45%;width:44\.2%;height:22%"/,
+  );
+  assert.match(
+    desktopBookSeaDiver,
+    /data-friend-book-sample-entry-copy-desktop="book-sea-diver"[^>]*class="flex min-w-0 flex-col gap-2"/,
   );
   assert.match(
     desktopBookSeaDiver,
@@ -98,7 +126,11 @@ test('renders empty archive slots as date-only placeholders without the old help
   assert.doesNotMatch(desktopNightWatcher, /APR 06, 2026/);
   assert.match(
     desktopNightWatcher,
-    /data-friend-book-sample-entry-header-desktop="night-watcher"[^>]*class="flex items-start gap-3"/,
+    /style="left:3\.9%;top:70%;width:44\.2%;height:22%"/,
+  );
+  assert.match(
+    desktopNightWatcher,
+    /data-friend-book-sample-entry-copy-desktop="night-watcher"[^>]*class="flex min-w-0 flex-col gap-2"/,
   );
   assert.match(
     desktopNightWatcher,

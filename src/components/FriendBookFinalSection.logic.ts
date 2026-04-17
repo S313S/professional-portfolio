@@ -24,6 +24,47 @@ export interface FriendBookPoint {
   y: number;
 }
 
+export interface FriendBookBetweenTwoPagesSessionState {
+  foundSpotIds: string[];
+  remainingSeconds: number;
+  mistakes: number;
+  status: 'active' | 'success' | 'failed';
+}
+
+export interface FriendBookMoonRunSessionState {
+  segmentIndex: number;
+  totalSegments: number;
+  successes: number;
+  markerPosition: number;
+  feedback: 'idle' | 'hit' | 'miss';
+  status: 'active' | 'success' | 'failed';
+}
+
+export interface FriendBookQuizQuestion {
+  id: string;
+  silhouetteImage: string;
+  prompt: string;
+  options: string[];
+  correctAnswer: string;
+  resultCopy: string;
+}
+
+export interface FriendBookQuizSessionState {
+  questions: FriendBookQuizQuestion[];
+  currentQuestionIndex: number;
+  selectedAnswer: string | null;
+  answerState: 'idle' | 'correct' | 'wrong' | 'completed';
+  correctAnswerCount: number;
+  completed: boolean;
+}
+
+export interface FriendBookGameSessionState {
+  gameId: FriendBookGameId;
+  betweenTwoPages?: FriendBookBetweenTwoPagesSessionState;
+  moonRun?: FriendBookMoonRunSessionState;
+  quiz?: FriendBookQuizSessionState;
+}
+
 export interface FriendBookGameProgress {
   completionCount: number;
   latestMedalId: string | null;
@@ -52,6 +93,7 @@ export const FRIEND_BOOK_DIFFERENCE_TARGETS = [
   'cat-tail',
   'page-fold',
 ] as const;
+export const FRIEND_BOOK_QUIZ_ROUND_SIZE = 5;
 
 const FRIEND_BOOK_GAME_IDS: FriendBookGameId[] = [
   'between-two-pages',
@@ -85,6 +127,20 @@ function createEmptyGameRecord(): Record<FriendBookGameId, FriendBookGameProgres
 
 function isFriendBookAvatarId(value: string): value is FriendBookAvatarId {
   return friendBookFinalSectionData.avatars.some((avatar) => avatar.id === value);
+}
+
+function sanitizeFriendBookAvatarId(
+  value: FriendBookAvatarId | string | null | undefined,
+): FriendBookAvatarId | null {
+  return typeof value === 'string' && isFriendBookAvatarId(value) ? value : null;
+}
+
+function clampRandomValue(randomValue: number): number {
+  if (!Number.isFinite(randomValue)) {
+    return 0;
+  }
+
+  return Math.min(Math.max(randomValue, 0), 0.999999);
 }
 
 function uniqueAvatarIds(
@@ -149,18 +205,13 @@ export function hydrateFriendBookProgress(
         latestNote: typeof incoming?.latestNote === 'string' ? incoming.latestNote : '',
         latestDate: typeof incoming?.latestDate === 'string' ? incoming.latestDate : null,
         latestAvatarId:
-          typeof incoming?.latestAvatarId === 'string'
-            ? (incoming.latestAvatarId as FriendBookAvatarId)
-            : null,
+          sanitizeFriendBookAvatarId(incoming?.latestAvatarId),
       };
     }
 
     const nextProgress: FriendBookProgress = {
       version: 1,
-      selectedAvatarId:
-        typeof parsed.selectedAvatarId === 'string'
-          ? (parsed.selectedAvatarId as FriendBookAvatarId)
-          : null,
+      selectedAvatarId: sanitizeFriendBookAvatarId(parsed.selectedAvatarId),
       unlockedAvatarIds: Array.isArray(parsed.unlockedAvatarIds)
         ? parsed.unlockedAvatarIds.filter(
             (avatarId): avatarId is FriendBookAvatarId => typeof avatarId === 'string',
@@ -215,12 +266,201 @@ export function getFriendBookGameStartStage(
   return progress.selectedAvatarId ? 'game-active' : 'avatar-select';
 }
 
+export function createFriendBookQuizRound(
+  questions: readonly FriendBookQuizQuestion[],
+  roundSize = FRIEND_BOOK_QUIZ_ROUND_SIZE,
+  randomValue: () => number = Math.random,
+): FriendBookQuizQuestion[] {
+  if (questions.length === 0 || roundSize <= 0) {
+    return [];
+  }
+
+  const pool = [...questions];
+  const targetSize = Math.min(Math.floor(roundSize), pool.length);
+
+  for (let index = 0; index < targetSize; index += 1) {
+    const randomIndex = index + Math.floor(clampRandomValue(randomValue()) * (pool.length - index));
+    const currentQuestion = pool[index]!;
+    pool[index] = pool[randomIndex]!;
+    pool[randomIndex] = currentQuestion;
+  }
+
+  return pool.slice(0, targetSize);
+}
+
+export function createFriendBookQuizSession(
+  questions: readonly FriendBookQuizQuestion[],
+  randomValue: () => number = Math.random,
+): FriendBookQuizSessionState {
+  return {
+    questions: createFriendBookQuizRound(questions, FRIEND_BOOK_QUIZ_ROUND_SIZE, randomValue),
+    currentQuestionIndex: 0,
+    selectedAnswer: null,
+    answerState: 'idle',
+    correctAnswerCount: 0,
+    completed: false,
+  };
+}
+
+export function createFriendBookGameSession(
+  gameId: FriendBookGameId,
+  quizQuestions: readonly FriendBookQuizQuestion[] = friendBookFinalSectionData.quizQuestionBank,
+  randomValue: () => number = Math.random,
+): FriendBookGameSessionState {
+  if (gameId === 'between-two-pages') {
+    return {
+      gameId,
+      betweenTwoPages: {
+        foundSpotIds: [],
+        remainingSeconds: 12,
+        mistakes: 0,
+        status: 'active',
+      },
+    };
+  }
+
+  if (gameId === 'moon-run') {
+    return {
+      gameId,
+      moonRun: {
+        segmentIndex: 0,
+        totalSegments: 4,
+        successes: 0,
+        markerPosition: 0.5,
+        feedback: 'idle',
+        status: 'active',
+      },
+    };
+  }
+
+  return {
+    gameId,
+    quiz: createFriendBookQuizSession(quizQuestions, randomValue),
+  };
+}
+
+export function advanceFriendBookQuizQuestion(
+  session: FriendBookGameSessionState,
+): FriendBookGameSessionState {
+  if (!session.quiz || session.quiz.completed) {
+    return session;
+  }
+
+  const isLastQuestion =
+    session.quiz.currentQuestionIndex >= Math.max(session.quiz.questions.length - 1, 0);
+
+  if (isLastQuestion) {
+    return {
+      ...session,
+      quiz: {
+        ...session.quiz,
+        selectedAnswer: null,
+        answerState: 'completed',
+        completed: true,
+      },
+    };
+  }
+
+  return {
+    ...session,
+    quiz: {
+      ...session.quiz,
+      currentQuestionIndex: session.quiz.currentQuestionIndex + 1,
+      selectedAnswer: null,
+      answerState: 'idle',
+      completed: false,
+    },
+  };
+}
+
+export function answerFriendBookQuizQuestion(
+  session: FriendBookGameSessionState,
+  selectedAnswer: string,
+): FriendBookGameSessionState {
+  if (
+    !session.quiz ||
+    session.quiz.completed ||
+    session.quiz.selectedAnswer !== null ||
+    session.quiz.answerState === 'completed'
+  ) {
+    return session;
+  }
+
+  const currentQuestion = session.quiz.questions[session.quiz.currentQuestionIndex];
+  const isCorrect = currentQuestion?.correctAnswer === selectedAnswer;
+
+  return {
+    ...session,
+    quiz: {
+      ...session.quiz,
+      selectedAnswer,
+      answerState: isCorrect ? 'correct' : 'wrong',
+      correctAnswerCount: session.quiz.correctAnswerCount + (isCorrect ? 1 : 0),
+    },
+  };
+}
+
+export function completeBetweenTwoPagesRound(
+  session: FriendBookGameSessionState,
+): {
+  isSuccess: boolean;
+  status: FriendBookBetweenTwoPagesSessionState['status'];
+  score: number;
+} {
+  const betweenTwoPages = session.betweenTwoPages;
+  const isSuccess =
+    Boolean(betweenTwoPages) &&
+    betweenTwoPages.remainingSeconds > 0 &&
+    FRIEND_BOOK_DIFFERENCE_TARGETS.every((targetId) =>
+      betweenTwoPages.foundSpotIds.includes(targetId),
+    );
+
+  return {
+    isSuccess,
+    status: isSuccess ? 'success' : 'failed',
+    score: betweenTwoPages?.remainingSeconds ?? 0,
+  };
+}
+
+export function registerMoonRunBeat(
+  session: FriendBookGameSessionState,
+  markerPosition: number,
+): FriendBookGameSessionState {
+  if (!session.moonRun || session.moonRun.status !== 'active') {
+    return session;
+  }
+
+  const attempt = resolveMoonRunAttempt(markerPosition);
+  const nextSegmentIndex = Math.min(
+    session.moonRun.segmentIndex + 1,
+    session.moonRun.totalSegments,
+  );
+  const nextSuccesses = session.moonRun.successes + (attempt.isSuccess ? 1 : 0);
+  const isComplete = nextSegmentIndex >= session.moonRun.totalSegments;
+
+  return {
+    ...session,
+    moonRun: {
+      ...session.moonRun,
+      markerPosition,
+      segmentIndex: nextSegmentIndex,
+      successes: nextSuccesses,
+      feedback: attempt.isSuccess ? 'hit' : 'miss',
+      status: isComplete
+        ? nextSuccesses >= session.moonRun.totalSegments
+          ? 'success'
+          : 'failed'
+        : 'active',
+    },
+  };
+}
+
 export function getFriendBookMedalIdForGame(
   gameId: FriendBookGameId,
   randomValue: number,
 ): string {
   const pool = friendBookFinalSectionData.medalPools[gameId];
-  const normalized = Number.isFinite(randomValue) ? Math.min(Math.max(randomValue, 0), 0.999999) : 0;
+  const normalized = clampRandomValue(randomValue);
   const index = Math.floor(normalized * pool.length);
 
   return pool[index]!;
@@ -237,6 +477,11 @@ export function completeFriendBookGameSession(
     avatarId?: FriendBookAvatarId | null;
   },
 ): FriendBookProgress {
+  const resolvedAvatarId =
+    sanitizeFriendBookAvatarId(options.avatarId) ??
+    sanitizeFriendBookAvatarId(progress.selectedAvatarId) ??
+    sanitizeFriendBookAvatarId(progress.games[options.gameId].latestAvatarId);
+
   const nextGames = {
     ...progress.games,
     [options.gameId]: {
@@ -247,15 +492,13 @@ export function completeFriendBookGameSession(
         getFriendBookMedalIdForGame(options.gameId, options.randomValue ?? Math.random()),
       latestNote: options.note.trim(),
       latestDate: options.displayDate,
-      latestAvatarId:
-        options.avatarId ?? progress.selectedAvatarId ?? progress.games[options.gameId].latestAvatarId,
+      latestAvatarId: resolvedAvatarId,
     },
   };
 
   const nextProgress: FriendBookProgress = {
     version: 1,
-    selectedAvatarId:
-      options.avatarId ?? progress.selectedAvatarId ?? progress.games[options.gameId].latestAvatarId,
+    selectedAvatarId: resolvedAvatarId,
     unlockedAvatarIds: progress.unlockedAvatarIds,
     games: nextGames,
     allGamesCompleted: computeAllGamesCompleted(nextGames),

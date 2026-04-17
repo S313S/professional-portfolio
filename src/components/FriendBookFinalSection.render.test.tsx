@@ -2,6 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { renderToStaticMarkup } from 'react-dom/server';
 
+import { friendBookFinalSectionData } from '../data';
+import { createFriendBookGameSession } from './FriendBookFinalSection.logic';
+import FriendBookGameOverlay from './FriendBookGameOverlay';
 import FriendBookFinalSection, {
   FRIEND_BOOK_BUTTON_POSITIONING,
   FRIEND_BOOK_COPY_POSITIONING,
@@ -136,4 +139,52 @@ test('renders the friend-book finale as a paper-book landing scene with sample a
   assert.doesNotMatch(markup, /MVP/);
   assert.doesNotMatch(markup, /Moonlit Echo/);
   assert.doesNotMatch(markup, /Night Keepsake/);
+});
+
+test('renders a dedicated full-screen friend-book game overlay for active rounds', () => {
+  const activeGame =
+    friendBookFinalSectionData.gameCards.find((game) => game.id === 'between-two-pages')!;
+  const markup = renderToStaticMarkup(
+    <FriendBookGameOverlay
+      activeGame={activeGame}
+      stage="game-active"
+      prompt="Find the three quiet differences before the page closes."
+    >
+      <div>Overlay body</div>
+    </FriendBookGameOverlay>,
+  );
+
+  assert.match(markup, /data-friend-book-game-overlay="true"/);
+  assert.match(markup, /data-friend-book-overlay-game="between-two-pages"/);
+  assert.match(markup, /data-friend-book-overlay-stage="game-active"/);
+  assert.match(markup, /Find the three quiet differences before the page closes\./);
+  assert.match(markup, /Overlay body/);
+});
+
+test('renders the who’s this overlay content with silhouette art and five-question pacing cues', () => {
+  const activeGame =
+    friendBookFinalSectionData.gameCards.find((game) => game.id === 'one-stroke-mark')!;
+  const session = createFriendBookGameSession(
+    'one-stroke-mark',
+    friendBookFinalSectionData.quizQuestionBank,
+    () => 0,
+  );
+  const currentQuestion = session.quiz!.questions[0]!;
+  const markup = renderToStaticMarkup(
+    <FriendBookGameOverlay
+      activeGame={activeGame}
+      stage="game-active"
+      prompt={currentQuestion.prompt}
+      progressLabel={`1 / ${session.quiz!.questions.length}`}
+    >
+      <img src={currentQuestion.silhouetteImage} alt="" />
+      <p>{currentQuestion.resultCopy}</p>
+    </FriendBookGameOverlay>,
+  );
+
+  assert.match(markup, /data-friend-book-overlay-game="one-stroke-mark"/);
+  assert.match(markup, /Who’s This\?/);
+  assert.match(markup, /1 \/ 5/);
+  assert.match(markup, /\/images\/friend-book-quiz\/mona-lisa-shadow\.svg/);
+  assert.match(markup, /The quiet smile belongs to Mona Lisa\./);
 });
