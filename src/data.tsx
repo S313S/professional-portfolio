@@ -444,10 +444,10 @@ const friendBookBetweenTwoPagesScenes: FriendBookBetweenTwoPagesScene[] = [
       {
         id: 'moon-stamp',
         label: 'moon seal',
-        x: 32,
-        y: 26,
-        width: 12,
-        height: 12,
+        x: 17,
+        y: 15,
+        width: 18,
+        height: 18,
       },
       {
         id: 'cat-tail',

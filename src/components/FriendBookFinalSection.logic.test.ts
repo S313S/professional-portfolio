@@ -276,6 +276,22 @@ test('between two pages scene-specific target coordinates stay aligned to the ca
   );
 });
 
+test('between two pages first scene keeps a wider moon target so the visible lunar difference is clickable', () => {
+  const firstScene = friendBookFinalSectionData.betweenTwoPagesScenes.find(
+    (scene) => scene.id === 'moon-cottage',
+  );
+  const moonTarget = firstScene?.targets.find((target) => target.id === 'moon-stamp');
+
+  assert.deepEqual(moonTarget, {
+    id: 'moon-stamp',
+    label: 'moon seal',
+    x: 17,
+    y: 15,
+    width: 18,
+    height: 18,
+  });
+});
+
 test('between two pages rotation does not repeat scenes until every scene has appeared once', () => {
   const sceneIds = friendBookFinalSectionData.betweenTwoPagesScenes.map((scene) => scene.id);
   let seenSceneIds: string[] = [];
