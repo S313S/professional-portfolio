@@ -256,7 +256,7 @@ test('between two pages scene-specific target coordinates stay aligned to the ca
     })),
     [
       { id: 'bridge-lantern', x: 47, y: 58, width: 10, height: 20 },
-      { id: 'tea-cup', x: 54, y: 81, width: 12, height: 14 },
+      { id: 'tea-cup', x: 53, y: 80, width: 15, height: 17 },
       { id: 'bamboo-cluster', x: 61, y: 36, width: 15, height: 18 },
     ],
   );
@@ -348,12 +348,18 @@ test('moon run level data exposes a short side-scrolling course', () => {
   );
 });
 
-test('friend-book quiz bank exposes the four replacement painting questions with valid assets', () => {
-  assert.equal(friendBookFinalSectionData.quizQuestionBank.length, 1);
+test('friend-book quiz bank exposes the replacement painting questions with valid assets', () => {
+  assert.equal(friendBookFinalSectionData.quizQuestionBank.length, 5);
 
   const ids = friendBookFinalSectionData.quizQuestionBank.map((question) => question.id);
-  assert.deepEqual(ids, ['napoleon-crossing-the-alps']);
-  assert.equal(new Set(ids).size, 1);
+  assert.deepEqual(ids, [
+    'napoleon-crossing-the-alps',
+    'abraham-lincoln',
+    'benjamin-franklin',
+    'nyanko-sensei-and-natsume',
+    'mona-lisa',
+  ]);
+  assert.equal(new Set(ids).size, 5);
   assert.equal(
     friendBookFinalSectionData.quizQuestionBank.every((question) => question.options.length === 4),
     true,
@@ -370,28 +376,50 @@ test('friend-book quiz bank exposes the four replacement painting questions with
     ),
     true,
   );
-
-  const napoleonQuestion = friendBookFinalSectionData.quizQuestionBank.find(
-    (question) => question.id === 'napoleon-crossing-the-alps',
-  );
   assert.equal(
-    napoleonQuestion?.silhouetteImage,
-    '/images/friend-book-quiz/Painting exam/拿破仑-剪影图.png',
-  );
-  assert.equal(
-    Reflect.get(napoleonQuestion ?? {}, 'referenceImage'),
-    '/images/friend-book-quiz/Painting exam/拿破仑.jpg',
-  );
-  assert.equal(
-    existsSync(
-      path.join(
-        process.cwd(),
-        'public',
-        String(Reflect.get(napoleonQuestion ?? {}, 'referenceImage')).slice(1),
+    friendBookFinalSectionData.quizQuestionBank.every((question) =>
+      existsSync(
+        path.join(
+          process.cwd(),
+          'public',
+          String(Reflect.get(question, 'referenceImage')).slice(1),
+        ),
       ),
     ),
     true,
   );
+
+  const questionAssets = Object.fromEntries(
+    friendBookFinalSectionData.quizQuestionBank.map((question) => [
+      question.id,
+      {
+        silhouetteImage: question.silhouetteImage,
+        referenceImage: Reflect.get(question, 'referenceImage'),
+      },
+    ]),
+  );
+  assert.deepEqual(questionAssets, {
+    'napoleon-crossing-the-alps': {
+      silhouetteImage: '/images/friend-book-quiz/Painting exam/拿破仑-剪影图.png',
+      referenceImage: '/images/friend-book-quiz/Painting exam/拿破仑.jpg',
+    },
+    'abraham-lincoln': {
+      silhouetteImage: '/images/friend-book-quiz/Painting exam/亚伯拉罕·林肯-剪影图.png',
+      referenceImage: '/images/friend-book-quiz/Painting exam/亚伯拉罕·林肯.jpeg',
+    },
+    'benjamin-franklin': {
+      silhouetteImage: '/images/friend-book-quiz/Painting exam/本杰明·富兰克林-剪影图.png',
+      referenceImage: '/images/friend-book-quiz/Painting exam/本杰明·富兰克林.jpeg',
+    },
+    'nyanko-sensei-and-natsume': {
+      silhouetteImage: '/images/friend-book-quiz/Painting exam/猫咪老师跟夏目-剪影图.png',
+      referenceImage: '/images/friend-book-quiz/Painting exam/猫咪老师跟夏目.jpg',
+    },
+    'mona-lisa': {
+      silhouetteImage: '/images/friend-book-quiz/Painting exam/蒙娜丽莎-剪影图.png',
+      referenceImage: '/images/friend-book-quiz/Painting exam/蒙娜丽莎.webp',
+    },
+  });
 });
 
 test('friend-book quiz helper returns a unique round capped by the available bank size', () => {
