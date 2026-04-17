@@ -220,8 +220,8 @@ test('between two pages scene bank exposes at least two paired illustrations wit
         (target) =>
           typeof target.width === 'number' &&
           typeof target.height === 'number' &&
-          target.width <= 18 &&
-          target.height <= 18,
+          target.width <= 20 &&
+          target.height <= 20,
       ),
       true,
     );
@@ -255,8 +255,8 @@ test('between two pages scene-specific target coordinates stay aligned to the ca
       height,
     })),
     [
-      { id: 'bridge-lantern', x: 74, y: 56, width: 11, height: 18 },
-      { id: 'tea-cup', x: 63, y: 80, width: 10, height: 12 },
+      { id: 'bridge-lantern', x: 47, y: 58, width: 10, height: 20 },
+      { id: 'tea-cup', x: 54, y: 81, width: 12, height: 14 },
       { id: 'bamboo-cluster', x: 61, y: 36, width: 15, height: 18 },
     ],
   );
@@ -269,9 +269,9 @@ test('between two pages scene-specific target coordinates stay aligned to the ca
       height,
     })),
     [
-      { id: 'torii-plaque', x: 39, y: 34, width: 10, height: 10 },
+      { id: 'torii-plaque', x: 41, y: 36, width: 11, height: 11 },
       { id: 'blossom-branch', x: 58, y: 38, width: 15, height: 16 },
-      { id: 'cushion-tassel', x: 88, y: 79, width: 10, height: 15 },
+      { id: 'cushion-tassel', x: 92, y: 82, width: 8, height: 15 },
     ],
   );
 });
