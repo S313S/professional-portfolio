@@ -79,11 +79,11 @@ test('renders archive entry bodies with unified emphasized sizing and weight', (
 
   assert.match(
     firstLeftRow,
-    /data-friend-book-archive-body="true"[^>]*class="[^"]*text-\[18\.4px\][^"]*font-semibold[^"]*xl:text-\[20\.6px\]/,
+    /data-friend-book-archive-body="true"[^>]*class="[^"]*mt-\[6px\][^"]*text-\[18\.4px\][^"]*font-semibold[^"]*xl:text-\[20\.6px\]/,
   );
   assert.match(
     secondLeftRow,
-    /data-friend-book-archive-body="true"[^>]*class="[^"]*text-\[18\.4px\][^"]*font-semibold[^"]*xl:text-\[20\.6px\]/,
+    /data-friend-book-archive-body="true"[^>]*class="[^"]*mt-\[6px\][^"]*text-\[18\.4px\][^"]*font-semibold[^"]*xl:text-\[20\.6px\]/,
   );
 });
 
@@ -134,5 +134,34 @@ test('widens all archive entry text columns by tightening the side columns', () 
   assert.match(
     secondLeftRow,
     /data-friend-book-archive-grid="true"[^>]*class="[^"]*grid-cols-\[60px_minmax\(0,1fr\)_72px\][^"]*gap-2[^"]*px-3[^"]*xl:grid-cols-\[70px_minmax\(0,1fr\)_84px\][^"]*xl:px-4/,
+  );
+});
+
+test('renders all archive review copy with the unified Yozai review styling', () => {
+  const markup = renderToStaticMarkup(<FriendBookFinalSection />);
+  const firstRightRow = getFirstMatch(
+    markup,
+    /data-friend-book-guestbook-row-right-desktop="0"[\s\S]*?<\/article>/,
+  );
+  const secondRightRow = getFirstMatch(
+    markup,
+    /data-friend-book-guestbook-row-right-desktop="1"[\s\S]*?<\/article>/,
+  );
+  const thirdRightRow = getFirstMatch(
+    markup,
+    /data-friend-book-guestbook-row-right-desktop="2"[\s\S]*?<\/article>/,
+  );
+
+  assert.match(
+    firstRightRow,
+    /data-friend-book-archive-review-copy="true"[^>]*class="[^"]*friend-book-yozai-copy[^"]*mt-\[5px\][^"]*text-\[19\.04px\][^"]*xl:text-\[20px\]/,
+  );
+  assert.match(
+    secondRightRow,
+    /data-friend-book-archive-review-copy="true"[^>]*class="[^"]*friend-book-yozai-copy[^"]*mt-\[5px\][^"]*text-\[19\.04px\][^"]*xl:text-\[20px\]/,
+  );
+  assert.match(
+    thirdRightRow,
+    /data-friend-book-archive-review-copy="true"[^>]*class="[^"]*friend-book-yozai-copy[^"]*mt-\[5px\][^"]*text-\[19\.04px\][^"]*xl:text-\[20px\]/,
   );
 });

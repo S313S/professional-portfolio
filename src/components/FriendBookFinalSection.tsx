@@ -1812,7 +1812,7 @@ export default function FriendBookFinalSection({
                         </div>
                         <p
                           data-friend-book-archive-body="true"
-                          className="friend-book-yozai-copy mt-3 text-[18.4px] leading-7 font-semibold text-[#241813] xl:text-[20.6px] xl:leading-[1.55]"
+                          className="friend-book-yozai-copy mt-[6px] text-[18.4px] leading-7 font-semibold text-[#241813] xl:text-[20.6px] xl:leading-[1.55]"
                         >
                           {entry.identityIntro}
                         </p>
@@ -1845,7 +1845,10 @@ export default function FriendBookFinalSection({
                 >
                   {entry ? (
                     <div className="flex h-full flex-col justify-between px-5 py-4 xl:px-6 xl:py-5">
-                      <p className="text-[0.94rem] leading-6 text-[#3f312b] xl:text-[1rem] xl:leading-[1.6]">
+                      <p
+                        data-friend-book-archive-review-copy="true"
+                        className="friend-book-yozai-copy mt-[5px] text-[19.04px] leading-6 text-[#3f312b] xl:text-[20px] xl:leading-[1.6]"
+                      >
                         {entry.portfolioReview}
                       </p>
                       <p className="self-end font-mono text-[0.64rem] uppercase tracking-[0.18em] text-[#6d5546] xl:text-[0.72rem]">
