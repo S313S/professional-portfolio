@@ -1773,7 +1773,10 @@ export default function FriendBookFinalSection({
                   style={getAbsoluteLayoutStyle(FRIEND_BOOK_ARCHIVE_DESKTOP_LAYOUT.sampleEntries[leftRowKey])}
                 >
                   {entry ? (
-                    <div className="grid h-full grid-cols-[60px_minmax(0,1fr)_92px] gap-3 px-4 py-3 xl:grid-cols-[70px_minmax(0,1fr)_104px] xl:px-5 xl:py-4">
+                    <div
+                      data-friend-book-archive-grid="true"
+                      className="grid h-full grid-cols-[60px_minmax(0,1fr)_72px] gap-2 px-3 py-3 xl:grid-cols-[70px_minmax(0,1fr)_84px] xl:px-4 xl:py-4"
+                    >
                       <div className="flex items-start justify-center pt-1">
                         {avatar ? (
                           <img
@@ -1788,7 +1791,10 @@ export default function FriendBookFinalSection({
                       </div>
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-3">
-                          <p className="font-serif text-[1.62rem] leading-none tracking-[-0.04em] text-[#2d2221] xl:text-[2rem]">
+                          <p
+                            data-friend-book-archive-title="true"
+                            className="friend-book-yozai-copy font-serif text-[1.62rem] leading-none tracking-[-0.04em] text-[#241813] xl:text-[2rem]"
+                          >
                             {entry.nickname}
                           </p>
                           {gameTag ? (
@@ -1804,7 +1810,10 @@ export default function FriendBookFinalSection({
                             </span>
                           ) : null}
                         </div>
-                        <p className="mt-3 text-[0.96rem] leading-7 text-[#463731] xl:text-[1.1rem] xl:leading-[1.55]">
+                        <p
+                          data-friend-book-archive-body="true"
+                          className="friend-book-yozai-copy mt-3 text-[18.4px] leading-7 font-semibold text-[#241813] xl:text-[20.6px] xl:leading-[1.55]"
+                        >
                           {entry.identityIntro}
                         </p>
                       </div>
