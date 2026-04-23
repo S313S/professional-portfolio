@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" role="img" aria-label="Silhouette placeholder">
-  <rect width="640" height="640" fill="#efe2cf"/>
-  <path d="M188 515c44-118 93-190 145-218 31-17 62-18 92-6 46 19 93 74 146 224H188Z" fill="#27201d"/>
-  <circle cx="292" cy="222" r="66" fill="#27201d"/>
-  <circle cx="392" cy="218" r="63" fill="#27201d"/>
-  <path d="M261 288c39 16 76 18 110 7 40-14 77-45 112-89 17 45 14 85-10 121-41 60-109 96-173 91-64-6-113-45-135-113 33-16 65-22 96-17Z" fill="#27201d"/>
-</svg>
