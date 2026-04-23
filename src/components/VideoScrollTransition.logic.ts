@@ -47,6 +47,11 @@ export const CTA_HINT_LEFT_BASE_PERCENT = 27.8;
 export const CTA_HINT_LEFT_MD_PERCENT = 27.6;
 export const VIDEO_SECTION_PLAYBACK_START_TOLERANCE_PX = 2;
 export const VIDEO_SCROLL_TRANSITION_SECTION_ID = 'video-scroll-transition';
+export const VIDEO_SCROLL_TRANSITION_PRELOAD_IMAGE_URLS = ['/images/drag图标_灰色版.png'];
+export const VIDEO_SCROLL_TRANSITION_PRELOAD_VIDEO_URLS = [
+  '/videos/窗帘飘动.mp4',
+  '/videos/窗帘飘动_镜头推进到相册.mp4',
+];
 
 export const DEFAULT_VIDEO_SCROLL_INITIAL_STATE: VideoScrollState = {
   phase: 'loopPlaying',

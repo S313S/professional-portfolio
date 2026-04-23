@@ -7,8 +7,8 @@ import {defineConfig, loadEnv} from 'vite';
 
 import {
   CODEX_REPORT_FILE_PATH,
-  createDefaultCodexReport,
-  normalizeCodexReport,
+  createDefaultCodexGuideDocument,
+  normalizeCodexGuideDocument,
 } from './src/codexReport';
 
 export default defineConfig(({mode}) => {
@@ -28,13 +28,11 @@ export default defineConfig(({mode}) => {
           server.middlewares.use(async (req, res, next) => {
             if (req.url === '/__codex-report/current' && req.method === 'GET') {
               try {
-                let payload = createDefaultCodexReport();
+                let payload = createDefaultCodexGuideDocument();
 
                 try {
                   const fileContents = await readFile(codexReportOutputPath, 'utf8');
-                  payload = normalizeCodexReport(
-                    JSON.parse(fileContents) as ReturnType<typeof createDefaultCodexReport>,
-                  );
+                  payload = normalizeCodexGuideDocument(JSON.parse(fileContents));
                 } catch (error) {
                   if (
                     !(error instanceof Error) ||
@@ -74,7 +72,7 @@ export default defineConfig(({mode}) => {
                   req.on('error', reject);
                 });
 
-                const payload = normalizeCodexReport(JSON.parse(body || '{}'));
+                const payload = normalizeCodexGuideDocument(JSON.parse(body || '{}'));
                 const record = {
                   ...payload,
                   updatedAt: new Date().toISOString(),

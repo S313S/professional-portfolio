@@ -23,6 +23,7 @@ import {
   WORKS_DETAIL_RETURN_TO_LOBBY_EVENT,
   WORKS_DETAIL_TRANSITION_START_EVENT,
 } from './WorksDetailSection.logic';
+import { useHomeLoaderAssetStatus } from '../homeLoader';
 import { armScrollMomentumLock } from '../scrollMomentumLock';
 
 const MOBILE_MEDIA_QUERY = '(max-width: 767px), (pointer: coarse)';
@@ -50,6 +51,8 @@ export default function WorksLobbySection() {
   const [shouldShowHint, setShouldShowHint] = useState(false);
   const [hasDismissedHint, setHasDismissedHint] = useState(false);
   const visualState = useMemo(() => getWorksLobbyVisualState(scrollState), [scrollState]);
+  const worksLobbyVideoStatus = useHomeLoaderAssetStatus('works-lobby-video');
+  const shouldPreferPosterFallback = worksLobbyVideoStatus !== 'loaded';
 
   const commitState = (nextState: WorksLobbyScrollState) => {
     stateRef.current = nextState;
@@ -465,8 +468,9 @@ export default function WorksLobbySection() {
     >
       <div
         data-works-lobby-layer="video"
+        data-home-loader-video-status={worksLobbyVideoStatus}
         className="absolute inset-0"
-        style={{ opacity: visualState.videoOpacity }}
+        style={{ opacity: shouldPreferPosterFallback ? 0 : visualState.videoOpacity }}
       >
         <video
           ref={videoRef}
@@ -485,7 +489,7 @@ export default function WorksLobbySection() {
       <div
         data-works-lobby-layer="image"
         className="absolute inset-0"
-        style={{ opacity: visualState.imageOpacity }}
+        style={{ opacity: shouldPreferPosterFallback ? 1 : visualState.imageOpacity }}
       >
         <img
           src="/images/WorksCollectionRoom_Bg.jpg"

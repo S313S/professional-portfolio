@@ -7,6 +7,8 @@ import {
   CTA_HINT_OFFSET_X_PX,
   DEFAULT_VIDEO_SCROLL_INITIAL_STATE,
   DEFAULT_VIDEO_WHEEL_STEP,
+  VIDEO_SCROLL_TRANSITION_PRELOAD_IMAGE_URLS,
+  VIDEO_SCROLL_TRANSITION_PRELOAD_VIDEO_URLS,
   getCtaHintLeftValue,
   getSoftRepinScrollTop,
   getVideoScrollMountState,
@@ -149,6 +151,17 @@ test('shows the CTA when the curtain video finishes naturally', () => {
   assert.equal(visualState.loopOpacity, 1);
   assert.equal(visualState.overlayOpacity, 0);
   assert.equal(visualState.shouldPlayLoopVideo, false);
+});
+
+test('preloads the drag prompt icon before the CTA appears', () => {
+  assert.deepEqual(VIDEO_SCROLL_TRANSITION_PRELOAD_IMAGE_URLS, ['/images/drag图标_灰色版.png']);
+});
+
+test('preloads both video assets before the CTA appears', () => {
+  assert.deepEqual(VIDEO_SCROLL_TRANSITION_PRELOAD_VIDEO_URLS, [
+    '/videos/窗帘飘动.mp4',
+    '/videos/窗帘飘动_镜头推进到相册.mp4',
+  ]);
 });
 
 test('downward wheel input stays pinned without controlling playback while the curtain loop is still playing', () => {

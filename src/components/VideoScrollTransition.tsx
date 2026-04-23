@@ -8,6 +8,8 @@ import {
   CTA_HINT_OFFSET_X_PX,
   DEFAULT_VIDEO_SCROLL_INITIAL_STATE,
   DEFAULT_VIDEO_WHEEL_STEP,
+  VIDEO_SCROLL_TRANSITION_PRELOAD_IMAGE_URLS,
+  VIDEO_SCROLL_TRANSITION_PRELOAD_VIDEO_URLS,
   getCtaHintLeftValue,
   getSoftRepinScrollTop,
   getVideoScrollMountState,
@@ -29,6 +31,7 @@ import {
   type VideoNavigationType,
   type VideoScrollState,
 } from './VideoScrollTransition.logic';
+import { useHomeLoaderAssetStatus } from '../homeLoader';
 
 const PUSH_VIDEO_END_FRAME_OFFSET = 1 / 60;
 const MOBILE_MEDIA_QUERY = '(max-width: 767px), (pointer: coarse)';
@@ -55,7 +58,10 @@ export default function VideoScrollTransition() {
   const [videoState, setVideoState] = useState<VideoScrollState>(DEFAULT_VIDEO_SCROLL_INITIAL_STATE);
   const [isMobile, setIsMobile] = useState(false);
   const [isSectionInView, setIsSectionInView] = useState(false);
+  const loopVideoAssetStatus = useHomeLoaderAssetStatus('video-scroll-loop-video');
+  const pushVideoAssetStatus = useHomeLoaderAssetStatus('video-scroll-push-video');
   const visualState = getVideoVisualState(videoState);
+  const canShowCta = visualState.showCta && pushVideoAssetStatus === 'loaded';
   const ctaButtonAnimationClassName = visualState.showCtaPromptAnimation
     ? 'video-cta-prompt-button'
     : '';
@@ -402,6 +408,36 @@ export default function VideoScrollTransition() {
   }, []);
 
   useEffect(() => {
+    const preloadedImages = VIDEO_SCROLL_TRANSITION_PRELOAD_IMAGE_URLS.map((url) => {
+      const image = new Image();
+      image.decoding = 'async';
+      image.src = url;
+      return image;
+    });
+
+    const preloadedVideos = VIDEO_SCROLL_TRANSITION_PRELOAD_VIDEO_URLS.map((url) => {
+      const video = document.createElement('video');
+      video.preload = 'auto';
+      video.muted = true;
+      video.playsInline = true;
+      video.src = url;
+      video.load();
+      return video;
+    });
+
+    return () => {
+      preloadedImages.forEach((image) => {
+        image.src = '';
+      });
+      preloadedVideos.forEach((video) => {
+        video.pause();
+        video.removeAttribute('src');
+        video.load();
+      });
+    };
+  }, []);
+
+  useEffect(() => {
     if (
       shouldPlayLoopVideoInSection({
         state: videoState,
@@ -709,6 +745,7 @@ export default function VideoScrollTransition() {
     >
       <video
         ref={loopVideoRef}
+        data-home-loader-loop-status={loopVideoAssetStatus}
         src="/videos/窗帘飘动.mp4"
         poster="/images/video-loop-poster.png"
         className="absolute inset-0 h-full w-full object-cover transition-opacity duration-500"
@@ -726,6 +763,7 @@ export default function VideoScrollTransition() {
       >
         <video
           ref={pushVideoRef}
+          data-home-loader-push-status={pushVideoAssetStatus}
           src="/videos/窗帘飘动_镜头推进到相册.mp4"
           poster="/images/video-transition-poster.png"
           className="absolute inset-0 h-full w-full object-cover"
@@ -737,7 +775,7 @@ export default function VideoScrollTransition() {
         />
       </div>
 
-      {visualState.showCta ? (
+      {canShowCta ? (
         <div className="pointer-events-none absolute inset-0">
           <button
             type="button"

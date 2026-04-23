@@ -10,6 +10,7 @@ import {
   getInitialFocusTarget,
   getInitialScrollResetState,
 } from './App.logic.ts';
+import { HomeLoaderGate, shouldEnableHomeLoader } from './homeLoader.tsx';
 import './index.css';
 
 const standaloneRoute =
@@ -32,6 +33,11 @@ const RootComponent =
       : standaloneRoute === 'codex-report'
         ? CodexReportPage
       : App;
+const shouldEnableRootHomeLoader =
+  typeof window !== 'undefined' &&
+  standaloneRoute === null &&
+  RootComponent === App &&
+  shouldEnableHomeLoader(window.location.hostname);
 
 if (typeof window !== 'undefined') {
   window.history.scrollRestoration = initialScrollResetState.scrollRestoration;
@@ -49,6 +55,12 @@ if (typeof window !== 'undefined') {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <RootComponent />
+    {shouldEnableRootHomeLoader ? (
+      <HomeLoaderGate enabled>
+        <App />
+      </HomeLoaderGate>
+    ) : (
+      <RootComponent />
+    )}
   </StrictMode>,
 );
