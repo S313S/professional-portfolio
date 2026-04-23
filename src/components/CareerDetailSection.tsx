@@ -21,6 +21,7 @@ import {
   isCareerDetailSectionPinned,
 } from './CareerDetailSection.logic';
 import { WORKS_LOBBY_ACTIVATE_FROM_CAREER_DETAIL_EVENT } from './WorksLobbySection.logic';
+import { armScrollMomentumLock } from '../scrollMomentumLock';
 
 const CAREER_DETAIL_ASSETS = {
   background: '/images/careerDetail_bg.png',
@@ -767,6 +768,7 @@ export default function CareerDetailSection() {
 
       if (snapState.shouldSnap) {
         hasSnappedOnCurrentEntryRef.current = true;
+        armScrollMomentumLock();
         window.scrollTo({
           top: getCareerDetailSnapTargetY(sectionTop),
           behavior: 'smooth',

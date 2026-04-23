@@ -12,6 +12,7 @@ import WorksDetailSection from './components/WorksDetailSection';
 import WorksLobbySection from './components/WorksLobbySection';
 import FriendBookFinalSection from './components/FriendBookFinalSection';
 import { getInitialFocusTarget } from './App.logic';
+import { isScrollMomentumLocked } from './scrollMomentumLock';
 
 export default function App() {
   useEffect(() => {
@@ -38,6 +39,24 @@ export default function App() {
 
     return () => {
       window.removeEventListener('load', scrollToFocusTarget);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleWheelCapture = (event: WheelEvent) => {
+      if (!isScrollMomentumLocked()) {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+    };
+
+    window.addEventListener('wheel', handleWheelCapture, { passive: false, capture: true });
+
+    return () => {
+      window.removeEventListener('wheel', handleWheelCapture, { capture: true });
     };
   }, []);
 

@@ -120,6 +120,11 @@ export const FRIEND_BOOK_BETWEEN_TWO_PAGES_TARGET_POSITIONING = {
     'blossom-branch': { x: 56, y: 28.67, width: 12.24, height: 16.89 },
     'cushion-tassel': { x: 80.8, y: 55.17, width: 9.05, height: 21.54 },
   },
+  'dusk-field-road': {
+    'sign-charm': { x: 15.7, y: 48.8, width: 7.2, height: 12.1 },
+    'notebook-corner': { x: 69.6, y: 63.5, width: 9.6, height: 10.6 },
+    'schoolbag-badge': { x: 86.5, y: 55.4, width: 6.4, height: 8.1 },
+  },
 } as const satisfies Record<string, Record<string, FriendBookBetweenTwoPagesTargetFrame>>;
 
 export function getBetweenTwoPagesTargetFrame(

@@ -404,6 +404,22 @@ test('between two pages scene bank exposes at least two paired illustrations wit
   assert.equal(new Set(targetIdSignatures).size, scenes?.length);
 });
 
+test('between two pages scene bank includes the dusk field road scene with three configured targets', () => {
+  const scene = friendBookFinalSectionData.betweenTwoPagesScenes.find(
+    ({ id }) => id === 'dusk-field-road',
+  );
+
+  assert.equal(friendBookFinalSectionData.betweenTwoPagesScenes.length >= 4, true);
+  assert.deepEqual(
+    scene?.targets.map(({ id, label }) => ({ id, label })),
+    [
+      { id: 'sign-charm', label: 'sign charm' },
+      { id: 'notebook-corner', label: 'notebook corner' },
+      { id: 'schoolbag-badge', label: 'schoolbag badge' },
+    ],
+  );
+});
+
 test('between two pages scene-specific target coordinates stay aligned to the calibrated v2 and v3 difference areas', () => {
   const sceneById = Object.fromEntries(
     friendBookFinalSectionData.betweenTwoPagesScenes.map((scene) => [scene.id, scene]),
@@ -462,22 +478,20 @@ test('between two pages first scene keeps a wider moon target so the visible lun
 test('between two pages rotation does not repeat scenes until every scene has appeared once', () => {
   const sceneIds = friendBookFinalSectionData.betweenTwoPagesScenes.map((scene) => scene.id);
   let seenSceneIds: string[] = [];
+  const chosenSceneIds: string[] = [];
 
-  const first = getNextBetweenTwoPagesSceneRotation(seenSceneIds, () => 0);
-  seenSceneIds = first.seenSceneIds;
-  const second = getNextBetweenTwoPagesSceneRotation(seenSceneIds, () => 0);
-  seenSceneIds = second.seenSceneIds;
-  const third = getNextBetweenTwoPagesSceneRotation(seenSceneIds, () => 0);
-  seenSceneIds = third.seenSceneIds;
-  const fourth = getNextBetweenTwoPagesSceneRotation(seenSceneIds, () => 0);
+  for (let index = 0; index < sceneIds.length; index += 1) {
+    const next = getNextBetweenTwoPagesSceneRotation(seenSceneIds, () => 0);
+    chosenSceneIds.push(next.sceneId);
+    seenSceneIds = next.seenSceneIds;
+  }
 
-  assert.deepEqual(
-    [first.sceneId, second.sceneId, third.sceneId].sort(),
-    [...sceneIds].sort(),
-  );
+  const resetRound = getNextBetweenTwoPagesSceneRotation(seenSceneIds, () => 0);
+
+  assert.deepEqual(chosenSceneIds.sort(), [...sceneIds].sort());
   assert.deepEqual(seenSceneIds.sort(), [...sceneIds].sort());
-  assert.equal(fourth.sceneId, sceneIds[0]);
-  assert.deepEqual(fourth.seenSceneIds, [sceneIds[0]]);
+  assert.equal(resetRound.sceneId, sceneIds[0]);
+  assert.deepEqual(resetRound.seenSceneIds, [sceneIds[0]]);
 });
 
 test('moon run level data exposes a short side-scrolling course', () => {

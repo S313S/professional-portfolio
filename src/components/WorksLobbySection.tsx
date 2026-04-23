@@ -23,6 +23,7 @@ import {
   WORKS_DETAIL_RETURN_TO_LOBBY_EVENT,
   WORKS_DETAIL_TRANSITION_START_EVENT,
 } from './WorksDetailSection.logic';
+import { armScrollMomentumLock } from '../scrollMomentumLock';
 
 const MOBILE_MEDIA_QUERY = '(max-width: 767px), (pointer: coarse)';
 const WORKS_LOBBY_PIN_TOLERANCE_PX = 2;
@@ -278,6 +279,7 @@ export default function WorksLobbySection() {
 
       if (mountState.shouldSnap) {
         hasSnappedOnCurrentEntryRef.current = true;
+        armScrollMomentumLock();
         window.scrollTo({
           top: getWorksLobbyScrollTargetY(sectionTop),
           behavior: 'smooth',
@@ -445,6 +447,7 @@ export default function WorksLobbySection() {
 
     window.dispatchEvent(new Event(WORKS_DETAIL_TRANSITION_START_EVENT));
 
+    armScrollMomentumLock();
     window.scrollTo({
       top: targetY,
       behavior: 'smooth',

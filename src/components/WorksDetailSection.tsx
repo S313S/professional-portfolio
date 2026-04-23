@@ -29,6 +29,7 @@ import {
   type WorksDetailScene,
   type WorksDetailView,
 } from './WorksDetailSection.logic';
+import { armScrollMomentumLock } from '../scrollMomentumLock';
 
 const TOUCH_STEP_TOLERANCE_PX = 4;
 const WORKS_DETAIL_REVEAL_STEP = 0.18;
@@ -511,6 +512,7 @@ export default function WorksDetailSection({
     }
 
     wheelBufferRef.current = 0;
+    armScrollMomentumLock();
     window.scrollTo({
       top: getWorksDetailPinnedScrollY(nextSection.getBoundingClientRect().top + window.scrollY),
       behavior: 'smooth',

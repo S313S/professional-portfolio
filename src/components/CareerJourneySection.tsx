@@ -87,7 +87,7 @@ const CAREER_JOURNEY_CONFIG = {
       base: '-mt-2 text-base font-semibold tracking-[-0.03em] text-[#1f1713]',
       sm: 'sm:text-[1.0rem]',
       style: {
-        fontFamily: '"Manrope", sans-serif',
+        fontFamily: '"Manrope", ui-sans-serif, system-ui, sans-serif',
       } satisfies CSSProperties,
     },
   },

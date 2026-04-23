@@ -589,6 +589,56 @@ const friendBookBetweenTwoPagesScenes: FriendBookBetweenTwoPagesScene[] = [
       },
     ],
   },
+  {
+    id: 'dusk-field-road',
+    baseImage: '/images/friend-book-between-two-pages/base-scene-v4.png',
+    variantImage: '/images/friend-book-between-two-pages/variant-scene-v4.png',
+    aspectRatio: 2752 / 1536,
+    targets: [
+      {
+        id: 'sign-charm',
+        label: 'sign charm',
+        x: 16,
+        y: 49,
+        width: 8,
+        height: 12,
+        hitArea: [
+          { x: 15, y: 49 },
+          { x: 23, y: 49 },
+          { x: 23, y: 61 },
+          { x: 15, y: 61 },
+        ],
+      },
+      {
+        id: 'notebook-corner',
+        label: 'notebook corner',
+        x: 70,
+        y: 63,
+        width: 10,
+        height: 11,
+        hitArea: [
+          { x: 70, y: 63 },
+          { x: 80, y: 63 },
+          { x: 80, y: 74 },
+          { x: 70, y: 74 },
+        ],
+      },
+      {
+        id: 'schoolbag-badge',
+        label: 'schoolbag badge',
+        x: 87,
+        y: 56,
+        width: 6,
+        height: 8,
+        hitArea: [
+          { x: 86, y: 55 },
+          { x: 93, y: 55 },
+          { x: 93, y: 64 },
+          { x: 86, y: 64 },
+        ],
+      },
+    ],
+  },
 ];
 
 const friendBookMoonRunLevel: FriendBookMoonRunLevel = {

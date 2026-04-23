@@ -7,6 +7,7 @@ import {
   shouldLockExperienceHeroOnScroll,
 } from './ExperienceHero.logic';
 import { VIDEO_SCROLL_TRANSITION_SECTION_ID } from './VideoScrollTransition.logic';
+import { armScrollMomentumLock } from '../scrollMomentumLock';
 
 const EXPERIENCE_MASK_RADIUS_PX = 260;
 const EXPERIENCE_FLOW_SPEED = 1.75;
@@ -226,6 +227,7 @@ export default function ExperienceHero() {
 
       if (snapState.shouldSnap) {
         hasSnappedOnCurrentEntryRef.current = true;
+        armScrollMomentumLock();
         window.scrollTo({
           top: getExperienceHeroSnapTargetY(sectionTop),
           behavior: 'smooth',
