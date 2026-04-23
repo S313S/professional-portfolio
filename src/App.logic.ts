@@ -15,6 +15,7 @@ type SupportedFocusTarget = (typeof SUPPORTED_FOCUS_TARGETS)[number];
 const SUPPORTED_DEV_STANDALONE_ROUTES = {
   '/debug/friend-book-finale': 'friend-book-finale',
   '/debug/friend-book-diff-hotspots': 'friend-book-diff-hotspots',
+  '/debug/codex-report': 'codex-report',
 } as const;
 
 export type SupportedDevStandaloneRoute =

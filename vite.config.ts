@@ -1,8 +1,15 @@
 import {mkdir, writeFile} from 'fs/promises';
+import {readFile} from 'fs/promises';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import {defineConfig, loadEnv} from 'vite';
+
+import {
+  CODEX_REPORT_FILE_PATH,
+  createDefaultCodexReport,
+  normalizeCodexReport,
+} from './src/codexReport';
 
 export default defineConfig(({mode}) => {
   const env = loadEnv(mode, '.', '');
@@ -10,6 +17,7 @@ export default defineConfig(({mode}) => {
     __dirname,
     'tmp/friend-book-diff-hotspots.json',
   );
+  const codexReportOutputPath = path.resolve(__dirname, CODEX_REPORT_FILE_PATH);
   return {
     plugins: [
       react(),
@@ -18,6 +26,89 @@ export default defineConfig(({mode}) => {
         name: 'friend-book-diff-hotspots-debug-endpoint',
         configureServer(server) {
           server.middlewares.use(async (req, res, next) => {
+            if (req.url === '/__codex-report/current' && req.method === 'GET') {
+              try {
+                let payload = createDefaultCodexReport();
+
+                try {
+                  const fileContents = await readFile(codexReportOutputPath, 'utf8');
+                  payload = normalizeCodexReport(
+                    JSON.parse(fileContents) as ReturnType<typeof createDefaultCodexReport>,
+                  );
+                } catch (error) {
+                  if (
+                    !(error instanceof Error) ||
+                    !('code' in error) ||
+                    error.code !== 'ENOENT'
+                  ) {
+                    throw error;
+                  }
+                }
+
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.setHeader('Cache-Control', 'no-store');
+                res.end(`${JSON.stringify(payload, null, 2)}\n`);
+              } catch (error) {
+                res.statusCode = 500;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(
+                  JSON.stringify({
+                    ok: false,
+                    error: error instanceof Error ? error.message : 'Unknown error',
+                  }),
+                );
+              }
+              return;
+            }
+
+            if (req.url === '/__codex-report/update' && req.method === 'POST') {
+              try {
+                const body = await new Promise<string>((resolve, reject) => {
+                  let data = '';
+                  req.setEncoding('utf8');
+                  req.on('data', (chunk) => {
+                    data += chunk;
+                  });
+                  req.on('end', () => resolve(data));
+                  req.on('error', reject);
+                });
+
+                const payload = normalizeCodexReport(JSON.parse(body || '{}'));
+                const record = {
+                  ...payload,
+                  updatedAt: new Date().toISOString(),
+                };
+
+                await mkdir(path.dirname(codexReportOutputPath), {recursive: true});
+                await writeFile(
+                  codexReportOutputPath,
+                  `${JSON.stringify(record, null, 2)}\n`,
+                  'utf8',
+                );
+
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(
+                  JSON.stringify({
+                    ok: true,
+                    filePath: CODEX_REPORT_FILE_PATH,
+                    updatedAt: record.updatedAt,
+                  }),
+                );
+              } catch (error) {
+                res.statusCode = 500;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(
+                  JSON.stringify({
+                    ok: false,
+                    error: error instanceof Error ? error.message : 'Unknown error',
+                  }),
+                );
+              }
+              return;
+            }
+
             if (
               req.url !== '/__friend-book-debug/confirm-hotspots' ||
               req.method !== 'POST'

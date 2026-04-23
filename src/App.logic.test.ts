@@ -50,6 +50,7 @@ test('matches the friend-book standalone debug route only in development', () =>
     getDevStandaloneRoute('/debug/friend-book-diff-hotspots', true),
     'friend-book-diff-hotspots',
   );
+  assert.equal(getDevStandaloneRoute('/debug/codex-report', true), 'codex-report');
   assert.equal(getDevStandaloneRoute('/debug/friend-book-finale', false), null);
   assert.equal(getDevStandaloneRoute('/debug/works-detail', true), null);
 });
