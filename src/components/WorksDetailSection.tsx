@@ -7,6 +7,7 @@ import {
   getWorksDetailActivationState,
   getWorksDetailCompletionState,
   getWorksDetailDetailModeResetState,
+  getWorksDetailLoadingFallbackMs,
   getWorksDetailPinnedScrollY,
   getWorksDetailProjectSelectionState,
   getWorksDetailSceneNavigationState,
@@ -19,7 +20,6 @@ import {
   openWorksDetailCodingView,
   openWorksDetailDesignView,
   shouldLockWorksDetailScroll,
-  WORKS_DETAIL_LOADING_FALLBACK_MS,
   WORKS_DETAIL_LOADING_SRC,
   WORKS_DETAIL_REVEAL_IMAGE_SRC,
   WORKS_DETAIL_RETURN_TO_LOBBY_EVENT,
@@ -311,6 +311,7 @@ export default function WorksDetailSection({
   const viewRef = useRef<WorksDetailView>(initialView);
   const detailModeRef = useRef<WorksDetailDetailMode>(initialDetailMode);
   const loadingTimeoutRef = useRef<number | null>(null);
+  const loadingIframeReadyRef = useRef(false);
   const wheelBufferRef = useRef(0);
   const sceneUnlockTimeoutRef = useRef<number | null>(null);
   const detailSceneRef = useRef<WorksDetailScene>('gallery');
@@ -350,6 +351,18 @@ export default function WorksDetailSection({
 
     window.clearTimeout(loadingTimeoutRef.current);
     loadingTimeoutRef.current = null;
+  };
+
+  const scheduleLoadingTimeout = (hasIframeReportedReady: boolean) => {
+    clearLoadingTimeout();
+
+    loadingTimeoutRef.current = window.setTimeout(() => {
+      if (phaseRef.current !== 'loading') {
+        return;
+      }
+
+      completeLoading();
+    }, getWorksDetailLoadingFallbackMs(hasIframeReportedReady));
   };
 
   const clearSceneUnlockTimeout = () => {
@@ -481,6 +494,7 @@ export default function WorksDetailSection({
     const activationState = getWorksDetailActivationState(iframeKey);
 
     clearLoadingTimeout();
+    loadingIframeReadyRef.current = false;
     wheelBufferRef.current = 0;
     setEntryLandingState('hidden');
     resetDetailState();
@@ -546,6 +560,12 @@ export default function WorksDetailSection({
         return;
       }
 
+      if (event.data === 'detail-work-loading:ready' && phaseRef.current === 'loading') {
+        loadingIframeReadyRef.current = true;
+        scheduleLoadingTimeout(true);
+        return;
+      }
+
       if (event.data !== 'detail-work-loading:completed' || phaseRef.current !== 'loading') {
         return;
       }
@@ -562,17 +582,12 @@ export default function WorksDetailSection({
 
   useEffect(() => {
     if (phase !== 'loading') {
+      loadingIframeReadyRef.current = false;
       clearLoadingTimeout();
       return undefined;
     }
 
-    loadingTimeoutRef.current = window.setTimeout(() => {
-      if (phaseRef.current !== 'loading') {
-        return;
-      }
-
-      completeLoading();
-    }, WORKS_DETAIL_LOADING_FALLBACK_MS);
+    scheduleLoadingTimeout(loadingIframeReadyRef.current);
 
     return () => {
       clearLoadingTimeout();

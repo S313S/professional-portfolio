@@ -7,6 +7,7 @@ import {
   getWorksDetailBackNavigationState,
   getWorksDetailCompletionState,
   getWorksDetailDetailModeResetState,
+  getWorksDetailLoadingFallbackMs,
   getWorksDetailProjectSelectionState,
   getWorksDetailSceneNavigationState,
   isWorksDetailContentInteractive,
@@ -72,10 +73,17 @@ test('completing the loading animation lands directly on the fully revealed atta
   });
 });
 
+test('loading fallback waits longer before iframe readiness and only uses the tighter timer after the animation starts', () => {
+  assert.equal(getWorksDetailLoadingFallbackMs(false), 20000);
+  assert.equal(getWorksDetailLoadingFallbackMs(true), 11500);
+});
+
 test('loading phase locks scroll while the viewport is inside the works detail section', () => {
   assert.equal(
     shouldLockWorksDetailScroll({
       phase: 'loading',
+      view: 'entry',
+      detailMode: 'design',
       scrollY: 3200,
       sectionTop: 3200,
       sectionHeight: 1800,

@@ -2,7 +2,8 @@ export const WORKS_DETAIL_LOADING_SRC = '/detailWork-loading.html?embed=portfoli
 export const WORKS_DETAIL_REVEAL_IMAGE_SRC = '/images/workDetail_bg.jpeg';
 export const WORKS_DETAIL_TRANSITION_START_EVENT = 'works-detail-transition:start';
 export const WORKS_DETAIL_RETURN_TO_LOBBY_EVENT = 'works-detail:return-to-lobby';
-export const WORKS_DETAIL_LOADING_FALLBACK_MS = 10350;
+export const WORKS_DETAIL_LOADING_BOOTSTRAP_FALLBACK_MS = 20000;
+export const WORKS_DETAIL_LOADING_ANIMATION_FALLBACK_MS = 11500;
 export const WORKS_DETAIL_INTERACTIVE_REVEAL_PROGRESS = 1 / 1.35;
 
 export type WorksDetailPhase = 'idle' | 'loading' | 'revealing' | 'settled';
@@ -115,6 +116,12 @@ export interface WorksDetailProjectSelectionInput {
 export interface WorksDetailProjectSelectionState {
   nextScene: WorksDetailScene;
   nextProjectIndex: number;
+}
+
+export function getWorksDetailLoadingFallbackMs(hasIframeReportedReady: boolean) {
+  return hasIframeReportedReady
+    ? WORKS_DETAIL_LOADING_ANIMATION_FALLBACK_MS
+    : WORKS_DETAIL_LOADING_BOOTSTRAP_FALLBACK_MS;
 }
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
