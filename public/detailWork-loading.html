@@ -5,8 +5,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CODM Loading Animation</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
+  <script src="/vendor/gsap.min.js"></script>
+  <script src="/vendor/topojson-client.min.js"></script>
   <style>
     :root {
       --cn-text-offset-x: 40px;
@@ -903,7 +903,7 @@
       let landPolygons = []; // will hold arrays of [lon, lat] rings
 
       // Load real world land data (Natural Earth 110m)
-      fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/land-110m.json')
+      fetch('/vendor/land-110m.json')
         .then(r => r.json())
         .then(topology => {
           const land = topojson.feature(topology, topology.objects.land);
