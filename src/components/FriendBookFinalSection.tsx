@@ -121,9 +121,9 @@ export const FRIEND_BOOK_BETWEEN_TWO_PAGES_TARGET_POSITIONING = {
     'cushion-tassel': { x: 80.8, y: 55.17, width: 9.05, height: 21.54 },
   },
   'dusk-field-road': {
-    'sign-charm': { x: 15.7, y: 48.8, width: 7.2, height: 12.1 },
-    'notebook-corner': { x: 69.6, y: 63.5, width: 9.6, height: 10.6 },
-    'schoolbag-badge': { x: 86.5, y: 55.4, width: 6.4, height: 8.1 },
+    'sign-charm': { x: 20.51, y: 48.58, width: 7.2, height: 12.1 },
+    'notebook-corner': { x: 65.09, y: 62.97, width: 9.6, height: 10.6 },
+    'schoolbag-badge': { x: 79.19, y: 49.09, width: 6.63, height: 14.19 },
   },
 } as const satisfies Record<string, Record<string, FriendBookBetweenTwoPagesTargetFrame>>;
 
