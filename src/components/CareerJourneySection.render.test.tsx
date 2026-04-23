@@ -26,5 +26,5 @@ test('renders the career journey poster content and decorative assets', () => {
   assert.match(markup, /data-career-card="commerce"/);
   assert.match(markup, /data-career-card="social"/);
   assert.match(markup, /font-family:&quot;Cormorant Garamond&quot;, serif/);
-  assert.match(markup, /font-family:&quot;Manrope&quot;, ui-sans-serif, system-ui, sans-serif/);
+  assert.match(markup, /font-family:&quot;Manrope&quot;, sans-serif/);
 });
