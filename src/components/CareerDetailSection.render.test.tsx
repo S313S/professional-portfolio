@@ -23,6 +23,10 @@ test('renders the career detail stage with category-scoped bookmarks and default
   assert.match(markup, /data-career-detail-tab="industryKnowledge"/);
   assert.match(markup, /data-career-detail-select="record"/);
   assert.match(markup, /data-career-detail-drag-track="desktop"/);
+  assert.match(
+    markup,
+    /data-career-detail-drag-track="desktop"[^>]*class="[^"]*left-\[calc\(32%\+7px\)\][^"]*"/,
+  );
   assert.match(markup, /data-career-detail-drag-thumb="desktop"/);
   assert.match(markup, /data-career-detail-drag-thumb-icon="desktop"/);
   assert.match(markup, /data-career-detail-cta="page-switch"/);

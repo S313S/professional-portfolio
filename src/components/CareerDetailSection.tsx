@@ -1257,7 +1257,7 @@ export default function CareerDetailSection() {
             <div
               data-career-detail-drag-track="desktop"
               ref={selectorTrackRef}
-              className="absolute inset-y-[8%] left-1/2 z-10 w-[2.6rem] -translate-x-1/2 touch-none"
+              className="absolute inset-y-[8%] left-[calc(32%+7px)] z-10 w-[2.6rem] -translate-x-1/2 touch-none"
               onPointerDown={handleSelectorPointerDown}
               onPointerMove={handleSelectorPointerMove}
               onPointerUp={handleSelectorPointerUp}
