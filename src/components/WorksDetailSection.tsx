@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
 import gsap from 'gsap';
 
 import { personalData, type CodingCategoryId } from '../data';
@@ -7,6 +7,7 @@ import {
   getWorksDetailActivationState,
   getWorksDetailCompletionState,
   getWorksDetailDetailModeResetState,
+  getWorksDetailGalleryPlaneState,
   getWorksDetailLoadingFallbackMs,
   getWorksDetailPinnedScrollY,
   getWorksDetailProjectSelectionState,
@@ -20,6 +21,8 @@ import {
   openWorksDetailCodingView,
   openWorksDetailDesignView,
   shouldLockWorksDetailScroll,
+  WORKS_DETAIL_GALLERY_DESIGN_HEIGHT,
+  WORKS_DETAIL_GALLERY_DESIGN_WIDTH,
   WORKS_DETAIL_LOADING_SRC,
   WORKS_DETAIL_REVEAL_IMAGE_SRC,
   WORKS_DETAIL_RETURN_TO_LOBBY_EVENT,
@@ -89,16 +92,16 @@ const WORKS_DETAIL_GALLERY_LAYOUT = {
     '--works-detail-track-height': '34rem',
   },
   corridor: {
-    '--works-detail-corridor-center-y': '50%',
-    '--works-detail-corridor-width': 'min(88rem, 170vw)',
+    '--works-detail-corridor-center-y': '42%',
+    '--works-detail-corridor-width': '88rem',
     '--works-detail-corridor-band-height': '15.5rem',
-    '--works-detail-corridor-rail-offset': '8.75rem',
+    '--works-detail-corridor-rail-offset': '10.75rem',
   },
   slots: [
     {
       x: '-37.5rem',
       y: '33.7rem',
-      scale: 1.04,
+      scale: 1.21,
       opacity: 0.3,
       grayscale: 0.62,
       brightness: 0.42,
@@ -106,7 +109,7 @@ const WORKS_DETAIL_GALLERY_LAYOUT = {
     {
       x: '-26.5rem',
       y: '22.7rem',
-      scale: 1.04,
+      scale: 1.21,
       opacity: 0.34,
       grayscale: 0.54,
       brightness: 0.48,
@@ -114,7 +117,7 @@ const WORKS_DETAIL_GALLERY_LAYOUT = {
     {
       x: '-15.5rem',
       y: '11.7rem',
-      scale: 1.04,
+      scale: 1.21,
       opacity: 0.38,
       grayscale: 0.52,
       brightness: 0.44,
@@ -122,7 +125,7 @@ const WORKS_DETAIL_GALLERY_LAYOUT = {
     {
       x: '-4.5rem',
       y: '0.7rem',
-      scale: 1.04,
+      scale: 1.21,
       opacity: 0.94,
       grayscale: 0.08,
       brightness: 0.92,
@@ -131,7 +134,7 @@ const WORKS_DETAIL_GALLERY_LAYOUT = {
     {
       x: '6.5rem',
       y: '-10.3rem',
-      scale: 1.04,
+      scale: 1.21,
       opacity: 0.32,
       grayscale: 0.6,
       brightness: 0.42,
@@ -270,6 +273,18 @@ function getGalleryStageStyle(): WorksDetailCustomProperties {
   return WORKS_DETAIL_GALLERY_LAYOUT.stage as WorksDetailCustomProperties;
 }
 
+function getGalleryVisualPlaneStyle(
+  planeState: ReturnType<typeof getWorksDetailGalleryPlaneState>,
+): WorksDetailCustomProperties {
+  return {
+    '--works-detail-gallery-plane-width': `${planeState.designWidth}px`,
+    '--works-detail-gallery-plane-height': `${planeState.designHeight}px`,
+    '--works-detail-gallery-plane-scale': String(planeState.scale),
+    '--works-detail-gallery-plane-offset-x': `${planeState.offsetX}px`,
+    '--works-detail-gallery-plane-offset-y': `${planeState.offsetY}px`,
+  };
+}
+
 function getCodingProjectsGridStyle(): WorksDetailCustomProperties {
   return WORKS_DETAIL_CODING_LAYOUT.projects as WorksDetailCustomProperties;
 }
@@ -305,6 +320,7 @@ export default function WorksDetailSection({
 }: WorksDetailSectionProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
+  const galleryPanelRef = useRef<HTMLElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const touchStartYRef = useRef<number | null>(null);
   const phaseRef = useRef<WorksDetailPhase>(initialPhase);
@@ -336,6 +352,12 @@ export default function WorksDetailSection({
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isTransitioningScene, setIsTransitioningScene] = useState(false);
+  const [galleryPlaneState, setGalleryPlaneState] = useState(() =>
+    getWorksDetailGalleryPlaneState({
+      viewportWidth: WORKS_DETAIL_GALLERY_DESIGN_WIDTH,
+      viewportHeight: WORKS_DETAIL_GALLERY_DESIGN_HEIGHT,
+    }),
+  );
 
   phaseRef.current = phase;
   viewRef.current = view;
@@ -635,6 +657,53 @@ export default function WorksDetailSection({
       mobileMedia.removeEventListener('change', updateMediaState);
     };
   }, []);
+
+  useLayoutEffect(() => {
+    if (typeof window === 'undefined' || view !== 'detail' || detailMode !== 'design') {
+      return undefined;
+    }
+
+    const panel = galleryPanelRef.current;
+
+    if (!panel) {
+      return undefined;
+    }
+
+    const updateGalleryPlaneState = () => {
+      const rect = panel.getBoundingClientRect();
+      const nextState = getWorksDetailGalleryPlaneState({
+        viewportWidth: rect.width,
+        viewportHeight: rect.height,
+      });
+
+      setGalleryPlaneState((previousState) => {
+        if (
+          previousState.designWidth === nextState.designWidth &&
+          previousState.designHeight === nextState.designHeight &&
+          Math.abs(previousState.scale - nextState.scale) < 0.0001 &&
+          Math.abs(previousState.offsetX - nextState.offsetX) < 0.0001 &&
+          Math.abs(previousState.offsetY - nextState.offsetY) < 0.0001
+        ) {
+          return previousState;
+        }
+
+        return nextState;
+      });
+    };
+
+    updateGalleryPlaneState();
+
+    const resizeObserver =
+      typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(updateGalleryPlaneState);
+
+    resizeObserver?.observe(panel);
+    window.addEventListener('resize', updateGalleryPlaneState);
+
+    return () => {
+      resizeObserver?.disconnect();
+      window.removeEventListener('resize', updateGalleryPlaneState);
+    };
+  }, [detailMode, view]);
 
   useEffect(() => {
     if (
@@ -1128,10 +1197,10 @@ export default function WorksDetailSection({
             filter: isEntryLandingStage && !isEntryLandingVisible ? 'blur(4px)' : 'blur(0)',
             transition: isEntryLandingStage
               ? [
-                  `opacity ${WORKS_DETAIL_ENTRY_LANDING_DURATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`,
-                  `transform ${WORKS_DETAIL_ENTRY_LANDING_DURATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`,
-                  `filter ${WORKS_DETAIL_ENTRY_LANDING_DURATION_MS}ms ease-out`,
-                ].join(', ')
+                `opacity ${WORKS_DETAIL_ENTRY_LANDING_DURATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`,
+                `transform ${WORKS_DETAIL_ENTRY_LANDING_DURATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`,
+                `filter ${WORKS_DETAIL_ENTRY_LANDING_DURATION_MS}ms ease-out`,
+              ].join(', ')
               : undefined,
             willChange: isEntryLandingStage ? 'opacity, transform, filter' : undefined,
           }}
@@ -1291,10 +1360,10 @@ export default function WorksDetailSection({
                 <div aria-hidden="true" className="works-detail-stage__overlay" />
                 <div aria-hidden="true" className="works-detail-stage__vignette" />
                 <div aria-hidden="true" className="works-detail-stage__noise" />
-                <div aria-hidden="true" className="works-detail-stage__grid" />
 
                 <div className="works-detail-scene-shell">
                   <section
+                    ref={galleryPanelRef}
                     data-detail-scene-panel="gallery"
                     data-scene-active={detailScene === 'gallery'}
                     className="works-detail-gallery__panel works-detail-scene"
@@ -1311,41 +1380,45 @@ export default function WorksDetailSection({
                       </button>
                     </div>
 
-                    <div className="works-detail-track__corridor-layer" style={getGalleryCorridorStyle()}>
-                      <div className="works-detail-track__corridor works-detail-track__corridor--band" />
-                      <div className="works-detail-track__corridor works-detail-track__corridor--top" />
-                      <div className="works-detail-track__corridor works-detail-track__corridor--bottom" />
-                    </div>
+                    <div className="works-detail-gallery__visual-plane" style={getGalleryVisualPlaneStyle(galleryPlaneState)}>
+                      <div aria-hidden="true" className="works-detail-stage__grid" />
 
-                    <div ref={trackRef} className="works-detail-track" style={getGalleryTrackStyle()}>
-                      {gallerySlots.map((slot) => (
-                        <button
-                          key={`${slot.slotIndex}-${slot.project?.id ?? 'empty'}-${activeProjectIndex}`}
-                          type="button"
-                          className="works-detail-track__item"
-                          data-slot={slot.slotIndex}
-                          data-active={slot.isActive}
-                          data-empty={slot.project === null}
-                          data-visibility={slot.visibility}
-                          style={getGallerySlotStyle(slot.slotIndex, slot.project?.image)}
-                          aria-label={
-                            slot.project
-                              ? `Open ${slot.project.title} project`
-                              : `Empty works detail slot ${slot.slotIndex + 1}`
-                          }
-                          onClick={() => {
-                            if (!slot.project) {
-                              return;
+                      <div className="works-detail-track__corridor-layer" style={getGalleryCorridorStyle()}>
+                        <div className="works-detail-track__corridor works-detail-track__corridor--band" />
+                        <div className="works-detail-track__corridor works-detail-track__corridor--top" />
+                        <div className="works-detail-track__corridor works-detail-track__corridor--bottom" />
+                      </div>
+
+                      <div ref={trackRef} className="works-detail-track" style={getGalleryTrackStyle()}>
+                        {gallerySlots.map((slot) => (
+                          <button
+                            key={`${slot.slotIndex}-${slot.project?.id ?? 'empty'}-${activeProjectIndex}`}
+                            type="button"
+                            className="works-detail-track__item"
+                            data-slot={slot.slotIndex}
+                            data-active={slot.isActive}
+                            data-empty={slot.project === null}
+                            data-visibility={slot.visibility}
+                            style={getGallerySlotStyle(slot.slotIndex, slot.project?.image)}
+                            aria-label={
+                              slot.project
+                                ? `Open ${slot.project.title} project`
+                                : `Empty works detail slot ${slot.slotIndex + 1}`
                             }
+                            onClick={() => {
+                              if (!slot.project) {
+                                return;
+                              }
 
-                            handleProjectPreviewOpen(slot.projectIndex);
-                          }}
-                          disabled={slot.project === null}
-                        >
-                          <div className="works-detail-track__shade" />
-                          {slot.label ? <span className="works-detail-track__index">{slot.label}</span> : null}
-                        </button>
-                      ))}
+                              handleProjectPreviewOpen(slot.projectIndex);
+                            }}
+                            disabled={slot.project === null}
+                          >
+                            <div className="works-detail-track__shade" />
+                            {slot.label ? <span className="works-detail-track__index">{slot.label}</span> : null}
+                          </button>
+                        ))}
+                      </div>
                     </div>
 
                     <div className="works-detail-stage__projects">

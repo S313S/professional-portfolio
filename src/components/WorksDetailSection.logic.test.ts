@@ -7,6 +7,7 @@ import {
   getWorksDetailBackNavigationState,
   getWorksDetailCompletionState,
   getWorksDetailDetailModeResetState,
+  getWorksDetailGalleryPlaneState,
   getWorksDetailLoadingFallbackMs,
   getWorksDetailProjectSelectionState,
   getWorksDetailSceneNavigationState,
@@ -76,6 +77,25 @@ test('completing the loading animation lands directly on the fully revealed atta
 test('loading fallback waits longer before iframe readiness and only uses the tighter timer after the animation starts', () => {
   assert.equal(getWorksDetailLoadingFallbackMs(false), 20000);
   assert.equal(getWorksDetailLoadingFallbackMs(true), 11500);
+});
+
+test('gallery visual plane only changes scale when browser zoom changes the css viewport', () => {
+  const normalViewport = getWorksDetailGalleryPlaneState({
+    viewportWidth: 1406,
+    viewportHeight: 755,
+  });
+  const zoomedViewport = getWorksDetailGalleryPlaneState({
+    viewportWidth: 1406 / 1.1,
+    viewportHeight: 755 / 1.1,
+  });
+
+  assert.equal(normalViewport.designWidth, zoomedViewport.designWidth);
+  assert.equal(normalViewport.designHeight, zoomedViewport.designHeight);
+  assert.equal(normalViewport.offsetX, 0);
+  assert.equal(normalViewport.offsetY, 0);
+  assert.equal(zoomedViewport.offsetX, 0);
+  assert.equal(zoomedViewport.offsetY, 0);
+  assert.equal(Number(zoomedViewport.scale.toFixed(4)), Number((normalViewport.scale / 1.1).toFixed(4)));
 });
 
 test('loading phase locks scroll while the viewport is inside the works detail section', () => {

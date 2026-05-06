@@ -4,6 +4,7 @@ import App from './App.tsx';
 import CodexReportPage from './CodexReportPage.tsx';
 import FriendBookFinaleDebugPage from './FriendBookFinaleDebugPage.tsx';
 import FriendBookDiffHotspotsDebugPage from './FriendBookDiffHotspotsDebugPage.tsx';
+import WorksDetailDebugPage from './WorksDetailDebugPage.tsx';
 import {
   getCurrentNavigationType,
   getDevStandaloneRoute,
@@ -30,6 +31,8 @@ const RootComponent =
     ? FriendBookFinaleDebugPage
     : standaloneRoute === 'friend-book-diff-hotspots'
       ? FriendBookDiffHotspotsDebugPage
+      : standaloneRoute === 'works-detail'
+        ? WorksDetailDebugPage
       : standaloneRoute === 'codex-report'
         ? CodexReportPage
       : App;

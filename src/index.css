@@ -595,6 +595,24 @@
   flex-direction: column;
 }
 
+.works-detail-gallery__visual-plane {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  width: var(--works-detail-gallery-plane-width, 1406px);
+  height: var(--works-detail-gallery-plane-height, 755px);
+  pointer-events: none;
+  transform:
+    translate3d(
+      var(--works-detail-gallery-plane-offset-x, 0),
+      var(--works-detail-gallery-plane-offset-y, 0),
+      0
+    )
+    scale(var(--works-detail-gallery-plane-scale, 1));
+  transform-origin: top left;
+}
+
 .works-detail-stage__noise,
 .works-detail-stage__grid,
 .works-detail-stage__background,

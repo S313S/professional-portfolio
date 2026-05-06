@@ -263,7 +263,10 @@ test('matches the approved works gallery footer spacing, socials format, and fil
   assert.match(markup, /works-detail-track__corridor works-detail-track__corridor--band/);
   assert.match(markup, /works-detail-track__corridor works-detail-track__corridor--top/);
   assert.match(markup, /works-detail-track__corridor works-detail-track__corridor--bottom/);
+  assert.match(markup, /class="works-detail-gallery__visual-plane"/);
   assert.match(markup, /class="works-detail-track__corridor-layer"/);
+  assert.match(markup, /--works-detail-gallery-plane-width:1406px/);
+  assert.match(markup, /--works-detail-gallery-plane-height:755px/);
   assert.match(markup, />f \| t \| ▶</);
   assert.match(componentSource, /const WORKS_DETAIL_STAGE_SOCIALS = \['f', 't', '▶'\] as const;/);
   assert.match(componentSource, /from 'gsap'/);
@@ -271,7 +274,8 @@ test('matches the approved works gallery footer spacing, socials format, and fil
   assert.match(componentSource, /'--works-detail-projects-offset-x'/);
   assert.match(componentSource, /'--works-detail-projects-offset-y'/);
   assert.match(componentSource, /'--works-detail-corridor-center-y'/);
-  assert.match(componentSource, /'--works-detail-corridor-rail-offset'/);
+  assert.match(componentSource, /'--works-detail-corridor-rail-offset':\s*'12\.75rem'/);
+  assert.doesNotMatch(componentSource, /'--works-detail-corridor-rail-offset':\s*'8\.75rem'/);
   assert.match(componentSource, /'--works-detail-slot-x'/);
 });
 
@@ -283,6 +287,10 @@ test('keeps the works gallery dashed SVG grid and socials styling aligned with t
   assert.match(cssSource, /\.works-detail-stage__grid\s*\{[\s\S]*background-size:\s*260px 260px;/);
   assert.match(cssSource, /\.works-detail-stage__grid\s*\{[\s\S]*background-position:\s*[^;]+;/);
   assert.match(cssSource, /\.works-detail-stage__grid\s*\{[\s\S]*opacity:\s*0\.6;/);
+  assert.match(
+    cssSource,
+    /\.works-detail-gallery__visual-plane\s*\{[\s\S]*scale\(var\(--works-detail-gallery-plane-scale,\s*1\)\)/,
+  );
   assert.doesNotMatch(cssSource, /\.works-detail-stage__grid\s*\{[\s\S]*repeating-linear-gradient\(/);
   assert.match(
     cssSource,
@@ -456,6 +464,14 @@ test('locks the gallery cards, corridor, and background grid to the same 45 degr
   assert.match(
     componentSource,
     /x:\s*'6\.5rem'[\s\S]*y:\s*'-10\.3rem'[\s\S]*scale:\s*1\.04/,
+  );
+  assert.match(
+    componentSource,
+    /'--works-detail-corridor-width':\s*'88rem'/,
+  );
+  assert.doesNotMatch(
+    componentSource,
+    /'--works-detail-corridor-width':\s*'min\(88rem,\s*170vw\)'/,
   );
   assert.doesNotMatch(
     componentSource,

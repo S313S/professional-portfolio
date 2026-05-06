@@ -5,6 +5,8 @@ export const WORKS_DETAIL_RETURN_TO_LOBBY_EVENT = 'works-detail:return-to-lobby'
 export const WORKS_DETAIL_LOADING_BOOTSTRAP_FALLBACK_MS = 20000;
 export const WORKS_DETAIL_LOADING_ANIMATION_FALLBACK_MS = 11500;
 export const WORKS_DETAIL_INTERACTIVE_REVEAL_PROGRESS = 1 / 1.35;
+export const WORKS_DETAIL_GALLERY_DESIGN_WIDTH = 1406;
+export const WORKS_DETAIL_GALLERY_DESIGN_HEIGHT = 755;
 
 export type WorksDetailPhase = 'idle' | 'loading' | 'revealing' | 'settled';
 export type WorksDetailView = 'entry' | 'detail';
@@ -39,6 +41,21 @@ export interface WorksDetailVisualState {
   loadingPointerEvents: 'auto' | 'none';
   showIframe: boolean;
   shouldLockScroll: boolean;
+}
+
+export interface WorksDetailGalleryPlaneInput {
+  viewportWidth: number;
+  viewportHeight: number;
+  designWidth?: number;
+  designHeight?: number;
+}
+
+export interface WorksDetailGalleryPlaneState {
+  designWidth: number;
+  designHeight: number;
+  scale: number;
+  offsetX: number;
+  offsetY: number;
 }
 
 export interface WorksDetailBackNavigationState {
@@ -122,6 +139,31 @@ export function getWorksDetailLoadingFallbackMs(hasIframeReportedReady: boolean)
   return hasIframeReportedReady
     ? WORKS_DETAIL_LOADING_ANIMATION_FALLBACK_MS
     : WORKS_DETAIL_LOADING_BOOTSTRAP_FALLBACK_MS;
+}
+
+export function getWorksDetailGalleryPlaneState({
+  viewportWidth,
+  viewportHeight,
+  designWidth = WORKS_DETAIL_GALLERY_DESIGN_WIDTH,
+  designHeight = WORKS_DETAIL_GALLERY_DESIGN_HEIGHT,
+}: WorksDetailGalleryPlaneInput): WorksDetailGalleryPlaneState {
+  const safeDesignWidth = Math.max(designWidth, 1);
+  const safeDesignHeight = Math.max(designHeight, 1);
+  const safeViewportWidth = Math.max(viewportWidth, 1);
+  const safeViewportHeight = Math.max(viewportHeight, 1);
+  const scale = Math.max(
+    safeViewportWidth / safeDesignWidth,
+    safeViewportHeight / safeDesignHeight,
+  );
+  const normalizeOffset = (offset: number) => (Math.abs(offset) < 0.0001 ? 0 : offset);
+
+  return {
+    designWidth: safeDesignWidth,
+    designHeight: safeDesignHeight,
+    scale,
+    offsetX: normalizeOffset((safeViewportWidth - safeDesignWidth * scale) / 2),
+    offsetY: normalizeOffset((safeViewportHeight - safeDesignHeight * scale) / 2),
+  };
 }
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
