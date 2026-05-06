@@ -22,10 +22,15 @@ test('renders the career detail stage with category-scoped bookmarks and default
   assert.match(markup, /data-career-detail-tab="workExperience"/);
   assert.match(markup, /data-career-detail-tab="industryKnowledge"/);
   assert.match(markup, /data-career-detail-select="record"/);
+  assert.match(markup, /data-career-detail-selector-positioning="background-pixel-lock"/);
+  assert.match(
+    markup,
+    /data-career-detail-selector="desktop"[^>]*style="left:[^"]*px;top:[^"]*px;width:[^"]*px;height:[^"]*px"/,
+  );
   assert.match(markup, /data-career-detail-drag-track="desktop"/);
   assert.match(
     markup,
-    /data-career-detail-drag-track="desktop"[^>]*class="[^"]*left-\[calc\(32%\+17px\)\][^"]*"/,
+    /data-career-detail-drag-track="desktop"[^>]*class="[^"]*left-\[32%\][^"]*w-\[42%\][^"]*"/,
   );
   assert.match(markup, /data-career-detail-drag-thumb="desktop"/);
   assert.match(markup, /data-career-detail-drag-thumb-icon="desktop"/);
@@ -59,12 +64,15 @@ test('renders the career detail stage with category-scoped bookmarks and default
   assert.doesNotMatch(markup, /AI Adoption Signals/);
   assert.match(
     markup,
-    /data-career-detail-drag-thumb-icon="desktop"[^>]*src="\/images\/careerDetail_scroll_icon\.png"/,
+    /data-career-detail-drag-thumb-icon="desktop"[^>]*src="\/images\/careerDetail_scroll_icon\.png"[^>]*class="[^"]*w-full[^"]*"/,
   );
   assert.doesNotMatch(
     markup,
     /class="absolute inset-y-0 left-1\/2 h-full -translate-x-1\/2 object-contain opacity-95"/,
   );
+  assert.doesNotMatch(markup, /data-career-detail-selector="desktop"[^>]*right-\[0\.9%\]/);
+  assert.doesNotMatch(markup, /data-career-detail-drag-track="desktop"[^>]*left-\[calc\(32%\+17px\)\]/);
+  assert.doesNotMatch(markup, /data-career-detail-drag-thumb="desktop"[^>]*h-\[7rem\]/);
 });
 
 test('renders the desktop text content in separate upper and lower pinned regions', () => {

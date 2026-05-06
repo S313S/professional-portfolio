@@ -1,6 +1,7 @@
 import {StrictMode} from 'react';
 import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
+import CareerDetailDebugPage from './CareerDetailDebugPage.tsx';
 import CodexReportPage from './CodexReportPage.tsx';
 import FriendBookFinaleDebugPage from './FriendBookFinaleDebugPage.tsx';
 import FriendBookDiffHotspotsDebugPage from './FriendBookDiffHotspotsDebugPage.tsx';
@@ -33,6 +34,8 @@ const RootComponent =
       ? FriendBookDiffHotspotsDebugPage
       : standaloneRoute === 'works-detail'
         ? WorksDetailDebugPage
+      : standaloneRoute === 'career-detail'
+        ? CareerDetailDebugPage
       : standaloneRoute === 'codex-report'
         ? CodexReportPage
       : App;

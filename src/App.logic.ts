@@ -16,6 +16,7 @@ const SUPPORTED_DEV_STANDALONE_ROUTES = {
   '/debug/friend-book-finale': 'friend-book-finale',
   '/debug/friend-book-diff-hotspots': 'friend-book-diff-hotspots',
   '/debug/works-detail': 'works-detail',
+  '/debug/career-detail': 'career-detail',
   '/debug/codex-report': 'codex-report',
 } as const;
 

@@ -385,6 +385,13 @@ const CAREER_DETAIL_DESKTOP_TAB_PIXEL_RECTS: Record<CareerDetailTabKey, PixelRec
   },
 };
 
+const CAREER_DETAIL_DESKTOP_SELECTOR_PIXEL_RECT: PixelRect = {
+  x: 5080,
+  y: 316,
+  width: 332,
+  height: 2047,
+};
+
 const CAREER_DETAIL_DESKTOP_TAB_CONNECTORS: Record<CareerDetailTabKey, CareerDetailTabConnector> = {
   sharingJourney: {
     startOffset: { x: 0.94, y: 0.42 },
@@ -439,6 +446,17 @@ const getDesktopTabRect = (tabKey: CareerDetailTabKey, stageSize: Size): PixelRe
     y: imageFrame.top + rect.y * imageFrame.scale,
     width: rect.width * imageFrame.scale,
     height: rect.height * imageFrame.scale,
+  };
+};
+
+const getBackgroundPixelRectStyle = (rect: PixelRect, stageSize: Size): CSSProperties => {
+  const imageFrame = getCoveredImageFrame(stageSize, CAREER_DETAIL_BACKGROUND_SIZE);
+
+  return {
+    left: `${imageFrame.left + rect.x * imageFrame.scale}px`,
+    top: `${imageFrame.top + rect.y * imageFrame.scale}px`,
+    width: `${rect.width * imageFrame.scale}px`,
+    height: `${rect.height * imageFrame.scale}px`,
   };
 };
 
@@ -614,6 +632,10 @@ export default function CareerDetailSection() {
       Object.fromEntries(
         CAREER_DETAIL_TABS.map((tab) => [tab.key, getDesktopTabStyle(tab.key, sectionSize)]),
       ) as Record<CareerDetailTabKey, CSSProperties>,
+    [sectionSize],
+  );
+  const desktopSelectorStyle = useMemo(
+    () => getBackgroundPixelRectStyle(CAREER_DETAIL_DESKTOP_SELECTOR_PIXEL_RECT, sectionSize),
     [sectionSize],
   );
   const desktopConnectorPaths = useMemo(
@@ -1111,6 +1133,98 @@ export default function CareerDetailSection() {
         })}
       </div>
 
+      <div className="pointer-events-none absolute inset-0 z-40 hidden lg:block">
+        <div
+          data-career-detail-selector="desktop"
+          data-career-detail-selector-positioning="background-pixel-lock"
+          className="pointer-events-auto absolute flex items-center justify-center"
+          style={desktopSelectorStyle}
+        >
+          <select
+            data-career-detail-select="record"
+            aria-label="Career detail record"
+            className="sr-only"
+            value={selectedEntryState.selectedEntryId}
+            onChange={(event) => commitSelectedEntryId(event.target.value)}
+            disabled={isCurrentCategoryEmpty}
+          >
+            {isCurrentCategoryEmpty ? (
+              <option value="">No entries yet</option>
+            ) : (
+              selectedEntries.map((entry) => (
+                <option key={entry.id} value={entry.id}>
+                  {entry.bookmarkLabel}
+                </option>
+              ))
+            )}
+          </select>
+
+          <div
+            data-career-detail-drag-track="desktop"
+            ref={selectorTrackRef}
+            className="absolute inset-y-[8%] left-[16%] z-10 w-[42%] -translate-x-1/2 touch-none"
+            onPointerDown={handleSelectorPointerDown}
+            onPointerMove={handleSelectorPointerMove}
+            onPointerUp={handleSelectorPointerUp}
+            onPointerCancel={handleSelectorPointerUp}
+            onLostPointerCapture={resetSelectorDrag}
+          >
+            <div
+              data-career-detail-drag-thumb="desktop"
+              style={selectorThumbStyle}
+              className={joinClasses(
+                'absolute left-1/2 flex h-[24%] w-[78%] -translate-x-1/2 -translate-y-1/2 items-center justify-center transition-[top,transform] duration-300',
+                isSelectorDragging ? 'cursor-grabbing scale-[1.03]' : 'cursor-grab',
+              )}
+            >
+              <img
+                data-career-detail-drag-thumb-icon="desktop"
+                src={CAREER_DETAIL_ASSETS.scrollSelector}
+                alt=""
+                aria-hidden="true"
+                draggable={false}
+                className="pointer-events-none h-auto max-h-full w-full object-contain drop-shadow-[0_10px_24px_rgba(92,69,45,0.18)]"
+              />
+            </div>
+          </div>
+
+          <div
+            data-career-detail-record-rail="desktop"
+            data-career-detail-record-rail-layout={isSharingCategory ? 'distributed' : 'fixed-gap'}
+            className={joinClasses(
+              'absolute inset-y-[8%] right-[10%] z-20 flex w-[48%] flex-col items-center',
+              isSharingCategory ? 'justify-between' : 'justify-start gap-[1.2rem] pt-[0.6rem]',
+            )}
+          >
+            {selectedEntries.map((entry) => {
+              const isSelected = entry.id === selectedEntryState.selectedEntryId;
+
+              return (
+                <button
+                  key={entry.id}
+                  ref={(node) => {
+                    recordButtonRefs.current[entry.id] = node;
+                  }}
+                  type="button"
+                  data-career-detail-record-button={entry.id}
+                  aria-label={entry.bookmarkLabel}
+                  aria-pressed={isSelected}
+                  className={joinClasses(
+                    'rounded-full px-2 py-1 text-[0.72rem] font-medium tracking-[0.08em] text-[#5f4d3f] transition-all duration-300 [writing-mode:vertical-rl]',
+                    isSelected
+                      ? 'bg-[rgba(247,241,231,0.88)] text-[#2e241b] shadow-[0_8px_18px_rgba(92,69,45,0.12)]'
+                      : 'bg-[rgba(247,241,231,0.55)] hover:bg-[rgba(247,241,231,0.75)]',
+                  )}
+                  onClick={() => commitSelectedEntryId(entry.id)}
+                >
+                  {entry.bookmarkLabel}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
       <div className="relative z-20 mx-auto min-h-[100dvh] max-w-[1600px] px-5 py-8 sm:px-8 lg:px-10">
         <div className="flex min-h-[calc(100dvh-4rem)] flex-col gap-8 lg:hidden">
           <div className="rounded-[2rem] border border-[#8b735c]/15 bg-[#f7f1e7]/84 p-5 shadow-[0_24px_80px_rgba(83,60,37,0.14)] backdrop-blur-[2px]">
@@ -1229,96 +1343,6 @@ export default function CareerDetailSection() {
             >
               {displayedEntry.dateTitle}
             </h2>
-          </div>
-
-          <div
-            data-career-detail-selector="desktop"
-            className="absolute right-[0.9%] top-[10.5%] z-20 flex h-[68%] w-[6.2rem] items-center justify-center"
-          >
-            <select
-              data-career-detail-select="record"
-              aria-label="Career detail record"
-              className="sr-only"
-              value={selectedEntryState.selectedEntryId}
-              onChange={(event) => commitSelectedEntryId(event.target.value)}
-              disabled={isCurrentCategoryEmpty}
-            >
-              {isCurrentCategoryEmpty ? (
-                <option value="">No entries yet</option>
-              ) : (
-                selectedEntries.map((entry) => (
-                  <option key={entry.id} value={entry.id}>
-                    {entry.bookmarkLabel}
-                  </option>
-                ))
-              )}
-            </select>
-
-            <div
-              data-career-detail-drag-track="desktop"
-              ref={selectorTrackRef}
-              className="absolute inset-y-[8%] left-[calc(32%+17px)] z-10 w-[2.6rem] -translate-x-1/2 touch-none"
-              onPointerDown={handleSelectorPointerDown}
-              onPointerMove={handleSelectorPointerMove}
-              onPointerUp={handleSelectorPointerUp}
-              onPointerCancel={handleSelectorPointerUp}
-              onLostPointerCapture={resetSelectorDrag}
-            >
-              <div
-                data-career-detail-drag-thumb="desktop"
-                style={selectorThumbStyle}
-                className={joinClasses(
-                  'absolute left-1/2 flex h-[7rem] w-[2rem] -translate-x-1/2 -translate-y-1/2 items-center justify-center transition-[top,transform] duration-300',
-                  isSelectorDragging
-                    ? 'cursor-grabbing scale-[1.03]'
-                    : 'cursor-grab',
-                )}
-              >
-                <img
-                  data-career-detail-drag-thumb-icon="desktop"
-                  src={CAREER_DETAIL_ASSETS.scrollSelector}
-                  alt=""
-                  aria-hidden="true"
-                  draggable={false}
-                  className="pointer-events-none h-auto max-h-full w-[2rem] object-contain drop-shadow-[0_10px_24px_rgba(92,69,45,0.18)]"
-                />
-              </div>
-            </div>
-
-            <div
-              data-career-detail-record-rail="desktop"
-              data-career-detail-record-rail-layout={isSharingCategory ? 'distributed' : 'fixed-gap'}
-              className={joinClasses(
-                'absolute inset-y-[8%] right-[10%] flex flex-col items-center',
-                isSharingCategory ? 'justify-between' : 'justify-start gap-[1.2rem] pt-[0.6rem]',
-              )}
-            >
-              {selectedEntries.map((entry) => {
-                const isSelected = entry.id === selectedEntryState.selectedEntryId;
-
-                return (
-                  <button
-                    key={entry.id}
-                    ref={(node) => {
-                      recordButtonRefs.current[entry.id] = node;
-                    }}
-                    type="button"
-                    data-career-detail-record-button={entry.id}
-                    aria-label={entry.bookmarkLabel}
-                    aria-pressed={isSelected}
-                    className={joinClasses(
-                      'rounded-full px-2 py-1 text-[0.72rem] font-medium tracking-[0.08em] text-[#5f4d3f] transition-all duration-300 [writing-mode:vertical-rl]',
-                      isSelected
-                        ? 'bg-[rgba(247,241,231,0.88)] text-[#2e241b] shadow-[0_8px_18px_rgba(92,69,45,0.12)]'
-                        : 'bg-[rgba(247,241,231,0.55)] hover:bg-[rgba(247,241,231,0.75)]',
-                    )}
-                    onClick={() => commitSelectedEntryId(entry.id)}
-                  >
-                    {entry.bookmarkLabel}
-                  </button>
-                );
-              })}
-            </div>
           </div>
 
           <div data-career-detail-card-stack="desktop-primary" className="absolute left-[37%] top-[22%] w-[29%]">

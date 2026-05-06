@@ -8,7 +8,8 @@ const alignmentTolerancePx = 10;
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage({ viewport: { width: 1470, height: 835 } });
 
-  await page.goto(baseUrl, { waitUntil: 'networkidle' });
+  await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('#career-detail-section');
   await page.evaluate(() => {
     document.documentElement.style.scrollBehavior = 'auto';
 
@@ -53,7 +54,12 @@ const alignmentTolerancePx = 10;
       selectedButtonCenterY: selectedButtonRect.top + selectedButtonRect.height / 2,
       thumbCenterY: thumbRect.top + thumbRect.height / 2,
       selectedButtonLeft: selectedButtonRect.left,
+      selectedButtonWidth: selectedButtonRect.width,
+      selectedButtonHeight: selectedButtonRect.height,
       thumbCenterX: thumbRect.left + thumbRect.width / 2,
+      thumbRight: thumbRect.right,
+      thumbWidth: thumbRect.width,
+      thumbHeight: thumbRect.height,
     };
   });
 
@@ -66,6 +72,22 @@ const alignmentTolerancePx = 10;
   assert.ok(
     metrics.thumbCenterX < metrics.selectedButtonLeft,
     `Expected thumb to sit left of the selected record button, got thumbCenterX=${metrics.thumbCenterX}, selectedButtonLeft=${metrics.selectedButtonLeft}`,
+  );
+  assert.ok(
+    metrics.selectedButtonLeft - metrics.thumbCenterX >= 10,
+    `Expected thumb to keep a visible gap from the selected record button, got gap=${metrics.selectedButtonLeft - metrics.thumbCenterX}`,
+  );
+  assert.ok(
+    metrics.thumbRight <= metrics.selectedButtonLeft - 2,
+    `Expected thumb to sit outside the selected record button edge, got thumbRight=${metrics.thumbRight}, selectedButtonLeft=${metrics.selectedButtonLeft}`,
+  );
+  assert.ok(
+    metrics.thumbWidth >= metrics.selectedButtonWidth * 0.8,
+    `Expected thumb to remain visibly sized next to bookmarks, got thumbWidth=${metrics.thumbWidth}, selectedButtonWidth=${metrics.selectedButtonWidth}`,
+  );
+  assert.ok(
+    metrics.thumbHeight >= metrics.selectedButtonHeight * 0.75,
+    `Expected thumb height to remain visibly sized next to bookmarks, got thumbHeight=${metrics.thumbHeight}, selectedButtonHeight=${metrics.selectedButtonHeight}`,
   );
 
   await browser.close().catch(() => {});
