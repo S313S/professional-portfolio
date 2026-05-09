@@ -75,6 +75,14 @@ test('renders the career detail stage with category-scoped bookmarks and default
   assert.doesNotMatch(markup, /data-career-detail-drag-thumb="desktop"[^>]*h-\[7rem\]/);
 });
 
+test('page-switch click requests the second hometown audio track', () => {
+  const componentSource = readFileSync(new URL('./CareerDetailSection.tsx', import.meta.url), 'utf8');
+
+  assert.match(componentSource, /PORTFOLIO_AUDIO_TRACK_CHANGE_EVENT/);
+  assert.match(componentSource, /HOMETOWN_SERIES_2_AUDIO_SRC/);
+  assert.match(componentSource, /new CustomEvent/);
+});
+
 test('renders the desktop text content in separate upper and lower pinned regions', () => {
   const markup = renderToStaticMarkup(<CareerDetailSection />);
 

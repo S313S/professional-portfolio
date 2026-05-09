@@ -83,6 +83,15 @@ const FRICTION = 0.8;
 const JUMP_FORCE = -12;
 const MOVE_SPEED = 4.5;
 const MAX_FALL_SPEED = 12;
+const MIN_MEASURED_VIEWPORT_HEIGHT = 2;
+
+export function shouldEndMoonRunForFall(playerY: number, viewportHeight: number) {
+  if (viewportHeight < MIN_MEASURED_VIEWPORT_HEIGHT) {
+    return false;
+  }
+
+  return playerY > viewportHeight + 200;
+}
 
 const LEVEL: {
   platforms: Platform[];
@@ -671,7 +680,7 @@ export default function FriendBookMoonRunStage({ onComplete }: MoonRunStageProps
         setPhase('VICTORY');
       }
 
-      if (!phaseChanged && player.y > cssHeight + 200) {
+      if (!phaseChanged && shouldEndMoonRunForFall(player.y, cssHeight)) {
         phaseChanged = true;
         setPhase('GAMEOVER');
       }

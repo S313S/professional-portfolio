@@ -5,6 +5,10 @@ import {
   getDevStandaloneRoute,
   getInitialFocusTarget,
   getInitialScrollResetState,
+  getPortfolioAudioPlaybackIntent,
+  HOMETOWN_AUDIO_SRC,
+  HOMETOWN_SERIES_2_AUDIO_SRC,
+  PORTFOLIO_AUDIO_TRACK_CHANGE_EVENT,
 } from './App.logic';
 
 test('reload navigation resets the app back to the homepage top', () => {
@@ -56,4 +60,49 @@ test('matches the friend-book standalone debug route only in development', () =>
   assert.equal(getDevStandaloneRoute('/debug/friend-book-finale', false), null);
   assert.equal(getDevStandaloneRoute('/debug/works-detail', false), null);
   assert.equal(getDevStandaloneRoute('/debug/career-detail', false), null);
+});
+
+test('uses the hometown audio asset for portfolio background playback', () => {
+  assert.equal(HOMETOWN_AUDIO_SRC, '/audio/Hometown_Series1.MP3');
+});
+
+test('defines the second hometown audio asset and track-change event for the page switch', () => {
+  assert.equal(HOMETOWN_SERIES_2_AUDIO_SRC, '/audio/Hometown_Series2.MP3');
+  assert.equal(PORTFOLIO_AUDIO_TRACK_CHANGE_EVENT, 'portfolio-audio-track-change');
+});
+
+test('restarts the portfolio audio when the page returns to the homepage top', () => {
+  assert.equal(
+    getPortfolioAudioPlaybackIntent({
+      previousScrollY: 720,
+      nextScrollY: 0,
+    }),
+    'restart',
+  );
+
+  assert.equal(
+    getPortfolioAudioPlaybackIntent({
+      previousScrollY: 720,
+      nextScrollY: 18,
+    }),
+    'restart',
+  );
+});
+
+test('keeps portfolio audio continuity while scrolling through the long page', () => {
+  assert.equal(
+    getPortfolioAudioPlaybackIntent({
+      previousScrollY: 0,
+      nextScrollY: 360,
+    }),
+    'continue',
+  );
+
+  assert.equal(
+    getPortfolioAudioPlaybackIntent({
+      previousScrollY: 860,
+      nextScrollY: 320,
+    }),
+    'continue',
+  );
 });

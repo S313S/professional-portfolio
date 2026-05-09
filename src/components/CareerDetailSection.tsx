@@ -21,6 +21,11 @@ import {
   isCareerDetailSectionPinned,
 } from './CareerDetailSection.logic';
 import { WORKS_LOBBY_ACTIVATE_FROM_CAREER_DETAIL_EVENT } from './WorksLobbySection.logic';
+import {
+  HOMETOWN_SERIES_2_AUDIO_SRC,
+  PORTFOLIO_AUDIO_TRACK_CHANGE_EVENT,
+  type PortfolioAudioTrackChangeDetail,
+} from '../App.logic';
 import { armScrollMomentumLock } from '../scrollMomentumLock';
 
 const CAREER_DETAIL_ASSETS = {
@@ -1005,6 +1010,11 @@ export default function CareerDetailSection() {
     wheelDeltaAccumulatorRef.current = 0;
     lastWheelDirectionRef.current = 0;
     setIsPageSwitchHintHovered(false);
+    window.dispatchEvent(
+      new CustomEvent<PortfolioAudioTrackChangeDetail>(PORTFOLIO_AUDIO_TRACK_CHANGE_EVENT, {
+        detail: { src: HOMETOWN_SERIES_2_AUDIO_SRC },
+      }),
+    );
     window.dispatchEvent(new Event(WORKS_LOBBY_ACTIVATE_FROM_CAREER_DETAIL_EVENT));
   };
 
