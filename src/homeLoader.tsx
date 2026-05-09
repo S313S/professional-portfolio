@@ -7,10 +7,14 @@ import {
   type ReactNode,
 } from 'react';
 
+import {
+  HOMETOWN_SERIES_1_AUDIO_SRC,
+  HOMETOWN_SERIES_2_AUDIO_SRC,
+} from './App.logic';
 import { friendBookFinalSectionData } from './data';
 import { WORKS_DETAIL_LOADING_SRC } from './components/WorksDetailSection.logic';
 
-export type LoaderAssetKind = 'image' | 'video' | 'poster' | 'document';
+export type LoaderAssetKind = 'image' | 'video' | 'poster' | 'document' | 'audio';
 export type LoaderAssetStatus = 'pending' | 'loaded' | 'error';
 
 export interface LoaderAsset {
@@ -66,6 +70,8 @@ export const BLOCKING_HOME_LOADER_ASSETS: LoaderAsset[] = dedupeLoaderAssets([
   createLoaderAsset('video-scroll-push-poster', '/images/video-transition-poster.png', 'poster', 2),
   createLoaderAsset('video-scroll-push-video', '/videos/窗帘飘动_镜头推进到相册.mp4', 'video', 5),
   createLoaderAsset('video-scroll-drag-icon', '/images/drag图标_灰色版.png', 'image', 1),
+  createLoaderAsset('portfolio-audio-series-1', HOMETOWN_SERIES_1_AUDIO_SRC, 'audio', 2),
+  createLoaderAsset('portfolio-audio-series-2', HOMETOWN_SERIES_2_AUDIO_SRC, 'audio', 2),
 
   createLoaderAsset('grow-path-background', '/images/bg_growpath.jpeg', 'image', 3),
   createLoaderAsset('grow-path-card-01', '/images/growPath_01.png', 'image', 2),
@@ -334,6 +340,49 @@ function preloadDocumentAsset(
   };
 }
 
+function preloadAudioAsset(
+  asset: LoaderAsset,
+  updateStatus: (id: string, status: LoaderAssetStatus) => void,
+) {
+  const audio = new Audio();
+  let hasResolved = false;
+
+  const handleLoaded = () => {
+    if (hasResolved || audio.readyState < HTMLMediaElement.HAVE_FUTURE_DATA) {
+      return;
+    }
+
+    hasResolved = true;
+    updateStatus(asset.id, 'loaded');
+  };
+
+  const handleError = () => {
+    if (hasResolved) {
+      return;
+    }
+
+    hasResolved = true;
+    updateStatus(asset.id, 'error');
+  };
+
+  audio.preload = 'auto';
+  audio.addEventListener('canplay', handleLoaded);
+  audio.addEventListener('loadeddata', handleLoaded);
+  audio.addEventListener('error', handleError);
+  audio.src = asset.url;
+  audio.load();
+  handleLoaded();
+
+  return () => {
+    audio.removeEventListener('canplay', handleLoaded);
+    audio.removeEventListener('loadeddata', handleLoaded);
+    audio.removeEventListener('error', handleError);
+    audio.pause();
+    audio.removeAttribute('src');
+    audio.load();
+  };
+}
+
 function preloadHomeLoaderAsset(
   asset: LoaderAsset,
   updateStatus: (id: string, status: LoaderAssetStatus) => void,
@@ -344,6 +393,10 @@ function preloadHomeLoaderAsset(
 
   if (asset.kind === 'video') {
     return preloadVideoAsset(asset, updateStatus);
+  }
+
+  if (asset.kind === 'audio') {
+    return preloadAudioAsset(asset, updateStatus);
   }
 
   return preloadImageAsset(asset, updateStatus);

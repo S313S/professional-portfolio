@@ -23,6 +23,8 @@ test('blocks on direct section images, posters, and videos but not hidden intera
 
   assert.ok(assetUrls.includes('/videos/窗帘飘动.mp4'));
   assert.ok(assetUrls.includes('/images/video-transition-poster.png'));
+  assert.ok(assetUrls.includes('/audio/Hometown_Series1.MP3'));
+  assert.ok(assetUrls.includes('/audio/Hometown_Series2.MP3'));
   assert.ok(assetUrls.includes('/images/bg_growpath.jpeg'));
   assert.ok(assetUrls.includes('/detailWork-loading.html?embed=portfolio'));
   assert.ok(assetUrls.includes('/images/BookofFriends_Bg_Message Board.png'));
