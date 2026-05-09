@@ -12,7 +12,11 @@ import {
   getInitialFocusTarget,
   getInitialScrollResetState,
 } from './App.logic.ts';
-import { HomeLoaderGate, shouldEnableHomeLoader } from './homeLoader.tsx';
+import {
+  HomeLoaderGate,
+  shouldEnableHomeLoader,
+  shouldHoldHomeLoaderPreview,
+} from './homeLoader.tsx';
 import './index.css';
 
 const standaloneRoute =
@@ -43,7 +47,10 @@ const shouldEnableRootHomeLoader =
   typeof window !== 'undefined' &&
   standaloneRoute === null &&
   RootComponent === App &&
-  shouldEnableHomeLoader(window.location.hostname);
+  shouldEnableHomeLoader(window.location.hostname, window.location.search, import.meta.env.DEV);
+const shouldHoldRootHomeLoader =
+  typeof window !== 'undefined' &&
+  shouldHoldHomeLoaderPreview(window.location.search, import.meta.env.DEV);
 
 if (typeof window !== 'undefined') {
   window.history.scrollRestoration = initialScrollResetState.scrollRestoration;
@@ -62,7 +69,7 @@ if (typeof window !== 'undefined') {
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     {shouldEnableRootHomeLoader ? (
-      <HomeLoaderGate enabled>
+      <HomeLoaderGate enabled holdReady={shouldHoldRootHomeLoader}>
         <App />
       </HomeLoaderGate>
     ) : (

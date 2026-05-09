@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import gsap from 'gsap';
 
 import { personalData, type CodingCategoryId } from '../data';
@@ -189,6 +189,7 @@ interface WorksDetailSectionProps {
   initialTransitionProgress?: number;
   initialView?: WorksDetailView;
   initialDetailMode?: WorksDetailDetailMode;
+  initialActiveCodingProjectId?: string | null;
 }
 
 function clampProjectIndex(nextProjectIndex: number) {
@@ -290,6 +291,11 @@ function getCodingProjectsGridStyle(): WorksDetailCustomProperties {
   return WORKS_DETAIL_CODING_LAYOUT.projects as WorksDetailCustomProperties;
 }
 
+function hasCodingProjectLink(link: string) {
+  const trimmedLink = link.trim();
+  return trimmedLink !== '' && trimmedLink !== '#';
+}
+
 function getGallerySlotStyle(slotIndex: number, backgroundImage?: string): WorksDetailCustomProperties {
   const slotLayout: WorksDetailGallerySlotLayout =
     WORKS_DETAIL_GALLERY_LAYOUT.slots[slotIndex] ?? WORKS_DETAIL_GALLERY_LAYOUT.slots[0];
@@ -318,6 +324,7 @@ export default function WorksDetailSection({
   initialTransitionProgress = 0,
   initialView = 'entry',
   initialDetailMode = 'design',
+  initialActiveCodingProjectId = null,
 }: WorksDetailSectionProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -347,6 +354,9 @@ export default function WorksDetailSection({
   const [activeProjectIndex, setActiveProjectIndex] = useState(WORKS_DETAIL_DEFAULT_ACTIVE_INDEX);
   const [activeCodingCategoryId, setActiveCodingCategoryId] = useState<CodingCategoryId>(
     WORKS_DETAIL_DEFAULT_CODING_CATEGORY_ID,
+  );
+  const [activeCodingProjectId, setActiveCodingProjectId] = useState<string | null>(
+    initialActiveCodingProjectId,
   );
   const [entryLandingState, setEntryLandingState] = useState<WorksDetailEntryLandingState>(
     initialPhase === 'settled' && initialView === 'entry' ? 'visible' : 'hidden',
@@ -407,6 +417,7 @@ export default function WorksDetailSection({
 
   const resetCodingState = () => {
     setActiveCodingCategoryId(WORKS_DETAIL_DEFAULT_CODING_CATEGORY_ID);
+    setActiveCodingProjectId(null);
     codingDragPointerIdRef.current = null;
     codingDragStartXRef.current = null;
   };
@@ -495,6 +506,10 @@ export default function WorksDetailSection({
     personalData.codingCategories[0];
   const activeCodingProjects =
     personalData.codingProjects[activeCodingCategoryId]?.slice(0, 6) ?? [];
+  const activeCodingProject =
+    activeCodingProjects.find((project) => project.id === activeCodingProjectId) ?? null;
+  const visibleCodingProjects = activeCodingProject ? [activeCodingProject] : activeCodingProjects;
+  const codingProjectsGridState = activeCodingProject ? 'expanded' : 'list';
   const backgroundImageSrc =
     view === 'detail' && detailMode === 'coding'
       ? WORKS_DETAIL_CODING_BACKGROUND_SRC
@@ -1119,6 +1134,7 @@ export default function WorksDetailSection({
 
   const handleCodingCategorySelection = (categoryId: CodingCategoryId) => {
     setActiveCodingCategoryId(categoryId);
+    setActiveCodingProjectId(null);
   };
 
   const handleCodingCategoryShift = (direction: 'next' | 'previous') => {
@@ -1129,6 +1145,25 @@ export default function WorksDetailSection({
         : Math.max(currentIndex - 1, 0);
 
     setActiveCodingCategoryId(personalData.codingCategories[nextIndex]?.id ?? WORKS_DETAIL_DEFAULT_CODING_CATEGORY_ID);
+    setActiveCodingProjectId(null);
+  };
+
+  const handleCodingProjectToggle = (projectId: string) => {
+    setActiveCodingProjectId((currentProjectId) => (
+      currentProjectId === projectId ? null : projectId
+    ));
+  };
+
+  const handleCodingProjectKeyDown = (
+    event: ReactKeyboardEvent<HTMLElement>,
+    projectId: string,
+  ) => {
+    if (event.key !== 'Enter' && event.key !== ' ') {
+      return;
+    }
+
+    event.preventDefault();
+    handleCodingProjectToggle(projectId);
   };
 
   const handleCodingDragStart = (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -1323,38 +1358,104 @@ export default function WorksDetailSection({
                     <div
                       className="works-detail-coding__projects-grid"
                       data-coding-project-grid={activeCodingCategory?.id ?? WORKS_DETAIL_DEFAULT_CODING_CATEGORY_ID}
+                      data-coding-project-grid-state={codingProjectsGridState}
                       data-coding-animate="projects"
                       style={getCodingProjectsGridStyle()}
                     >
-                      {activeCodingProjects.map((project) => (
-                        <a
-                          key={project.id}
-                          href={project.link}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="works-detail-coding__project-card"
-                          data-coding-project-card={project.id}
-                        >
-                          <div className="works-detail-coding__project-media">
-                            <img
-                              src={project.image}
-                              alt={project.title}
-                              className="works-detail-coding__project-image"
-                            />
-                          </div>
-                          <div className="works-detail-coding__project-meta">
-                            <h4 className="works-detail-coding__project-title">{project.title}</h4>
-                            <p className="works-detail-coding__project-body">{project.description}</p>
-                            <div className="works-detail-coding__project-tags">
-                              {project.tags.map((tag) => (
-                                <span key={tag} className="works-detail-coding__project-tag">
-                                  {tag}
-                                </span>
-                              ))}
+                      {visibleCodingProjects.map((project) => {
+                        const isProjectExpanded = activeCodingProjectId === project.id;
+
+                        return (
+                          <article
+                            key={project.id}
+                            role="button"
+                            tabIndex={0}
+                            aria-expanded={isProjectExpanded}
+                            aria-label={`${isProjectExpanded ? 'Close' : 'Open'} ${project.title} details`}
+                            className="works-detail-coding__project-card"
+                            data-coding-project-card={project.id}
+                            data-coding-project-expanded={isProjectExpanded ? 'true' : 'false'}
+                            onClick={() => {
+                              handleCodingProjectToggle(project.id);
+                            }}
+                            onKeyDown={(event) => {
+                              handleCodingProjectKeyDown(event, project.id);
+                            }}
+                          >
+                            <div className="works-detail-coding__project-media">
+                              <img
+                                src={project.image}
+                                alt={project.title}
+                                className="works-detail-coding__project-image"
+                              />
                             </div>
-                          </div>
-                        </a>
-                      ))}
+                            <div className="works-detail-coding__project-meta">
+                              <div className="works-detail-coding__project-heading">
+                                <div>
+                                  <span className="works-detail-coding__project-category">
+                                    {activeCodingCategory?.title ?? 'Workflow'}
+                                  </span>
+                                  <h4 className="works-detail-coding__project-title">{project.title}</h4>
+                                </div>
+                                {isProjectExpanded ? (
+                                  <button
+                                    type="button"
+                                    aria-label={`Close ${project.title} details`}
+                                    className="works-detail-coding__project-close"
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      setActiveCodingProjectId(null);
+                                    }}
+                                  >
+                                    <span aria-hidden="true">Close</span>
+                                  </button>
+                                ) : null}
+                              </div>
+                              <p className="works-detail-coding__project-body">{project.description}</p>
+                              <div className="works-detail-coding__project-tags">
+                                {project.tags.map((tag) => (
+                                  <span key={tag} className="works-detail-coding__project-tag">
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
+                              {isProjectExpanded ? (
+                                <div className="works-detail-coding__project-detail">
+                                  <section className="works-detail-coding__project-detail-section">
+                                    <span>Problem</span>
+                                    <p>{project.detail.problem}</p>
+                                  </section>
+                                  <section className="works-detail-coding__project-detail-section">
+                                    <span>Approach</span>
+                                    <ul>
+                                      {project.detail.approach.map((step) => (
+                                        <li key={step}>{step}</li>
+                                      ))}
+                                    </ul>
+                                  </section>
+                                  <section className="works-detail-coding__project-detail-section">
+                                    <span>Outcome</span>
+                                    <p>{project.detail.outcome}</p>
+                                  </section>
+                                  {hasCodingProjectLink(project.link) ? (
+                                    <a
+                                      href={project.link}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="works-detail-coding__project-link"
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                      }}
+                                    >
+                                      Open project
+                                    </a>
+                                  ) : null}
+                                </div>
+                              ) : null}
+                            </div>
+                          </article>
+                        );
+                      })}
                     </div>
                   </section>
                 </div>

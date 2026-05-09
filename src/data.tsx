@@ -518,6 +518,17 @@ const codingProjects: Record<CodingCategoryId, CodingProjectCard[]> = {
       title: 'Agent Console',
       description:
         'A product concept for making agent status, confidence, and next-step recommendations understandable to operators.',
+      detail: {
+        problem:
+          'Agent workflows could feel opaque when operators could not quickly read state, confidence, or the next best action.',
+        approach: [
+          'Separated current status, confidence cues, and recommended actions into distinct visual zones.',
+          'Used plain-language state labels instead of exposing raw model or system details.',
+          'Designed the console around operator decisions rather than agent activity alone.',
+        ],
+        outcome:
+          'The concept made agent behavior easier to supervise and turned uncertain states into clearer operator choices.',
+      },
       tags: ['AI Product', 'Console'],
       image: '/images/careerDetail_litteleBg_01.png',
       link: '#',
@@ -528,6 +539,17 @@ const codingProjects: Record<CodingCategoryId, CodingProjectCard[]> = {
       title: 'Brief Copilot',
       description:
         'A guided brief generator that translated vague requests into structured execution inputs with less back-and-forth.',
+      detail: {
+        problem:
+          'Vague requests caused repeated clarification loops before a builder had enough structure to start safely.',
+        approach: [
+          'Guided users from intent to constraints, scope, and acceptance criteria.',
+          'Turned missing details into focused prompts instead of open-ended forms.',
+          'Formatted the output as an execution-ready brief.',
+        ],
+        outcome:
+          'The copilot reduced back-and-forth by producing clearer inputs for planning, implementation, and review.',
+      },
       tags: ['Copilot', 'Workflow'],
       image: '/images/careerDetail_litteleBg_02.png',
       link: '#',
@@ -538,6 +560,17 @@ const codingProjects: Record<CodingCategoryId, CodingProjectCard[]> = {
       title: 'Insight Merge',
       description:
         'A synthesis surface that grouped user signals, model output, and strategic framing into a single product readout.',
+      detail: {
+        problem:
+          'Research signals and model summaries were useful separately, but product decisions needed a combined readout.',
+        approach: [
+          'Grouped raw user signals beside synthesized themes and strategic implications.',
+          'Made source context visible so summaries could be challenged or trusted quickly.',
+          'Used concise sections to keep the surface useful for repeated product review.',
+        ],
+        outcome:
+          'The surface helped move from scattered insight capture to a clearer product interpretation layer.',
+      },
       tags: ['Insights', 'Synthesis'],
       image: '/images/careerDetail_litteleBg_03.png',
       link: '#',
@@ -548,6 +581,17 @@ const codingProjects: Record<CodingCategoryId, CodingProjectCard[]> = {
       title: 'Spec Orbit',
       description:
         'A planning tool that linked prompts, UI states, and test expectations so product decisions stayed traceable.',
+      detail: {
+        problem:
+          'Prompt decisions, UI states, and validation notes were drifting apart as implementation evolved.',
+        approach: [
+          'Linked each prompt or behavior decision to the UI state it affected.',
+          'Attached expected outcomes and test notes to the same planning surface.',
+          'Kept the structure lightweight enough for iterative product work.',
+        ],
+        outcome:
+          'Spec changes became easier to trace, reducing confusion when implementation and prompt behavior changed together.',
+      },
       tags: ['Specs', 'Traceability'],
       image: '/images/careerDetail_map.png',
       link: '#',
@@ -558,6 +602,17 @@ const codingProjects: Record<CodingCategoryId, CodingProjectCard[]> = {
       title: 'Launch Sentinel',
       description:
         'A launch assistant concept focused on preflight validation, rollback readiness, and team alignment for AI features.',
+      detail: {
+        problem:
+          'AI feature launches needed stronger preflight checks because behavior risk was not limited to UI bugs.',
+        approach: [
+          'Organized readiness around validation, rollback, monitoring, and communication checks.',
+          'Highlighted incomplete launch criteria before a feature reached the final approval moment.',
+          'Kept team alignment visible beside technical readiness.',
+        ],
+        outcome:
+          'The concept framed launch readiness as an operational surface, not just a final checklist.',
+      },
       tags: ['Launch', 'Reliability'],
       image: '/images/top-title.png',
       link: '#',
@@ -568,6 +623,17 @@ const codingProjects: Record<CodingCategoryId, CodingProjectCard[]> = {
       title: 'Memory Thread',
       description:
         'A product idea for preserving thread context across edits so agent collaboration felt less fragile over time.',
+      detail: {
+        problem:
+          'Long-running agent work could lose important context when plans, edits, and decisions stretched across sessions.',
+        approach: [
+          'Captured durable context as a thread timeline with decisions, changed files, and pending questions.',
+          'Separated stable project facts from temporary conversation state.',
+          'Made resume points explicit so future work could continue without restarting discovery.',
+        ],
+        outcome:
+          'The idea made agent collaboration feel more continuous and less dependent on fragile conversational memory.',
+      },
       tags: ['Memory', 'Product Strategy'],
       image: '/images/easel-removebg.png',
       link: '#',

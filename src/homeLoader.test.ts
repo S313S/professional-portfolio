@@ -6,6 +6,7 @@ import {
   createInitialHomeLoaderAssetStatuses,
   getHomeLoaderProgress,
   hasBlockingHomeLoaderErrors,
+  shouldHoldHomeLoaderPreview,
   shouldEnableHomeLoader,
   type LoaderAsset,
 } from './homeLoader';
@@ -16,6 +17,19 @@ test('enables the home loader only for the Tencent Cloud production hostnames', 
   assert.equal(shouldEnableHomeLoader('localhost'), false);
   assert.equal(shouldEnableHomeLoader('127.0.0.1'), false);
   assert.equal(shouldEnableHomeLoader('preview.xiaoci-ai.com'), false);
+});
+
+test('allows the home loader to be previewed locally in development', () => {
+  assert.equal(shouldEnableHomeLoader('localhost', '?previewHomeLoader=1', true), true);
+  assert.equal(shouldEnableHomeLoader('127.0.0.1', '?previewHomeLoader=1', true), true);
+  assert.equal(shouldEnableHomeLoader('localhost', '?previewHomeLoader=1', false), false);
+  assert.equal(shouldEnableHomeLoader('localhost', '?foo=previewHomeLoader', true), false);
+});
+
+test('allows the local home loader preview to be held open in development', () => {
+  assert.equal(shouldHoldHomeLoaderPreview('?previewHomeLoader=1&holdHomeLoader=1', true), true);
+  assert.equal(shouldHoldHomeLoaderPreview('?previewHomeLoader=1&holdHomeLoader=1', false), false);
+  assert.equal(shouldHoldHomeLoaderPreview('?holdHomeLoader=1', true), false);
 });
 
 test('blocks on direct section images, posters, and videos but not hidden interactive assets', () => {

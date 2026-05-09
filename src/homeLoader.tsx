@@ -9,6 +9,7 @@ import {
 
 import { friendBookFinalSectionData } from './data';
 import { WORKS_DETAIL_LOADING_SRC } from './components/WorksDetailSection.logic';
+import { portfolioAudioController } from './portfolioAudioController';
 
 export type LoaderAssetKind = 'image' | 'video' | 'poster' | 'document';
 export type LoaderAssetStatus = 'pending' | 'loaded' | 'error';
@@ -182,8 +183,22 @@ export const BLOCKING_HOME_LOADER_ASSETS: LoaderAsset[] = dedupeLoaderAssets([
 
 const HomeLoaderContext = createContext<HomeLoaderState | null>(null);
 
-export function shouldEnableHomeLoader(hostname: string) {
-  return HOME_LOADER_ENABLED_HOSTNAMES.has(hostname.trim().toLowerCase());
+export function shouldEnableHomeLoader(hostname: string, search = '', isDev = false) {
+  if (HOME_LOADER_ENABLED_HOSTNAMES.has(hostname.trim().toLowerCase())) {
+    return true;
+  }
+
+  return isDev && new URLSearchParams(search).get('previewHomeLoader') === '1';
+}
+
+export function shouldHoldHomeLoaderPreview(search = '', isDev = false) {
+  const searchParams = new URLSearchParams(search);
+
+  return (
+    isDev &&
+    searchParams.get('previewHomeLoader') === '1' &&
+    searchParams.get('holdHomeLoader') === '1'
+  );
 }
 
 export function createInitialHomeLoaderAssetStatuses(assets: LoaderAsset[]) {
@@ -360,6 +375,21 @@ function HomeLoaderScreen({
   totalCount: number;
   hasErrors: boolean;
 }) {
+  const [isSoundEnabled, setIsSoundEnabled] = useState(
+    portfolioAudioController.getSoundPreference() === 'enabled',
+  );
+
+  const handleSoundToggle = () => {
+    if (isSoundEnabled) {
+      portfolioAudioController.disable();
+      setIsSoundEnabled(false);
+      return;
+    }
+
+    portfolioAudioController.enableSeries1();
+    setIsSoundEnabled(true);
+  };
+
   return (
     <div className="fixed inset-0 z-[120] overflow-hidden bg-[#FDFCF8] text-zinc-900">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(24,24,27,0.035),transparent_48%),linear-gradient(180deg,rgba(255,255,255,0.58),rgba(253,252,248,0.88)_26%,rgba(253,252,248,1)_100%)]" />
@@ -402,6 +432,32 @@ function HomeLoaderScreen({
               <span>{String(progress).padStart(2, '0')}%</span>
             </div>
 
+            <div className="flex justify-center">
+              <button
+                type="button"
+                role="switch"
+                aria-checked={isSoundEnabled}
+                onClick={handleSoundToggle}
+                className="inline-flex h-10 items-center gap-3 rounded-full border border-zinc-300 bg-white/70 px-2.5 pl-4 text-[0.68rem] uppercase tracking-[0.24em] text-zinc-600 shadow-[0_14px_34px_rgba(24,24,27,0.08)] transition hover:border-zinc-500 hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900 focus-visible:ring-offset-4 focus-visible:ring-offset-[#FDFCF8]"
+              >
+                <span>Open with sound</span>
+                <span
+                  aria-hidden="true"
+                  className={`relative h-6 w-11 rounded-full border transition ${
+                    isSoundEnabled
+                      ? 'border-zinc-900 bg-zinc-900'
+                      : 'border-zinc-300 bg-zinc-100'
+                  }`}
+                >
+                  <span
+                    className={`absolute top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-white shadow-sm transition ${
+                      isSoundEnabled ? 'left-[1.55rem]' : 'left-1'
+                    }`}
+                  />
+                </span>
+              </button>
+            </div>
+
             <p
               className={`text-xs leading-6 tracking-[0.18em] uppercase ${
                 hasErrors ? 'text-[#8a4b33]' : 'text-zinc-400'
@@ -420,9 +476,11 @@ function HomeLoaderScreen({
 
 export function HomeLoaderGate({
   enabled,
+  holdReady = false,
   children,
 }: {
   enabled: boolean;
+  holdReady?: boolean;
   children: ReactNode;
 }) {
   const [assets, setAssets] = useState<Record<string, LoaderAssetStatus>>(() =>
@@ -463,12 +521,16 @@ export function HomeLoaderGate({
   }, [enabled]);
 
   useEffect(() => {
-    if (!enabled || areBlockingAssetsReady(BLOCKING_HOME_LOADER_ASSETS, assets) === false) {
+    if (
+      holdReady ||
+      !enabled ||
+      areBlockingAssetsReady(BLOCKING_HOME_LOADER_ASSETS, assets) === false
+    ) {
       return;
     }
 
     setIsReady(true);
-  }, [assets, enabled]);
+  }, [assets, enabled, holdReady]);
 
   const blockingAssets = BLOCKING_HOME_LOADER_ASSETS.filter((asset) => asset.blocking);
   const hasErrors = hasBlockingHomeLoaderErrors(BLOCKING_HOME_LOADER_ASSETS, assets);

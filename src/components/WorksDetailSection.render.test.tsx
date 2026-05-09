@@ -200,6 +200,7 @@ test('renders the coding detail mode with a new background, draggable category c
   assert.match(markup, /data-coding-category-card-draggable="true"/);
   assert.match(markup, /data-coding-category-card-draggable="false"/);
   assert.match(markup, /data-coding-project-grid="workflow"/);
+  assert.match(markup, /data-coding-project-grid-state="list"/);
   assert.match(markup, /data-coding-project-card=/);
   assert.match(markup, /data-coding-project-expanded="false"/);
   assert.match(markup, /aria-expanded="false"/);
@@ -220,6 +221,30 @@ test('renders the coding detail mode with a new background, draggable category c
   assert.doesNotMatch(markup, /Six selected builds from the/i);
   const codingCards = markup.match(/data-coding-project-card=/g) ?? [];
   assert.equal(codingCards.length, 6);
+});
+
+test('renders only the active coding project when a coding card is expanded', () => {
+  const markup = renderToStaticMarkup(
+    <WorksDetailSection
+      initialPhase="settled"
+      initialView="detail"
+      initialTransitionProgress={1}
+      initialDetailMode="coding"
+      initialActiveCodingProjectId="handoff-radar"
+    />,
+  );
+
+  assert.match(markup, /data-coding-project-grid-state="expanded"/);
+  assert.match(markup, /data-coding-project-card="handoff-radar"/);
+  assert.match(markup, /data-coding-project-expanded="true"/);
+  assert.match(markup, /aria-expanded="true"/);
+  assert.match(markup, />Problem</);
+  assert.match(markup, />Approach</);
+  assert.match(markup, />Outcome</);
+  assert.doesNotMatch(markup, /data-coding-project-card="prompt-qa-sheet"/);
+  assert.doesNotMatch(markup, /data-coding-project-muted="true"/);
+  const codingCards = markup.match(/data-coding-project-card=/g) ?? [];
+  assert.equal(codingCards.length, 1);
 });
 
 test('keeps category switching clickable by limiting drag capture to the active coding card only', () => {
@@ -291,7 +316,7 @@ test('matches the approved works gallery footer spacing, socials format, and fil
   assert.match(componentSource, /'--works-detail-projects-offset-x'/);
   assert.match(componentSource, /'--works-detail-projects-offset-y'/);
   assert.match(componentSource, /'--works-detail-corridor-center-y'/);
-  assert.match(componentSource, /'--works-detail-corridor-rail-offset':\s*'12\.75rem'/);
+  assert.match(componentSource, /'--works-detail-corridor-rail-offset':\s*'10\.75rem'/);
   assert.doesNotMatch(componentSource, /'--works-detail-corridor-rail-offset':\s*'8\.75rem'/);
   assert.match(componentSource, /'--works-detail-slot-x'/);
 });
@@ -362,6 +387,35 @@ test('hides inactive coding card body copy so back-stack text does not bleed thr
   assert.match(
     cssSource,
     /\.works-detail-coding__category-card\[data-active="false"\]\s+\.works-detail-coding__category-copy\s*\{[\s\S]*opacity:\s*0;/,
+  );
+});
+
+test('keeps expanded coding project cards compact enough to fit in a single viewport', () => {
+  const cssSource = readFileSync(new URL('../index.css', import.meta.url), 'utf8');
+
+  assert.match(
+    cssSource,
+    /\.works-detail-coding__project-card\[data-coding-project-expanded="true"\]\s*\{[\s\S]*max-height:\s*min\(48rem,\s*calc\(100vh - 4\.5rem\)\);/,
+  );
+  assert.match(
+    cssSource,
+    /\.works-detail-coding__project-card\[data-coding-project-expanded="true"\]\s+\.works-detail-coding__project-media\s*\{[\s\S]*height:\s*clamp\(14rem,\s*40vh,\s*21rem\);/,
+  );
+  assert.match(
+    cssSource,
+    /\.works-detail-coding__project-card\[data-coding-project-expanded="true"\]\s+\.works-detail-coding__project-detail\s*\{[\s\S]*grid-template-columns:\s*minmax\(0,\s*0\.85fr\)\s*minmax\(0,\s*1\.35fr\);/,
+  );
+  assert.match(
+    cssSource,
+    /\.works-detail-coding__project-card\[data-coding-project-expanded="true"\]\s+\.works-detail-coding__project-detail-section:nth-child\(2\)\s*\{[\s\S]*grid-column:\s*2;[\s\S]*grid-row:\s*1\s*\/\s*span 2;/,
+  );
+  assert.match(
+    cssSource,
+    /\.works-detail-coding__project-card\[data-coding-project-expanded="true"\]\s+\.works-detail-coding__project-detail-section:nth-child\(3\)\s*\{[\s\S]*grid-column:\s*1;[\s\S]*grid-row:\s*2;/,
+  );
+  assert.doesNotMatch(
+    cssSource,
+    /\.works-detail-coding__project-card\[data-coding-project-expanded="true"\]\s+\.works-detail-coding__project-media\s*\{[\s\S]*aspect-ratio:\s*16\s*\/\s*7\.6;/,
   );
 });
 
@@ -464,23 +518,23 @@ test('locks the gallery cards, corridor, and background grid to the same 45 degr
   );
   assert.match(
     componentSource,
-    /slots:\s*\[\s*\{[\s\S]*x:\s*'-37\.5rem'[\s\S]*y:\s*'33\.7rem'[\s\S]*scale:\s*1\.04/,
+    /slots:\s*\[\s*\{[\s\S]*x:\s*'-37\.5rem'[\s\S]*y:\s*'33\.7rem'[\s\S]*scale:\s*1\.21/,
   );
   assert.match(
     componentSource,
-    /x:\s*'-26\.5rem'[\s\S]*y:\s*'22\.7rem'[\s\S]*scale:\s*1\.04/,
+    /x:\s*'-26\.5rem'[\s\S]*y:\s*'22\.7rem'[\s\S]*scale:\s*1\.21/,
   );
   assert.match(
     componentSource,
-    /x:\s*'-15\.5rem'[\s\S]*y:\s*'11\.7rem'[\s\S]*scale:\s*1\.04/,
+    /x:\s*'-15\.5rem'[\s\S]*y:\s*'11\.7rem'[\s\S]*scale:\s*1\.21/,
   );
   assert.match(
     componentSource,
-    /x:\s*'-4\.5rem'[\s\S]*y:\s*'0\.7rem'[\s\S]*scale:\s*1\.04/,
+    /x:\s*'-4\.5rem'[\s\S]*y:\s*'0\.7rem'[\s\S]*scale:\s*1\.21/,
   );
   assert.match(
     componentSource,
-    /x:\s*'6\.5rem'[\s\S]*y:\s*'-10\.3rem'[\s\S]*scale:\s*1\.04/,
+    /x:\s*'6\.5rem'[\s\S]*y:\s*'-10\.3rem'[\s\S]*scale:\s*1\.21/,
   );
   assert.match(
     componentSource,
