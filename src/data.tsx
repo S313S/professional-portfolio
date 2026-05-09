@@ -32,6 +32,11 @@ export interface CodingProjectCard {
   categoryId: CodingCategoryId;
   title: string;
   description: string;
+  detail: {
+    problem: string;
+    approach: string[];
+    outcome: string;
+  };
   tags: string[];
   image: string;
   link: string;
@@ -257,6 +262,17 @@ const codingProjects: Record<CodingCategoryId, CodingProjectCard[]> = {
       title: 'Handoff Radar',
       description:
         'A release handoff board that made ownership gaps, blockers, and review state visible before they slowed the team down.',
+      detail: {
+        problem:
+          'Release work was moving through scattered threads, so blockers and owner gaps surfaced too late for calm correction.',
+        approach: [
+          'Grouped every handoff by owner, blocker state, and review readiness.',
+          'Separated urgent risks from routine progress so the board could be scanned quickly.',
+          'Kept next actions visible beside each item instead of burying them in notes.',
+        ],
+        outcome:
+          'The team could spot fragile handoffs earlier and turn review follow-up into a visible operating rhythm.',
+      },
       tags: ['Workflow', 'Review Ops'],
       image: '/images/career_bg.png',
       link: '#',
@@ -267,6 +283,17 @@ const codingProjects: Record<CodingCategoryId, CodingProjectCard[]> = {
       title: 'Prompt QA Sheet',
       description:
         'A structured prompt review surface for checking assumptions, model drift, and expected output shape before shipping.',
+      detail: {
+        problem:
+          'Prompt changes were easy to approve on tone while missing assumptions, regressions, and output-shape drift.',
+        approach: [
+          'Split review into assumptions, expected format, model behavior, and edge-case checks.',
+          'Created a repeatable acceptance pass that could be reused across prompt iterations.',
+          'Made failure notes short enough to feed directly into the next revision.',
+        ],
+        outcome:
+          'Prompt reviews became easier to compare across versions, reducing subjective approvals and late fixes.',
+      },
       tags: ['Prompting', 'QA'],
       image: '/images/careerDetail_bg.png',
       link: '#',
@@ -277,6 +304,17 @@ const codingProjects: Record<CodingCategoryId, CodingProjectCard[]> = {
       title: 'Signal Archive',
       description:
         'An internal archive flow for capturing working decisions, visual references, and implementation notes without losing context.',
+      detail: {
+        problem:
+          'Useful decisions and references were getting lost between chat history, screenshots, and implementation notes.',
+        approach: [
+          'Turned raw signals into lightweight entries with source, decision, and follow-up context.',
+          'Grouped visual references and build notes around the project moment where they mattered.',
+          'Kept the archive searchable without forcing a heavy documentation workflow.',
+        ],
+        outcome:
+          'Past decisions became easier to recover, making future edits less dependent on memory or repeated explanations.',
+      },
       tags: ['Documentation', 'Knowledge'],
       image: '/images/bg_growpath.jpeg',
       link: '#',
@@ -287,6 +325,17 @@ const codingProjects: Record<CodingCategoryId, CodingProjectCard[]> = {
       title: 'Review Rail',
       description:
         'A reviewer-first layout that compressed diffs, rationale, and next actions into one faster inspection loop.',
+      detail: {
+        problem:
+          'Reviewers needed to jump between diff context, intent, and follow-up actions before they could make a decision.',
+        approach: [
+          'Placed rationale, changed surface, and next action in a single inspection path.',
+          'Prioritized unresolved questions over passive status text.',
+          'Kept the layout dense enough for repeated review without feeling like a dashboard wall.',
+        ],
+        outcome:
+          'Review sessions became more direct, with fewer context switches and clearer decision points.',
+      },
       tags: ['Review', 'Decision Making'],
       image: '/images/video-transition-poster.png',
       link: '#',
@@ -297,6 +346,17 @@ const codingProjects: Record<CodingCategoryId, CodingProjectCard[]> = {
       title: 'Execution Docket',
       description:
         'A task flow that paired small implementation batches with explicit validation, making AI assistance safer to scale.',
+      detail: {
+        problem:
+          'AI-assisted implementation could move quickly, but work became harder to trust when validation was not attached to each batch.',
+        approach: [
+          'Broke implementation into small batches with an explicit verification command per batch.',
+          'Kept acceptance notes close to the task list so checks did not become an afterthought.',
+          'Made blockers visible before they turned into hidden scope changes.',
+        ],
+        outcome:
+          'The workflow made faster delivery more reviewable and reduced uncertainty around what had actually been validated.',
+      },
       tags: ['Delivery', 'Automation'],
       image: '/images/growPath_03.png',
       link: '#',
@@ -307,6 +367,17 @@ const codingProjects: Record<CodingCategoryId, CodingProjectCard[]> = {
       title: 'Ops Playbook',
       description:
         'A reusable playbook for turning ambiguous product requests into testable, sequenced implementation work.',
+      detail: {
+        problem:
+          'Ambiguous requests were jumping straight into build mode before scope, constraints, and verification were stable.',
+        approach: [
+          'Converted fuzzy intent into concrete success criteria and implementation steps.',
+          'Separated product decisions from discoverable repo facts to avoid unnecessary questions.',
+          'Included test checkpoints so the playbook could be handed to another builder.',
+        ],
+        outcome:
+          'The playbook helped turn open-ended asks into work that was easier to execute, review, and continue later.',
+      },
       tags: ['Planning', 'Ops System'],
       image: '/images/growPath_04.png',
       link: '#',
@@ -319,6 +390,17 @@ const codingProjects: Record<CodingCategoryId, CodingProjectCard[]> = {
       title: 'Motion Sprint',
       description:
         'A rapid interaction prototype where animation timing and copy changed in the same loop as code.',
+      detail: {
+        problem:
+          'Motion ideas were hard to judge from static references, and copy changes often shifted the timing after the fact.',
+        approach: [
+          'Built the interaction as a live prototype so timing, copy, and layout could be tuned together.',
+          'Used small animation passes to compare pacing without rewriting the whole scene.',
+          'Kept the prototype close to production markup to reduce translation loss.',
+        ],
+        outcome:
+          'The team could make faster decisions about motion feel because the prototype showed the real interaction rhythm.',
+      },
       tags: ['Prototype', 'Motion'],
       image: '/images/after.png',
       link: '#',
@@ -329,6 +411,17 @@ const codingProjects: Record<CodingCategoryId, CodingProjectCard[]> = {
       title: 'Portfolio Remix',
       description:
         'A concept page built from mood, references, and implementation experiments in a single focused session.',
+      detail: {
+        problem:
+          'The page needed a sharper direction, but the strongest visual ideas were still split across references and rough notes.',
+        approach: [
+          'Translated mood references into concrete layout, color, and component experiments.',
+          'Tested the visual hierarchy directly in the browser instead of extending static mockups.',
+          'Removed ideas that looked interesting but did not support the portfolio story.',
+        ],
+        outcome:
+          'The remix turned scattered inspiration into a usable direction with clearer hierarchy and faster iteration paths.',
+      },
       tags: ['Creative Coding', 'UI'],
       image: '/images/before.png',
       link: '#',
@@ -339,6 +432,17 @@ const codingProjects: Record<CodingCategoryId, CodingProjectCard[]> = {
       title: 'Hero Lab',
       description:
         'A hero-section playground for testing typography, scene layering, and interaction feel before settling visual direction.',
+      detail: {
+        problem:
+          'Hero directions looked promising in isolation, but it was unclear which one would hold up with real type and interaction.',
+        approach: [
+          'Created a playground for swapping type scale, image depth, and foreground controls.',
+          'Compared scenes at multiple viewport sizes before choosing the final direction.',
+          'Kept test variants lightweight so weak ideas could be discarded quickly.',
+        ],
+        outcome:
+          'The final hero direction was selected from working interaction evidence rather than static preference alone.',
+      },
       tags: ['Landing Page', 'Experiment'],
       image: '/images/growPath_01.png',
       link: '#',
@@ -349,6 +453,17 @@ const codingProjects: Record<CodingCategoryId, CodingProjectCard[]> = {
       title: 'Scene Builder',
       description:
         'A layout sketching flow where product ideas were validated through live-coded scene composition instead of static comps.',
+      detail: {
+        problem:
+          'Early product ideas needed spatial validation, but static comps were too slow for rapid scene-level exploration.',
+        approach: [
+          'Turned layout sketches into reusable scene blocks that could be rearranged quickly.',
+          'Validated density, focus, and scrolling behavior in the same environment as the final page.',
+          'Kept experiments constrained to the decision being tested.',
+        ],
+        outcome:
+          'The scene builder made abstract product ideas easier to evaluate before committing to a full implementation.',
+      },
       tags: ['Layout', 'Iteration'],
       image: '/images/growPath_02.png',
       link: '#',
@@ -359,6 +474,17 @@ const codingProjects: Record<CodingCategoryId, CodingProjectCard[]> = {
       title: 'Interface Jam',
       description:
         'A collaborative build session that used fast component swaps to test tone, density, and hierarchy live.',
+      detail: {
+        problem:
+          'Stakeholders needed to compare interface tone and density, but async screenshots made feedback slow and fragmented.',
+        approach: [
+          'Prepared component alternatives that could be swapped live during the session.',
+          'Focused discussion on hierarchy, scan speed, and emotional tone instead of isolated styling.',
+          'Captured decisions immediately as implementation changes.',
+        ],
+        outcome:
+          'The session compressed visual alignment into a shorter loop and left behind a clearer component direction.',
+      },
       tags: ['Component', 'Collaboration'],
       image: '/images/works-detail-07-square.png',
       link: '#',
@@ -369,6 +495,17 @@ const codingProjects: Record<CodingCategoryId, CodingProjectCard[]> = {
       title: 'Contrast Pass',
       description:
         'A series of quick contrast and surface studies that made a rough interface feel intentional without slowing down delivery.',
+      detail: {
+        problem:
+          'The interface worked structurally, but weak contrast and uneven surfaces made it feel unfinished.',
+        approach: [
+          'Audited text, borders, and background surfaces for hierarchy breaks.',
+          'Adjusted contrast in small passes so the existing layout did not need to be rebuilt.',
+          'Kept accent colors restrained to avoid turning polish into a new visual system.',
+        ],
+        outcome:
+          'The pass made the interface feel more deliberate while preserving delivery speed and existing structure.',
+      },
       tags: ['Polish', 'Visual System'],
       image: '/images/workDetail_bg.jpeg',
       link: '#',

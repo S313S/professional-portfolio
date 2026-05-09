@@ -24,6 +24,7 @@ import {
   WORKS_DETAIL_GALLERY_DESIGN_HEIGHT,
   WORKS_DETAIL_GALLERY_DESIGN_WIDTH,
   WORKS_DETAIL_LOADING_SRC,
+  WORKS_DETAIL_POST_LOADING_NAVIGATION_LOCK_MS,
   WORKS_DETAIL_REVEAL_IMAGE_SRC,
   WORKS_DETAIL_RETURN_TO_LOBBY_EVENT,
   WORKS_DETAIL_TRANSITION_START_EVENT,
@@ -328,6 +329,7 @@ export default function WorksDetailSection({
   const detailModeRef = useRef<WorksDetailDetailMode>(initialDetailMode);
   const loadingTimeoutRef = useRef<number | null>(null);
   const loadingIframeReadyRef = useRef(false);
+  const loadingCompletedAtRef = useRef<number | null>(null);
   const wheelBufferRef = useRef(0);
   const sceneUnlockTimeoutRef = useRef<number | null>(null);
   const detailSceneRef = useRef<WorksDetailScene>('gallery');
@@ -451,6 +453,8 @@ export default function WorksDetailSection({
     const section = sectionRef.current;
 
     clearLoadingTimeout();
+    loadingCompletedAtRef.current = performance.now();
+    armScrollMomentumLock(WORKS_DETAIL_POST_LOADING_NAVIGATION_LOCK_MS);
     wheelBufferRef.current = 0;
     resetDetailState();
     resetCodingState();
@@ -501,6 +505,7 @@ export default function WorksDetailSection({
   const exitToLobby = () => {
     clearLoadingTimeout();
     clearSceneUnlockTimeout();
+    loadingCompletedAtRef.current = null;
     wheelBufferRef.current = 0;
     setEntryLandingState('hidden');
     setPhase('idle');
@@ -517,6 +522,7 @@ export default function WorksDetailSection({
 
     clearLoadingTimeout();
     loadingIframeReadyRef.current = false;
+    loadingCompletedAtRef.current = null;
     wheelBufferRef.current = 0;
     setEntryLandingState('hidden');
     resetDetailState();
@@ -562,6 +568,14 @@ export default function WorksDetailSection({
     }
 
     return nextSection.getBoundingClientRect().top;
+  };
+
+  const isPostLoadingNavigationUnlocked = () => {
+    const completedAt = loadingCompletedAtRef.current;
+    return (
+      completedAt === null ||
+      performance.now() - completedAt >= WORKS_DETAIL_POST_LOADING_NAVIGATION_LOCK_MS
+    );
   };
 
   useEffect(() => {
@@ -830,6 +844,7 @@ export default function WorksDetailSection({
           view: currentView,
           deltaY: event.deltaY,
           nextSectionTop: getNextSectionTop(),
+          isNavigationUnlocked: isPostLoadingNavigationUnlocked(),
         })
       ) {
         event.preventDefault();
@@ -951,6 +966,7 @@ export default function WorksDetailSection({
           view: viewRef.current,
           deltaY: startY - currentY,
           nextSectionTop: getNextSectionTop(),
+          isNavigationUnlocked: isPostLoadingNavigationUnlocked(),
         })
       ) {
         event.preventDefault();

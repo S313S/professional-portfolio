@@ -3,7 +3,8 @@ export const WORKS_DETAIL_REVEAL_IMAGE_SRC = '/images/workDetail_bg.jpeg';
 export const WORKS_DETAIL_TRANSITION_START_EVENT = 'works-detail-transition:start';
 export const WORKS_DETAIL_RETURN_TO_LOBBY_EVENT = 'works-detail:return-to-lobby';
 export const WORKS_DETAIL_LOADING_BOOTSTRAP_FALLBACK_MS = 20000;
-export const WORKS_DETAIL_LOADING_ANIMATION_FALLBACK_MS = 11500;
+export const WORKS_DETAIL_LOADING_ANIMATION_FALLBACK_MS = 18000;
+export const WORKS_DETAIL_POST_LOADING_NAVIGATION_LOCK_MS = 2400;
 export const WORKS_DETAIL_INTERACTIVE_REVEAL_PROGRESS = 1 / 1.35;
 export const WORKS_DETAIL_GALLERY_DESIGN_WIDTH = 1406;
 export const WORKS_DETAIL_GALLERY_DESIGN_HEIGHT = 755;
@@ -109,6 +110,7 @@ export interface WorksDetailNextSectionNavigationInput {
   view: WorksDetailView;
   deltaY: number;
   nextSectionTop: number | null;
+  isNavigationUnlocked?: boolean;
 }
 
 export interface WorksDetailSceneNavigationInput {
@@ -324,8 +326,10 @@ export function shouldAdvanceWorksDetailToNextSection({
   view,
   deltaY,
   nextSectionTop,
+  isNavigationUnlocked = true,
 }: WorksDetailNextSectionNavigationInput) {
   return (
+    isNavigationUnlocked &&
     phase === 'settled' &&
     view === 'entry' &&
     deltaY > 0 &&

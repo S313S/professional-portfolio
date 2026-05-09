@@ -181,6 +181,9 @@ test('renders the coding detail mode with a new background, draggable category c
       initialDetailMode="coding"
     />,
   );
+  const componentSource = readFileSync(new URL('./WorksDetailSection.tsx', import.meta.url), 'utf8');
+  const dataSource = readFileSync(new URL('../data.tsx', import.meta.url), 'utf8');
+  const codingProjectInterface = dataSource.match(/export interface CodingProjectCard \{[\s\S]*?\n\}/)?.[0] ?? '';
 
   assert.match(markup, /data-works-detail-detail-mode="coding"/);
   assert.match(markup, /data-detail-scene-panel="coding"/);
@@ -198,7 +201,21 @@ test('renders the coding detail mode with a new background, draggable category c
   assert.match(markup, /data-coding-category-card-draggable="false"/);
   assert.match(markup, /data-coding-project-grid="workflow"/);
   assert.match(markup, /data-coding-project-card=/);
-  assert.match(markup, /target="_blank"/);
+  assert.match(markup, /data-coding-project-expanded="false"/);
+  assert.match(markup, /aria-expanded="false"/);
+  assert.doesNotMatch(markup, /target="_blank"/);
+  assert.match(componentSource, /activeCodingProjectId/);
+  assert.match(componentSource, /data-coding-project-expanded/);
+  assert.match(componentSource, /project\.detail\.problem/);
+  assert.match(componentSource, /project\.detail\.approach/);
+  assert.match(componentSource, /project\.detail\.outcome/);
+  assert.doesNotMatch(componentSource, /project\.detail\.role/);
+  assert.doesNotMatch(componentSource, /project\.detail\.deliverables/);
+  assert.match(dataSource, /problem:/);
+  assert.match(dataSource, /approach:/);
+  assert.match(dataSource, /outcome:/);
+  assert.doesNotMatch(codingProjectInterface, /role:/);
+  assert.doesNotMatch(codingProjectInterface, /deliverables:/);
   assert.doesNotMatch(markup, /Design in action/i);
   assert.doesNotMatch(markup, /Six selected builds from the/i);
   const codingCards = markup.match(/data-coding-project-card=/g) ?? [];
