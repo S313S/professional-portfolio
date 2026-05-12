@@ -80,7 +80,7 @@ function createBrowserSupabaseClient(config: FriendBookRemoteConfig): FriendBook
     return null;
   }
 
-  return createClient(config.url!, config.publishableKey!);
+  return createClient(config.url!, config.publishableKey!) as unknown as FriendBookSupabaseLike;
 }
 
 export function createFriendBookSupabaseRepository(options: {
