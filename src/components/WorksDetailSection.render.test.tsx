@@ -51,17 +51,17 @@ test('renders the in-page detail view with a close button when the left entry ha
   assert.match(markup, /data-scene-active="true"/);
   assert.match(markup, />04</);
   assert.match(markup, />05</);
-  assert.match(markup, />06</);
-  assert.match(markup, />07</);
-  assert.match(markup, />08</);
   assert.match(markup, /data-active="true"/);
+  assert.match(markup, /data-slot="3" data-active="true"[^>]*aria-label="Open First Light in AI project"/);
+  assert.match(markup, /data-active="true"[^>]*aria-label="Open First Light in AI project"/);
+  assert.match(markup, /\/images\/VisualWorks\/VisualWorks_Myfirst_cg\.png/);
   assert.match(markup, new RegExp(personalData.featuredWorks[1]!.title));
   assert.match(markup, new RegExp(personalData.featuredWorks[2]!.title));
   assert.match(markup, new RegExp(personalData.featuredWorks[3]!.title));
   assert.match(
     markup,
     new RegExp(
-      personalData.featuredWorks[2]!.subtitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+      personalData.featuredWorks[1]!.subtitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
     ),
   );
   assert.doesNotMatch(markup, />SANOFI</);
@@ -86,25 +86,57 @@ test('detail markup includes a fullscreen project scene with the active work ima
   assert.match(markup, /works-detail-project__panel/);
   assert.match(markup, /works-detail-project__backdrop/);
   assert.match(markup, /works-detail-project__media/);
+  assert.match(markup, /data-project-image-mode="contained"/);
+  assert.match(markup, /works-detail-project__background-image/);
   assert.match(markup, /works-detail-project__image/);
   assert.match(markup, /works-detail-project__meta/);
   assert.match(
     markup,
-    new RegExp(personalData.featuredWorks[3]!.eyebrow.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
+    new RegExp(personalData.featuredWorks[0]!.eyebrow.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
   );
   assert.match(
     markup,
-    new RegExp(personalData.featuredWorks[3]!.title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
+    new RegExp(personalData.featuredWorks[0]!.title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
   );
   assert.match(
     markup,
     new RegExp(
-      personalData.featuredWorks[3]!.description.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+      personalData.featuredWorks[0]!.description.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
     ),
   );
   assert.doesNotMatch(markup, />Get In Touch</);
   assert.doesNotMatch(markup, />Say Hello</);
   assert.doesNotMatch(markup, />MENU</);
+});
+
+test('uses contained project media for the two vertical works that need full-image previews', () => {
+  const componentSource = readFileSync('src/components/WorksDetailSection.tsx', 'utf8');
+
+  assert.match(componentSource, /WORKS_DETAIL_CONTAINED_PROJECT_IMAGE_SRCS/);
+  assert.match(componentSource, /\/images\/VisualWorks\/VisualWorks_Myfirst_cg\.png/);
+  assert.match(componentSource, /\/images\/VisualWorks\/VisualWorks_TakePhoto_Night\.jpeg/);
+  assert.match(componentSource, /data-project-image-mode=\{shouldContainProjectImage \? 'contained' : 'cover'\}/);
+});
+
+test('uses the real VisualMemory works in narrative order', () => {
+  assert.equal(personalData.featuredWorks.length, 10);
+  assert.deepEqual(
+    personalData.featuredWorks.map((work) => work.image),
+    [
+      '/images/VisualWorks/VisualWorks_Myfirst_cg.png',
+      '/images/VisualWorks/VisualWorks_MJ_Ocean.jpeg',
+      '/images/VisualWorks/VisualWorks_MJ_Earth.png',
+      '/images/VisualWorks/VisualWorks_ComfyUI_theLazygirl.png',
+      '/images/VisualWorks/VisualWorks_OilPatiner.png',
+      '/images/VisualWorks/VisualWorks_circlVideo.png',
+      '/images/VisualWorks/VisualWorks_happyNewYork.png',
+      '/images/VisualWorks/VisualWorks_IP_Mearge.jpeg',
+      '/images/VisualWorks/VisualWorks_TakePhoto.jpeg',
+      '/images/VisualWorks/VisualWorks_TakePhoto_Night.jpeg',
+    ],
+  );
+  assert.equal(personalData.featuredWorks[0]!.title, 'First Light in AI');
+  assert.equal(personalData.featuredWorks[9]!.title, 'Night Sense');
 });
 
 test('keeps the left entry button clickable once the reveal is visually complete', () => {
@@ -353,6 +385,22 @@ test('keeps the works gallery dashed SVG grid and socials styling aligned with t
   );
   assert.match(
     cssSource,
+    /\.works-detail-project__background-image\s*\{[^}]*filter:\s*blur\(24px\);/,
+  );
+  assert.match(
+    cssSource,
+    /\.works-detail-project__background-image\s*\{[^}]*pointer-events:\s*none;/,
+  );
+  assert.match(
+    cssSource,
+    /\.works-detail-project__media\[data-project-image-mode='contained'\]\s+\.works-detail-project__image\s*\{[^}]*pointer-events:\s*none;/,
+  );
+  assert.match(
+    cssSource,
+    /\.works-detail-project__media\[data-project-image-mode='contained'\]\s+\.works-detail-project__image\s*\{[^}]*object-fit:\s*contain;/,
+  );
+  assert.match(
+    cssSource,
     /\.works-detail-project__meta\s*\{[\s\S]*inset:\s*auto 0 0 0;[\s\S]*background:/,
   );
   assert.match(
@@ -548,6 +596,11 @@ test('locks the gallery cards, corridor, and background grid to the same 45 degr
     componentSource,
     /const diagonalOffset = \(activeProjectIndex - WORKS_DETAIL_DEFAULT_ACTIVE_INDEX\) \* 18;/,
   );
+  assert.match(
+    componentSource,
+    /const projectIndex = activeProjectIndex \+ slotIndex - WORKS_DETAIL_ACTIVE_SLOT_INDEX;/,
+  );
+  assert.doesNotMatch(componentSource, /const startIndex = Math\.min\(/);
   assert.doesNotMatch(
     componentSource,
     /gsap\.to\(trackRef\.current,\s*\{[\s\S]*x:\s*-diagonalOffset,[\s\S]*y:\s*diagonalOffset,[\s\S]*\}\);/,

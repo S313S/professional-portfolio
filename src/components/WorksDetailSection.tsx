@@ -50,7 +50,11 @@ const WORKS_DETAIL_STAGE_SOCIALS = ['f', 't', '▶'] as const;
 const WORKS_DETAIL_CARD_LABEL_OFFSET = 4;
 const WORKS_DETAIL_VISIBLE_SLOT_COUNT = 5;
 const WORKS_DETAIL_ACTIVE_SLOT_INDEX = 3;
-const WORKS_DETAIL_DEFAULT_ACTIVE_INDEX = Math.max(personalData.featuredWorks.length - 2, 0);
+const WORKS_DETAIL_DEFAULT_ACTIVE_INDEX = 0;
+const WORKS_DETAIL_CONTAINED_PROJECT_IMAGE_SRCS = new Set([
+  '/images/VisualWorks/VisualWorks_Myfirst_cg.png',
+  '/images/VisualWorks/VisualWorks_TakePhoto_Night.jpeg',
+]);
 const WORKS_DETAIL_DEFAULT_CODING_CATEGORY_ID: CodingCategoryId =
   personalData.codingCategories[0]?.id ?? 'workflow';
 const WORKS_DETAIL_CODING_DRAG_THRESHOLD_PX = 56;
@@ -296,7 +300,10 @@ function hasCodingProjectLink(link: string) {
   return trimmedLink !== '' && trimmedLink !== '#';
 }
 
-function getGallerySlotStyle(slotIndex: number, backgroundImage?: string): WorksDetailCustomProperties {
+function getGallerySlotStyle(
+  slotIndex: number,
+  backgroundImage?: string,
+): WorksDetailCustomProperties {
   const slotLayout: WorksDetailGallerySlotLayout =
     WORKS_DETAIL_GALLERY_LAYOUT.slots[slotIndex] ?? WORKS_DETAIL_GALLERY_LAYOUT.slots[0];
   const slotStyle: WorksDetailCustomProperties = {
@@ -494,6 +501,8 @@ export default function WorksDetailSection({
   const isEntryStagePinnedToSection = phase === 'settled' && view === 'entry';
 
   const activeProject = personalData.featuredWorks[activeProjectIndex] ?? personalData.featuredWorks[0];
+  const activeProjectImageSrc = activeProject?.image ?? WORKS_DETAIL_REVEAL_IMAGE_SRC;
+  const shouldContainProjectImage = WORKS_DETAIL_CONTAINED_PROJECT_IMAGE_SRCS.has(activeProjectImageSrc);
   const previousProject =
     activeProjectIndex > 0 ? personalData.featuredWorks[activeProjectIndex - 1] : null;
   const nextProject =
@@ -1627,9 +1636,21 @@ export default function WorksDetailSection({
                     </div>
 
                     <div className="works-detail-project__backdrop" />
-                    <div className="works-detail-project__media" data-project-animate="media">
+                    <div
+                      className="works-detail-project__media"
+                      data-project-animate="media"
+                      data-project-image-mode={shouldContainProjectImage ? 'contained' : 'cover'}
+                    >
+                      {shouldContainProjectImage ? (
+                        <img
+                          src={activeProjectImageSrc}
+                          alt=""
+                          aria-hidden="true"
+                          className="works-detail-project__background-image"
+                        />
+                      ) : null}
                       <img
-                        src={activeProject?.image ?? WORKS_DETAIL_REVEAL_IMAGE_SRC}
+                        src={activeProjectImageSrc}
                         alt={activeProject?.title ?? 'Selected project'}
                         className="works-detail-project__image"
                       />
