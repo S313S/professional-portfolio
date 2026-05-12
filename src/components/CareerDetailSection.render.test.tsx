@@ -30,7 +30,7 @@ test('renders the career detail stage with category-scoped bookmarks and default
   assert.match(markup, /data-career-detail-drag-track="desktop"/);
   assert.match(
     markup,
-    /data-career-detail-drag-track="desktop"[^>]*class="[^"]*left-\[32%\][^"]*w-\[42%\][^"]*"/,
+    /data-career-detail-drag-track="desktop"[^>]*class="[^"]*left-\[16%\][^"]*w-\[42%\][^"]*"/,
   );
   assert.match(markup, /data-career-detail-drag-thumb="desktop"/);
   assert.match(markup, /data-career-detail-drag-thumb-icon="desktop"/);
@@ -40,9 +40,10 @@ test('renders the career detail stage with category-scoped bookmarks and default
   assert.match(markup, /data-career-detail-cta-hint-visible="false"/);
   assert.match(markup, /aria-label="Open works lobby section"/);
   assert.match(markup, /Click to continue/);
-  assert.match(markup, /data-career-detail-record-button="sharing-essay-first-post"/);
-  assert.match(markup, /data-career-detail-record-button="sharing-essay-pattern-library"/);
-  assert.match(markup, /data-career-detail-record-button="sharing-essay-editorial-rhythm"/);
+  assert.match(markup, /data-career-detail-record-button="sharing-ai-visual-lab"/);
+  assert.match(markup, /data-career-detail-record-button="sharing-travel-journals"/);
+  assert.match(markup, /data-career-detail-record-button="sharing-brand-site"/);
+  assert.match(markup, /data-career-detail-record-button="sharing-public-notes"/);
   assert.doesNotMatch(markup, /data-career-detail-record-button="work-system-campaign-ops"/);
   assert.doesNotMatch(markup, /data-career-detail-record-button="industry-signal-ai-adoption"/);
   assert.doesNotMatch(markup, />CLASSIFIED</);
@@ -51,15 +52,17 @@ test('renders the career detail stage with category-scoped bookmarks and default
   assert.doesNotMatch(markup, /data-career-detail-divider="chapter-ii"/);
   assert.doesNotMatch(markup, /data-career-detail-icon="shield"/);
   assert.doesNotMatch(markup, /data-career-detail-icon="anchor"/);
-  assert.match(markup, /April 12th, 2021/);
+  assert.match(markup, /January 8th, 2025/);
   assert.match(markup, /Dispatch Log I: Sharing Journey/);
-  assert.match(markup, /Publishing Before It Felt Polished/);
-  assert.match(markup, /I started sharing small working notes before they felt complete/);
-  assert.match(markup, /The First Audience Was Future Me/);
-  assert.match(markup, /Marked after the first month of consistent public notes\./);
-  assert.match(markup, /First Public Notes/);
-  assert.match(markup, /Pattern Library/);
-  assert.match(markup, /Editorial Rhythm/);
+  assert.match(markup, /Visual Tests Became Workflows/);
+  assert.match(markup, /I treated AI images and short videos as small field tests/);
+  assert.match(markup, /Reproducibility Over Novelty/);
+  assert.match(markup, /Indexed from repeatable AIGC image and video experiments\./);
+  assert.match(markup, /Visual Lab/);
+  assert.match(markup, /Travel Journals/);
+  assert.match(markup, /Brand Website/);
+  assert.match(markup, /Public Notes/);
+  assert.doesNotMatch(markup, /Publishing Before It Felt Polished/);
   assert.doesNotMatch(markup, /Campaign Ops Foundations/);
   assert.doesNotMatch(markup, /AI Adoption Signals/);
   assert.match(
@@ -140,18 +143,18 @@ test('maps each category to its dedicated desktop archival card image', () => {
   assert.match(componentSource, /asideImageSrc:\s*'\/images\/careerDetail_litteleBg_03\.png'/);
 });
 
-test('keeps the default sharing bookmark rail on its original distributed spacing', () => {
+test('keeps the default bookmark rail on compact four-entry spacing', () => {
   const markup = renderToStaticMarkup(<CareerDetailSection />);
 
   assert.match(markup, /data-career-detail-record-rail="desktop"/);
-  assert.match(markup, /data-career-detail-record-rail-layout="distributed"/);
+  assert.match(markup, /data-career-detail-record-rail-layout="compact"/);
   assert.match(
     markup,
-    /data-career-detail-record-rail="desktop"[^>]*class="[^"]*justify-between[^"]*"/,
+    /data-career-detail-record-rail="desktop"[^>]*class="[^"]*justify-start[^"]*gap-\[0\.74rem\][^"]*"/,
   );
   assert.doesNotMatch(
     markup,
-    /data-career-detail-record-rail="desktop"[^>]*class="[^"]*gap-\[1\.2rem\][^"]*"/,
+    /data-career-detail-record-rail="desktop"[^>]*class="[^"]*justify-between[^"]*"/,
   );
 });
 
@@ -246,14 +249,18 @@ test('keeps bookmark labels aligned to the shared 2-3 word theme-label rhythm ac
   );
 
   assert.deepEqual(bookmarkLabels, [
-    'First Public Notes',
-    'Pattern Library',
-    'Editorial Rhythm',
-    'Campaign Ops',
-    'Process Design',
-    'AI Delivery',
-    'Adoption Signals',
-    'Creator Commerce',
+    'Visual Lab',
+    'Travel Journals',
+    'Brand Website',
+    'Public Notes',
+    'Data Operations',
+    'AI Evaluation',
+    'Cross-Border AI',
+    'New Media AI',
+    'Implementation Reality',
+    'AI Marketing',
+    'Emotional Consumption',
+    'Worker Positioning',
   ]);
 
   for (const label of bookmarkLabels) {
@@ -264,15 +271,31 @@ test('keeps bookmark labels aligned to the shared 2-3 word theme-label rhythm ac
   assert.doesNotMatch(componentSource, /Campaign Ops Foundations/);
   assert.doesNotMatch(componentSource, /AI Delivery Systems/);
   assert.doesNotMatch(componentSource, /AI Adoption Signals/);
+  assert.doesNotMatch(componentSource, /ZHIWEN TECH/);
+  assert.doesNotMatch(componentSource, /XIAOTI TRAVEL/);
 });
 
-test('uses the fixed-gap bookmark rail only for non-sharing categories', () => {
+test('uses one compact bookmark rail for four entries in every category', () => {
   const componentSource = readFileSync(new URL('./CareerDetailSection.tsx', import.meta.url), 'utf8');
 
-  assert.match(componentSource, /const isSharingCategory = selectedCategory\.key === 'sharingJourney';/);
-  assert.match(componentSource, /data-career-detail-record-rail-layout=\{isSharingCategory \? 'distributed' : 'fixed-gap'\}/);
-  assert.match(componentSource, /justify-between/);
-  assert.match(componentSource, /justify-start gap-\[1\.2rem\] pt-\[0\.6rem\]/);
+  assert.doesNotMatch(componentSource, /const isSharingCategory = selectedCategory\.key === 'sharingJourney';/);
+  assert.match(componentSource, /data-career-detail-record-rail-layout="compact"/);
+  assert.match(componentSource, /justify-start gap-\[0\.74rem\] pt-\[0\.2rem\]/);
+  assert.match(componentSource, /h-\[18\.5%\]/);
+  assert.doesNotMatch(componentSource, /justify-start gap-\[1\.2rem\] pt-\[0\.6rem\]/);
+});
+
+test('contains concise cooperation-facing content for all three archive categories', () => {
+  const componentSource = readFileSync(new URL('./CareerDetailSection.tsx', import.meta.url), 'utf8');
+
+  assert.match(componentSource, /headline:\s*'Visual Tests Became Workflows'/);
+  assert.match(componentSource, /headline:\s*'Consumer AI Needed Evaluation'/);
+  assert.match(componentSource, /headline:\s*'Automation Needs A Business Spine'/);
+  assert.match(componentSource, /headline:\s*'Marketing Is Discovery Work'/);
+  assert.match(componentSource, /cost by roughly 100K RMB/);
+  assert.match(componentSource, /delivery acceptance by 17%/);
+  assert.match(componentSource, /hotline congestion by 5%/);
+  assert.match(componentSource, /conversion lift by 17%/);
 });
 
 test('uses a single page-switch position and size config across desktop widths', () => {

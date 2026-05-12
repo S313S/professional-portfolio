@@ -8,8 +8,8 @@ test('renders the career detail section directly for local debug routing', () =>
   const markup = renderToStaticMarkup(<CareerDetailDebugPage />);
 
   assert.match(markup, /id="career-detail-section"/);
-  assert.match(markup, /April 12th, 2021/);
-  assert.match(markup, /Publishing Before It Felt Polished/);
+  assert.match(markup, /January 8th, 2025/);
+  assert.match(markup, /Visual Tests Became Workflows/);
   assert.match(markup, /data-career-detail-selector="desktop"/);
   assert.match(markup, /data-career-detail-record-rail="desktop"/);
   assert.doesNotMatch(markup, /id="works-detail-section"/);

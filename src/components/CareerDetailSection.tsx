@@ -210,46 +210,60 @@ const CAREER_DETAIL_CATEGORIES: CareerDetailCategory[] = [
     asideImageSrc: '/images/careerDetail_litteleBg_01.png',
     entries: [
       {
-        id: 'sharing-essay-first-post',
-        bookmarkLabel: 'First Public Notes',
-        metaLine: 'Field Note: Public Writing Practice',
-        dateTitle: 'April 12th, 2021',
+        id: 'sharing-ai-visual-lab',
+        bookmarkLabel: 'Visual Lab',
+        metaLine: 'Field Note: AIGC Visual Practice',
+        dateTitle: 'January 8th, 2025',
         eyebrow: 'Dispatch Log I: Sharing Journey',
-        headline: 'Publishing Before It Felt Polished',
+        headline: 'Visual Tests Became Workflows',
         body:
-          'I started sharing small working notes before they felt complete, using public posts as a way to capture decisions, questions, and patterns while they were still fresh enough to be useful.',
-        supportingTitle: 'The First Audience Was Future Me',
+          'I treated AI images and short videos as small field tests, not one-off tricks. Each experiment tracked inputs, tools, and repeatable controls so the result could become a workflow.',
+        supportingTitle: 'Reproducibility Over Novelty',
         supportingBody:
-          'Those early entries worked less like polished essays and more like breadcrumb trails. They helped me revisit what I had tried, what failed, and which ideas deserved another pass.',
-        annotation: 'Marked after the first month of consistent public notes.',
+          'The useful signal was whether a visual method could be repeated, adjusted, and explained to someone else without relying on luck.',
+        annotation: 'Indexed from repeatable AIGC image and video experiments.',
       },
       {
-        id: 'sharing-essay-pattern-library',
-        bookmarkLabel: 'Pattern Library',
-        metaLine: 'Archive: Audience Pattern Tracking',
-        dateTitle: 'September 3rd, 2021',
+        id: 'sharing-travel-journals',
+        bookmarkLabel: 'Travel Journals',
+        metaLine: 'Archive: Personal Creation Notes',
+        dateTitle: 'May 18th, 2025',
         eyebrow: 'Dispatch Log II: Sharing Journey',
-        headline: 'Turning Repeated Questions Into Reusable Notes',
+        headline: 'Turning Trips Into Artifacts',
         body:
-          'As more people responded, I stopped treating every conversation as a one-off. Repeated questions became a pattern library that shaped what I wrote next and how I framed each lesson.',
-        supportingTitle: 'Useful Notes Need Retrieval Paths',
+          'Travel photos, ticket stubs, and quick notes became digital journals. The value was not technical display, but turning lived material into something warm enough for others to remember.',
+        supportingTitle: 'Emotion Was The Medium',
         supportingBody:
-          'I learned to tag ideas by situation instead of mood so someone could quickly find the note that matched their own transition, not just admire the writing.',
-        annotation: 'Indexed after recurring reader questions began clustering around the same themes.',
+          'Those personal pieces confirmed that AI craft works best when it carries memory, mood, and a clear reason to exist.',
+        annotation: 'Filed from AI-generated travel and personal creation experiments.',
       },
       {
-        id: 'sharing-essay-editorial-rhythm',
-        bookmarkLabel: 'Editorial Rhythm',
-        metaLine: 'Routine: adventure for sharing',
-        dateTitle: 'February 18th, 2022',
+        id: 'sharing-brand-site',
+        bookmarkLabel: 'Brand Website',
+        metaLine: 'Build Log: Personal Brand System',
+        dateTitle: 'March 24th, 2026',
         eyebrow: 'Dispatch Log III: Sharing Journey',
-        headline: 'Building A Rhythm That Could Survive Busy Weeks',
+        headline: 'A Portfolio Became A System',
         body:
-          'Once the novelty wore off, the real work became consistency. I built a lighter editorial cadence that could survive deadlines and still produce something clear, timely, and worth keeping.',
-        supportingTitle: 'Small Systems Protected The Voice',
+          'The personal website began as a visual portfolio and became a testbed for AI coding, design judgment, and structured self-presentation. The point was to make ability inspectable.',
+        supportingTitle: 'Taste Needed Structure',
         supportingBody:
-          'Templates, capture habits, and shorter review loops made it possible to publish without waiting for perfect conditions, which kept the writing alive during heavier work cycles.',
-        annotation: 'Filed after the sharing habit became part of the week instead of a special event.',
+          'Working through layout, assets, and interaction bugs taught me that aesthetic ambition only matters when it survives engineering maintenance.',
+        annotation: 'Logged from the portfolio site and HR-facing assistant build.',
+      },
+      {
+        id: 'sharing-public-notes',
+        bookmarkLabel: 'Public Notes',
+        metaLine: 'Routine: Public Thinking Notes',
+        dateTitle: 'April 26th, 2026',
+        eyebrow: 'Dispatch Log IV: Sharing Journey',
+        headline: 'Publishing As Calibration',
+        body:
+          'Short posts on AI tools, workflows, and career shifts became a way to test thinking in public. Each note forced a cleaner claim than private reading alone could produce.',
+        supportingTitle: 'Output Sharpened Input',
+        supportingBody:
+          'The audience mattered, but the deeper value was retrieval: public notes made decisions, doubts, and patterns easier to revisit later.',
+        annotation: 'Referenced by public notes and the 2050 sharing session.',
       },
     ],
   },
@@ -260,46 +274,60 @@ const CAREER_DETAIL_CATEGORIES: CareerDetailCategory[] = [
     asideImageSrc: '/images/careerDetail_litteleBg_02.png',
     entries: [
       {
-        id: 'work-system-campaign-ops',
-        bookmarkLabel: 'Campaign Ops',
-        metaLine: 'Work Log: Campaign Operations',
-        dateTitle: 'June 7th, 2022',
+        id: 'work-ping-an-data-ops',
+        bookmarkLabel: 'Data Operations',
+        metaLine: 'Work Log: Business Data Systems',
+        dateTitle: 'June 1st, 2021',
         eyebrow: 'Dispatch Log I: Work Experience',
-        headline: 'Learning To Make Fast Work Legible',
+        headline: 'Data Had To Serve Action',
         body:
-          'The first stretch of execution work taught me that speed alone was not enough. Teams moved faster when process, ownership, and status were visible without requiring a meeting to reconstruct them.',
-        supportingTitle: 'Clarity Reduced Rework',
+          'At Ping An, data work became useful only when it changed business handling. User profiles, labels, and a small Q&A assistant connected analysis to service and marketing action.',
+        supportingTitle: 'Metrics Anchored Trust',
         supportingBody:
-          'The most valuable changes were simple: tighter briefs, sharper handoffs, and clearer definitions of done that made collaborative work easier to inspect and trust.',
-        annotation: 'Logged during repeated campaign delivery cycles.',
+          'The clearest proof points were practical: hotline congestion by 5% and a marketing conversion lift by 17%.',
+        annotation: 'Filed from user data operations and business-side data applications.',
       },
       {
-        id: 'work-system-process-design',
-        bookmarkLabel: 'Process Design',
-        metaLine: 'Work Log: Workflow Design',
-        dateTitle: 'November 14th, 2023',
+        id: 'work-bytedance-ai-evaluation',
+        bookmarkLabel: 'AI Evaluation',
+        metaLine: 'Work Log: Consumer AI Operations',
+        dateTitle: 'March 1st, 2024',
         eyebrow: 'Dispatch Log II: Work Experience',
-        headline: 'Designing Workflows That Other People Could Carry',
+        headline: 'Consumer AI Needed Evaluation',
         body:
-          'As projects became more cross-functional, I shifted from doing everything directly to shaping the workflow itself, so progress could continue even when the original operator stepped away.',
-        supportingTitle: 'Good Systems Explain Themselves',
+          'At ByteDance, I learned that consumer AI cannot live on demos. It needs recognition standards, evaluation loops, and agent workflows that keep model behavior readable to operators.',
+        supportingTitle: 'Standards Made Models Legible',
         supportingBody:
-          'Documentation, checkpoints, and smaller decision gates made the work easier to inherit. That lowered friction for collaborators and exposed problems earlier.',
-        annotation: 'Compiled after several rounds of workflow redesign.',
+          'Prompting mattered, but the durable work was turning fuzzy model output into reviewable cases, reusable criteria, and deployable operating habits.',
+        annotation: 'Indexed from Douyin AI and Doubao Flow Agent work.',
       },
       {
-        id: 'work-system-ai-delivery',
-        bookmarkLabel: 'AI Delivery',
-        metaLine: 'Work Log: AI-Enabled Execution',
-        dateTitle: 'August 5th, 2024',
+        id: 'work-cross-border-ai',
+        bookmarkLabel: 'Cross-Border AI',
+        metaLine: 'Work Log: Cross-Border E-Commerce',
+        dateTitle: 'March 3rd, 2025',
         eyebrow: 'Dispatch Log III: Work Experience',
-        headline: 'Using AI To Shorten The Path From Idea To Output',
+        headline: 'Visual Workflows Saved Labor',
         body:
-          'The practical value of AI showed up when it reduced repetitive coordination work and made iteration cheaper. I focused on fitting it into delivery systems instead of treating it as a separate novelty.',
-        supportingTitle: 'The Workflow Was The Real Product',
+          'In cross-border e-commerce, AI value appeared when repeat visual tasks became workflow assets: print extraction, product replication, and digital-human marketing clips moved faster.',
+        supportingTitle: 'Outputs Needed Operating Loops',
         supportingBody:
-          'Prompting mattered, but the lasting gains came from how tasks were staged, reviewed, and handed off between people and tools.',
-        annotation: 'Recorded after AI-assisted delivery became part of the baseline workflow.',
+          'The work reduced cost by roughly 100K RMB, shortened operations by about 20%, and lifted designer daily output by 40%.',
+        annotation: 'Filed from ComfyUI, n8n, and multi-model delivery work.',
+      },
+      {
+        id: 'work-new-media-ai-delivery',
+        bookmarkLabel: 'New Media AI',
+        metaLine: 'Work Log: New Media Delivery',
+        dateTitle: 'October 1st, 2025',
+        eyebrow: 'Dispatch Log IV: Work Experience',
+        headline: 'Delivery Needed Translation',
+        body:
+          'In new media work, the hardest part was translating vague needs into usable tasks. AI tools helped only after briefs, references, and review paths were made concrete.',
+        supportingTitle: 'Systems Carried The Work',
+        supportingBody:
+          'Tools like OpenClaw and visual-bridge turned scattered requests into repeatable flows, improving cross-team delivery acceptance by 17%.',
+        annotation: 'Logged from AI tool deployment, training, scripts, and content delivery.',
       },
     ],
   },
@@ -310,32 +338,60 @@ const CAREER_DETAIL_CATEGORIES: CareerDetailCategory[] = [
     asideImageSrc: '/images/careerDetail_litteleBg_03.png',
     entries: [
       {
-        id: 'industry-signal-ai-adoption',
-        bookmarkLabel: 'Adoption Signals',
-        metaLine: 'Research Log: Adoption Patterns',
-        dateTitle: 'January 22nd, 2024',
+        id: 'industry-ai-implementation',
+        bookmarkLabel: 'Implementation Reality',
+        metaLine: 'Research Log: AI Implementation',
+        dateTitle: 'March 14th, 2026',
         eyebrow: 'Dispatch Log I: Industry Knowledge',
-        headline: 'Watching Where AI Moved From Demo To Habit',
+        headline: 'Automation Needs A Business Spine',
         body:
-          'The clearest signals did not come from launch events. They came from teams quietly changing their weekly routines, replacing manual steps, and treating AI as workflow infrastructure instead of spectacle.',
-        supportingTitle: 'Repeated Usage Beat Novelty',
+          'Most AI adoption problems are not tool problems first. They are business translation problems: unclear pain, weak data, missing owners, and no path from demo to routine.',
+        supportingTitle: 'Demos Are Not Adoption',
         supportingBody:
-          'I learned to look for behavior that persisted after the announcement cycle ended. Stable habits revealed more about product value than momentary excitement.',
-        annotation: 'Cross-referenced against repeated workflow changes and operator notes.',
+          'The real moat is taking one concrete business flow from zero to one and making it reliable enough for others to use.',
+        annotation: 'Cross-referenced from AI implementation notes and OPC discussions.',
       },
       {
-        id: 'industry-signal-creator-commerce',
-        bookmarkLabel: 'Creator Commerce',
-        metaLine: 'Research Log: Distribution Economics',
-        dateTitle: 'May 30th, 2024',
+        id: 'industry-ai-marketing',
+        bookmarkLabel: 'AI Marketing',
+        metaLine: 'Research Log: New Media Systems',
+        dateTitle: 'April 25th, 2026',
         eyebrow: 'Dispatch Log II: Industry Knowledge',
-        headline: 'Where Content, Distribution, And Revenue Began To Merge',
+        headline: 'Marketing Is Discovery Work',
         body:
-          'I tracked how creators and small teams started designing content with downstream conversion in mind from the beginning, which made the boundary between media, product, and commerce noticeably thinner.',
-        supportingTitle: 'Distribution Changed The Brief',
+          'My current read of AI marketing is simple: buyers must know what they want, where to find it, and why to trust the seller. AI can accelerate each step.',
+        supportingTitle: 'Search Meets Social',
         supportingBody:
-          'Once distribution economics shaped what got made, product thinking had to account for channels, audience expectations, and monetization much earlier in the process.',
-        annotation: 'Filed after comparing creator workflows, launch patterns, and channel behavior.',
+          'Useful systems combine social content, search exposure, sales paths, and brand memory instead of treating posts as isolated creative output.',
+        annotation: 'Filed from the 3SB marketing notes and new media operation research.',
+      },
+      {
+        id: 'industry-emotional-consumption',
+        bookmarkLabel: 'Emotional Consumption',
+        metaLine: 'Research Log: Emotional Economy',
+        dateTitle: 'May 12th, 2026',
+        eyebrow: 'Dispatch Log III: Industry Knowledge',
+        headline: 'Emotion Became A Market',
+        body:
+          'Emotional consumption explains why small visual goods, personal gifts, and creator-led products can matter. People are not only buying function; they are buying resonance.',
+        supportingTitle: 'AI Expands Production',
+        supportingBody:
+          'My bet is that AI will amplify emotional producers by lowering production friction, especially in marketing, new media, and youth-facing scenes.',
+        annotation: 'Referenced from emotional economy and target-sector notes.',
+      },
+      {
+        id: 'industry-worker-positioning',
+        bookmarkLabel: 'Worker Positioning',
+        metaLine: 'Research Log: AI Worker Positioning',
+        dateTitle: 'May 12th, 2026',
+        eyebrow: 'Dispatch Log IV: Industry Knowledge',
+        headline: 'Workers Need Systems',
+        body:
+          'When cheaper operators can produce similar AI chat output, differentiation has to move upstream. The valuable worker understands the business and builds durable systems.',
+        supportingTitle: 'Questions Become Processes',
+        supportingBody:
+          'The point is not to ask better one-off prompts, but to turn useful judgment into repeatable workflows that keep running.',
+        annotation: 'OpenClaw is treated here as a concrete answer, not a job title.',
       },
     ],
   },
@@ -544,7 +600,6 @@ export default function CareerDetailSection() {
   const selectedEntry = selectedEntryState.selectedEntry;
   const selectedEntryIndex = selectedEntryState.selectedEntryIndex;
   const isCurrentCategoryEmpty = selectedEntry === null;
-  const isSharingCategory = selectedCategory.key === 'sharingJourney';
   const shouldShowPageSwitchCta =
     hasAttemptedDownwardScroll && !hasActivatedPageSwitchRef.current && isCtaSectionActive;
   const shouldShowPageSwitchHint = shouldShowPageSwitchCta && !isPageSwitchHintHovered;
@@ -1183,7 +1238,7 @@ export default function CareerDetailSection() {
               data-career-detail-drag-thumb="desktop"
               style={selectorThumbStyle}
               className={joinClasses(
-                'absolute left-1/2 flex h-[24%] w-[78%] -translate-x-1/2 -translate-y-1/2 items-center justify-center transition-[top,transform] duration-300',
+                'absolute left-1/2 flex h-[18.5%] w-[92%] -translate-x-1/2 -translate-y-1/2 items-center justify-center transition-[top,transform] duration-300',
                 isSelectorDragging ? 'cursor-grabbing scale-[1.03]' : 'cursor-grab',
               )}
             >
@@ -1200,11 +1255,8 @@ export default function CareerDetailSection() {
 
           <div
             data-career-detail-record-rail="desktop"
-            data-career-detail-record-rail-layout={isSharingCategory ? 'distributed' : 'fixed-gap'}
-            className={joinClasses(
-              'absolute inset-y-[8%] right-[10%] z-20 flex w-[48%] flex-col items-center',
-              isSharingCategory ? 'justify-between' : 'justify-start gap-[1.2rem] pt-[0.6rem]',
-            )}
+            data-career-detail-record-rail-layout="compact"
+            className="absolute inset-y-[8%] right-[10%] z-20 flex w-[48%] flex-col items-center justify-start gap-[0.74rem] pt-[0.2rem]"
           >
             {selectedEntries.map((entry) => {
               const isSelected = entry.id === selectedEntryState.selectedEntryId;

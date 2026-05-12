@@ -30,12 +30,12 @@ const alignmentTolerancePx = 10;
     .click();
   await page.waitForTimeout(250);
 
-  await page.locator('[data-career-detail-record-button="industry-signal-creator-commerce"]').click();
+  await page.locator('[data-career-detail-record-button="industry-ai-marketing"]').click();
   await page.waitForTimeout(250);
 
   const metrics = await page.evaluate(() => {
     const selectedButton = document.querySelector(
-      '[data-career-detail-record-button="industry-signal-creator-commerce"][aria-pressed="true"]',
+      '[data-career-detail-record-button="industry-ai-marketing"][aria-pressed="true"]',
     );
     const thumb = document.querySelector('[data-career-detail-drag-thumb="desktop"]');
 

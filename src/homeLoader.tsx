@@ -10,8 +10,9 @@ import {
 import { friendBookFinalSectionData } from './data';
 import { WORKS_DETAIL_LOADING_SRC } from './components/WorksDetailSection.logic';
 import { portfolioAudioController } from './portfolioAudioController';
+import { COVER_AND_SELF_INTRO_AUDIO_SRC } from './App.logic';
 
-export type LoaderAssetKind = 'image' | 'video' | 'poster' | 'document';
+export type LoaderAssetKind = 'image' | 'video' | 'poster' | 'document' | 'audio';
 export type LoaderAssetStatus = 'pending' | 'loaded' | 'error';
 
 export interface LoaderAsset {
@@ -59,6 +60,13 @@ const dedupeLoaderAssets = (assets: LoaderAsset[]) => {
 };
 
 export const BLOCKING_HOME_LOADER_ASSETS: LoaderAsset[] = dedupeLoaderAssets([
+  createLoaderAsset(
+    'portfolio-cover-self-introduction-audio',
+    COVER_AND_SELF_INTRO_AUDIO_SRC,
+    'audio',
+    2,
+  ),
+
   createLoaderAsset('experience-hero-before-image', '/images/before.png', 'image', 3),
   createLoaderAsset('experience-hero-after-image', '/images/after.png', 'image', 3),
 
@@ -317,6 +325,51 @@ function preloadVideoAsset(
   };
 }
 
+function preloadAudioAsset(
+  asset: LoaderAsset,
+  updateStatus: (id: string, status: LoaderAssetStatus) => void,
+) {
+  const audio = document.createElement('audio');
+  let hasResolved = false;
+
+  const handleLoaded = () => {
+    if (hasResolved || audio.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
+      return;
+    }
+
+    hasResolved = true;
+    updateStatus(asset.id, 'loaded');
+  };
+
+  const handleError = () => {
+    if (hasResolved) {
+      return;
+    }
+
+    hasResolved = true;
+    updateStatus(asset.id, 'error');
+  };
+
+  audio.preload = 'auto';
+  audio.addEventListener('canplay', handleLoaded);
+  audio.addEventListener('canplaythrough', handleLoaded);
+  audio.addEventListener('loadeddata', handleLoaded);
+  audio.addEventListener('error', handleError);
+  audio.src = asset.url;
+  audio.load();
+  handleLoaded();
+
+  return () => {
+    audio.removeEventListener('canplay', handleLoaded);
+    audio.removeEventListener('canplaythrough', handleLoaded);
+    audio.removeEventListener('loadeddata', handleLoaded);
+    audio.removeEventListener('error', handleError);
+    audio.pause();
+    audio.removeAttribute('src');
+    audio.load();
+  };
+}
+
 function preloadDocumentAsset(
   asset: LoaderAsset,
   updateStatus: (id: string, status: LoaderAssetStatus) => void,
@@ -359,6 +412,10 @@ function preloadHomeLoaderAsset(
 
   if (asset.kind === 'video') {
     return preloadVideoAsset(asset, updateStatus);
+  }
+
+  if (asset.kind === 'audio') {
+    return preloadAudioAsset(asset, updateStatus);
   }
 
   return preloadImageAsset(asset, updateStatus);

@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { COVER_AND_SELF_INTRO_AUDIO_SRC } from './App.logic';
 import {
   BLOCKING_HOME_LOADER_ASSETS,
   createInitialHomeLoaderAssetStatuses,
@@ -35,6 +36,7 @@ test('allows the local home loader preview to be held open in development', () =
 test('blocks on direct section images, posters, and videos but not hidden interactive assets', () => {
   const assetUrls = BLOCKING_HOME_LOADER_ASSETS.map((asset) => asset.url);
 
+  assert.ok(assetUrls.includes(COVER_AND_SELF_INTRO_AUDIO_SRC));
   assert.ok(assetUrls.includes('/videos/窗帘飘动.mp4'));
   assert.ok(assetUrls.includes('/images/video-transition-poster.png'));
   assert.ok(assetUrls.includes('/images/bg_growpath.jpeg'));
@@ -47,6 +49,20 @@ test('blocks on direct section images, posters, and videos but not hidden intera
   assert.ok(!assetUrls.includes('/videos/Lofi-girl.mov'));
 
   assert.equal(new Set(assetUrls).size, assetUrls.length);
+});
+
+test('preloads the cover and self-introduction audio before opening the homepage', () => {
+  const coverAudioAsset = BLOCKING_HOME_LOADER_ASSETS.find(
+    (asset) => asset.url === COVER_AND_SELF_INTRO_AUDIO_SRC,
+  );
+
+  assert.deepEqual(coverAudioAsset, {
+    id: 'portfolio-cover-self-introduction-audio',
+    url: COVER_AND_SELF_INTRO_AUDIO_SRC,
+    kind: 'audio',
+    weight: 2,
+    blocking: true,
+  });
 });
 
 test('computes weighted progress from the current blocking asset states', () => {
