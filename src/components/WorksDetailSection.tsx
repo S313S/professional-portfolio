@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
+import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import gsap from 'gsap';
 
 import { personalData, type CodingCategoryId } from '../data';
@@ -46,7 +46,23 @@ const WORKS_DETAIL_RIGHT_BUTTON_SRC = '/images/workDetail_rigtht_icon.png';
 const WORKS_DETAIL_STAGE_BACKGROUND_SRC = '';
 const WORKS_DETAIL_CODING_BACKGROUND_SRC = '/images/careerDetail_bg.png';
 const WORKS_DETAIL_CODING_STAGE_BACKGROUND_SRC = '/images/career_bg.png';
-const WORKS_DETAIL_STAGE_SOCIALS = ['f', 't', '▶'] as const;
+const FEISHU_PORTFOLIO_URL =
+  'https://uixp8a9di3s.feishu.cn/docx/TLNpdBRkEoiOvkxnEQMcEy5rnLh';
+const XHS_PROFILE_CARD_SRC = '/images/xhsMainPage_Link.jpeg';
+const WORKS_DETAIL_STAGE_SOCIAL_LINKS = [
+  {
+    id: 'feishu',
+    label: 'f',
+    tooltip: 'See more work details in Feishu Docs',
+    href: FEISHU_PORTFOLIO_URL,
+  },
+  {
+    id: 'xiaohongshu',
+    label: 'x',
+    tooltip: 'Personal social media platform',
+  },
+] as const;
+const WORKS_DETAIL_STAGE_STATIC_SOCIAL_LABEL = '▶';
 const WORKS_DETAIL_CARD_LABEL_OFFSET = 4;
 const WORKS_DETAIL_VISIBLE_SLOT_COUNT = 5;
 const WORKS_DETAIL_ACTIVE_SLOT_INDEX = 3;
@@ -371,6 +387,7 @@ export default function WorksDetailSection({
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isTransitioningScene, setIsTransitioningScene] = useState(false);
+  const [isXhsCardOpen, setIsXhsCardOpen] = useState(false);
   const [galleryPlaneState, setGalleryPlaneState] = useState(() =>
     getWorksDetailGalleryPlaneState({
       viewportWidth: WORKS_DETAIL_GALLERY_DESIGN_WIDTH,
@@ -653,6 +670,24 @@ export default function WorksDetailSection({
       clearLoadingTimeout();
     };
   }, [phase, iframeKey]);
+
+  useEffect(() => {
+    if (!isXhsCardOpen) {
+      return undefined;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsXhsCardOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isXhsCardOpen]);
 
   useEffect(() => {
     if (phase === 'idle') {
@@ -1587,7 +1622,7 @@ export default function WorksDetailSection({
                     </div>
 
                     <div className="relative z-10 mt-auto flex flex-col gap-6">
-                      <div className="works-detail-stage__footer" aria-hidden="true">
+                      <div className="works-detail-stage__footer">
                         <div className="works-detail-stage__footer-left">
                           <span className="works-detail-stage__footer-line" />
                           <span className="works-detail-stage__brand">VisualMemory</span>
@@ -1609,13 +1644,88 @@ export default function WorksDetailSection({
                           </div>
                         </div>
                         <div className="works-detail-stage__footer-right">
-                          <span className="works-detail-stage__socials">
-                            {WORKS_DETAIL_STAGE_SOCIALS.join(' | ')}
+                          <span className="works-detail-stage__socials" aria-label="Portfolio links">
+                            {WORKS_DETAIL_STAGE_SOCIAL_LINKS.map((social, index) => (
+                              <Fragment key={social.id}>
+                                {index > 0 ? (
+                                  <span className="works-detail-stage__social-separator" aria-hidden="true">
+                                    |
+                                  </span>
+                                ) : null}
+                                {'href' in social ? (
+                                  <a
+                                    className="works-detail-stage__social-link"
+                                    href={social.href}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    aria-label={social.tooltip}
+                                    data-tooltip={social.tooltip}
+                                  >
+                                    {social.label}
+                                  </a>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    className="works-detail-stage__social-link"
+                                    aria-label={social.tooltip}
+                                    data-tooltip={social.tooltip}
+                                    onClick={() => {
+                                      setIsXhsCardOpen(true);
+                                    }}
+                                  >
+                                    {social.label}
+                                  </button>
+                                )}
+                              </Fragment>
+                            ))}
+                            <span className="works-detail-stage__social-separator" aria-hidden="true">
+                              |
+                            </span>
+                            <span className="works-detail-stage__social-static" aria-hidden="true">
+                              {WORKS_DETAIL_STAGE_STATIC_SOCIAL_LABEL}
+                            </span>
                           </span>
                           <span className="works-detail-stage__credits">CREDITS</span>
                         </div>
                       </div>
                     </div>
+                    {isXhsCardOpen ? (
+                      <div
+                        className="works-detail-xhs-modal"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="works-detail-xhs-modal-title"
+                        onClick={() => {
+                          setIsXhsCardOpen(false);
+                        }}
+                      >
+                        <div
+                          className="works-detail-xhs-modal__card"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                          }}
+                        >
+                          <div className="works-detail-xhs-modal__header">
+                            <h3 id="works-detail-xhs-modal-title">Personal social media platform</h3>
+                            <button
+                              type="button"
+                              className="works-detail-xhs-modal__close"
+                              aria-label="Close Xiaohongshu profile card"
+                              onClick={() => {
+                                setIsXhsCardOpen(false);
+                              }}
+                            >
+                              Close
+                            </button>
+                          </div>
+                          <img
+                            className="works-detail-xhs-modal__image"
+                            src={XHS_PROFILE_CARD_SRC}
+                            alt="Xiaohongshu profile QR code card"
+                          />
+                        </div>
+                      </div>
+                    ) : null}
                   </section>
 
                   <section
