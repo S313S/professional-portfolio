@@ -54,7 +54,7 @@ test('renders the in-page detail view with a close button when the left entry ha
   assert.match(markup, /data-active="true"/);
   assert.match(markup, /data-slot="3" data-active="true"[^>]*aria-label="Open First Light in AI project"/);
   assert.match(markup, /data-active="true"[^>]*aria-label="Open First Light in AI project"/);
-  assert.match(markup, /\/images\/VisualWorks\/VisualWorks_Myfirst_cg\.png/);
+  assert.match(markup, /\/images\/VisualWorks\/VisualWorks_Myfirst_cg\.jpeg/);
   assert.match(markup, new RegExp(personalData.featuredWorks[1]!.title));
   assert.match(markup, new RegExp(personalData.featuredWorks[2]!.title));
   assert.match(markup, new RegExp(personalData.featuredWorks[3]!.title));
@@ -113,7 +113,7 @@ test('uses contained project media for the two vertical works that need full-ima
   const componentSource = readFileSync('src/components/WorksDetailSection.tsx', 'utf8');
 
   assert.match(componentSource, /WORKS_DETAIL_CONTAINED_PROJECT_IMAGE_SRCS/);
-  assert.match(componentSource, /\/images\/VisualWorks\/VisualWorks_Myfirst_cg\.png/);
+  assert.match(componentSource, /\/images\/VisualWorks\/VisualWorks_Myfirst_cg\.jpeg/);
   assert.match(componentSource, /\/images\/VisualWorks\/VisualWorks_TakePhoto_Night\.jpeg/);
   assert.match(componentSource, /data-project-image-mode=\{shouldContainProjectImage \? 'contained' : 'cover'\}/);
 });
@@ -123,13 +123,13 @@ test('uses the real VisualMemory works in narrative order', () => {
   assert.deepEqual(
     personalData.featuredWorks.map((work) => work.image),
     [
-      '/images/VisualWorks/VisualWorks_Myfirst_cg.png',
+      '/images/VisualWorks/VisualWorks_Myfirst_cg.jpeg',
       '/images/VisualWorks/VisualWorks_MJ_Ocean.jpeg',
-      '/images/VisualWorks/VisualWorks_MJ_Earth.png',
-      '/images/VisualWorks/VisualWorks_ComfyUI_theLazygirl.png',
-      '/images/VisualWorks/VisualWorks_OilPatiner.png',
-      '/images/VisualWorks/VisualWorks_circlVideo.png',
-      '/images/VisualWorks/VisualWorks_happyNewYork.png',
+      '/images/VisualWorks/VisualWorks_MJ_Earth.jpeg',
+      '/images/VisualWorks/VisualWorks_ComfyUI_theLazygirl.jpeg',
+      '/images/VisualWorks/VisualWorks_OilPatiner.jpeg',
+      '/images/VisualWorks/VisualWorks_circlVideo.jpeg',
+      '/images/VisualWorks/VisualWorks_happyNewYork.jpeg',
       '/images/VisualWorks/VisualWorks_IP_Mearge.jpeg',
       '/images/VisualWorks/VisualWorks_TakePhoto.jpeg',
       '/images/VisualWorks/VisualWorks_TakePhoto_Night.jpeg',

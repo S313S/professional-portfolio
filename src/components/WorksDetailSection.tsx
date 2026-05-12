@@ -52,7 +52,7 @@ const WORKS_DETAIL_VISIBLE_SLOT_COUNT = 5;
 const WORKS_DETAIL_ACTIVE_SLOT_INDEX = 3;
 const WORKS_DETAIL_DEFAULT_ACTIVE_INDEX = 0;
 const WORKS_DETAIL_CONTAINED_PROJECT_IMAGE_SRCS = new Set([
-  '/images/VisualWorks/VisualWorks_Myfirst_cg.png',
+  '/images/VisualWorks/VisualWorks_Myfirst_cg.jpeg',
   '/images/VisualWorks/VisualWorks_TakePhoto_Night.jpeg',
 ]);
 const WORKS_DETAIL_DEFAULT_CODING_CATEGORY_ID: CodingCategoryId =

@@ -53,7 +53,7 @@ test('blocks on direct section images, posters, and videos but not hidden intera
 });
 
 test('blocks on every featured VisualWorks image before opening the homepage', () => {
-  const assetUrls = BLOCKING_HOME_LOADER_ASSETS.map((asset) => asset.url);
+  const assetByUrl = new Map(BLOCKING_HOME_LOADER_ASSETS.map((asset) => [asset.url, asset]));
   const featuredVisualWorkUrls = personalData.featuredWorks.map((work) => work.image);
 
   assert.ok(featuredVisualWorkUrls.length > 0);
@@ -61,10 +61,10 @@ test('blocks on every featured VisualWorks image before opening the homepage', (
     featuredVisualWorkUrls.every((url) => url.startsWith('/images/VisualWorks/')),
   );
 
-  assert.deepEqual(
-    featuredVisualWorkUrls.filter((url) => !assetUrls.includes(url)),
-    [],
-  );
+  for (const url of featuredVisualWorkUrls) {
+    assert.equal(assetByUrl.get(url)?.kind, 'image');
+    assert.equal(assetByUrl.get(url)?.blocking, true);
+  }
 });
 
 test('preloads the cover and self-introduction audio before opening the homepage', () => {

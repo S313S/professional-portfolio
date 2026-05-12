@@ -175,7 +175,7 @@ const featuredWorks: FeaturedWork[] = [
     description:
       'This was the first AI image I felt truly proud of. I spent long hours refining the pose, prompt, and mood, and the response from friends made it the starting point of my visual journey.',
     tags: ['AI Image', 'Prompt Craft', 'Creative Origin'],
-    image: '/images/VisualWorks/VisualWorks_Myfirst_cg.png',
+    image: '/images/VisualWorks/VisualWorks_Myfirst_cg.jpeg',
     link: '#',
   },
   {
@@ -197,7 +197,7 @@ const featuredWorks: FeaturedWork[] = [
     description:
       'After the realistic experiments, I wanted to try something more symbolic. This Earth concept received a lot of encouragement and expanded how I understood beauty beyond literal images.',
     tags: ['Concept Art', 'Symbolic Image', 'Aesthetic Range'],
-    image: '/images/VisualWorks/VisualWorks_MJ_Earth.png',
+    image: '/images/VisualWorks/VisualWorks_MJ_Earth.jpeg',
     link: '#',
   },
   {
@@ -208,7 +208,7 @@ const featuredWorks: FeaturedWork[] = [
     description:
       'The earlier non-realistic work made me curious about how different subjects change the final feeling. This piece explored a Monet-like atmosphere and showed me how surprising a new style could be.',
     tags: ['ComfyUI', 'Painterly Style', 'Mood Study'],
-    image: '/images/VisualWorks/VisualWorks_ComfyUI_theLazygirl.png',
+    image: '/images/VisualWorks/VisualWorks_ComfyUI_theLazygirl.jpeg',
     link: '#',
   },
   {
@@ -219,7 +219,7 @@ const featuredWorks: FeaturedWork[] = [
     description:
       'This oil-painting experiment became a milestone. It helped me see that my taste and visual judgment were becoming more concrete, and that I could match objects with the right artistic language.',
     tags: ['Oil Painting', 'Visual Judgment', 'Style Matching'],
-    image: '/images/VisualWorks/VisualWorks_OilPatiner.png',
+    image: '/images/VisualWorks/VisualWorks_OilPatiner.jpeg',
     link: '#',
   },
   {
@@ -230,7 +230,7 @@ const featuredWorks: FeaturedWork[] = [
     description:
       'Inspired by animation and the popular lofi girl format, I turned the image into a looping companion video. The result strengthened both my image direction and my video-making workflow.',
     tags: ['Loop Video', 'Lofi Mood', 'Motion Craft'],
-    image: '/images/VisualWorks/VisualWorks_circlVideo.png',
+    image: '/images/VisualWorks/VisualWorks_circlVideo.jpeg',
     link: '#',
   },
   {
@@ -241,7 +241,7 @@ const featuredWorks: FeaturedWork[] = [
     description:
       'After building a foundation in visual creation, I began bringing these works into everyday life. This New Year image, paired with wishes, brought back many warm responses.',
     tags: ['Holiday Visual', 'Personal Gift', 'Everyday Art'],
-    image: '/images/VisualWorks/VisualWorks_happyNewYork.png',
+    image: '/images/VisualWorks/VisualWorks_happyNewYork.jpeg',
     link: '#',
   },
   {
