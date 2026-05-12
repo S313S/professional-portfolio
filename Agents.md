@@ -119,6 +119,49 @@ Vite 插件还提供本地调试端点：
 - `public/images/DEPRECATED_ASSETS.md` 记录废弃资产信息，新增或替换资产时先确认是否已有历史约束。
 - 页面风格以定制插画、相册/档案、夜空、展厅、纸质友人帐等视觉系统为主。新增 UI 应贴合现有段落，而不是套通用 SaaS 卡片风格。
 
+## 部署与 COS 静态资源
+
+当前常用部署方式是先执行 `npm run build`，再用：
+
+```bash
+rsync -avz --delete dist/ root@106.54.13.225:/var/www/xiaoci-portfolio/
+```
+
+这条命令只会同步云服务器本地目录。线上 Nginx 可能会把 `/images/...` 请求 `302` 到腾讯云轻量云对象存储 COS，当前已知桶为：
+
+```text
+portfolio-static-1259451604
+地域：上海 ap-shanghai
+访问域名：https://portfolio-static-1259451604.cos.ap-shanghai.myqcloud.com
+轻量云入口：腾讯云控制台 -> 轻量云 Lighthouse -> 对象存储
+```
+
+如果线上首页加载门停在 `SOME ASSETS FAILED TO LOAD. PLEASE REFRESH AND TRY AGAIN.`，且 DevTools Network 中静态资源先从 `xiaoci-ai.com/images/...` 返回 `302`，再到 `portfolio-static-1259451604.cos.ap-shanghai.myqcloud.com/...` 返回 `404 Not Found`，通常说明：本地 `dist` 和云服务器已有文件，但 COS 桶里缺少对应对象。
+
+排查顺序：
+
+1. 确认本地构建产物存在，例如 `dist/images/VisualWorks/`。
+2. 确认服务器本地也存在：
+
+```bash
+ssh root@106.54.13.225 'ls -lh /var/www/xiaoci-portfolio/images/VisualWorks'
+```
+
+3. 确认线上是否跳 COS：
+
+```bash
+curl -I -L https://xiaoci-ai.com/images/VisualWorks/VisualWorks_Myfirst_cg.jpeg
+```
+
+4. 如果最终 COS 返回 `404`，到轻量云对象存储桶 `portfolio-static-1259451604`，把 `dist/images/VisualWorks/` 里的文件上传到 COS 的 `images/VisualWorks/` 路径。不要上传成 `dist/images/VisualWorks/...` 或 `public/images/VisualWorks/...`。
+5. 上传后直接验证 COS 地址，例如：
+
+```text
+https://portfolio-static-1259451604.cos.ap-shanghai.myqcloud.com/images/VisualWorks/VisualWorks_Myfirst_cg.jpeg
+```
+
+文件名大小写和后缀必须与代码引用完全一致。新增阻塞预加载资源时，除了 `rsync dist/`，也要确认被 Nginx 转发到 COS 的资源已经同步到 COS，否则首页加载门会被卡住。
+
 ## 协作约定
 
 - 在创建实施计划时，请用中文描述。
