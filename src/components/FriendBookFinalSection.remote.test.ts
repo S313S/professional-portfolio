@@ -1,0 +1,118 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+
+import {
+  createFriendBookRemoteInsertPayload,
+  isFriendBookRemoteConfigured,
+  mapFriendBookRemoteRowToEntry,
+  mergeFriendBookRemoteEntries,
+} from './FriendBookFinalSection.remote.ts';
+import { createDefaultFriendBookProgress } from './FriendBookFinalSection.logic.ts';
+
+test('remote config is enabled only when url and publishable key are present', () => {
+  assert.equal(isFriendBookRemoteConfigured({ url: '', publishableKey: 'key' }), false);
+  assert.equal(
+    isFriendBookRemoteConfigured({ url: 'https://example.supabase.co', publishableKey: '' }),
+    false,
+  );
+  assert.equal(
+    isFriendBookRemoteConfigured({
+      url: 'https://example.supabase.co',
+      publishableKey: 'public-key',
+    }),
+    true,
+  );
+});
+
+test('maps a published Supabase row into a guestbook entry', () => {
+  const entry = mapFriendBookRemoteRowToEntry({
+    id: '348dd626-e18c-4de9-8186-91c70f81aa4d',
+    nickname: '站台风景员',
+    identity_intro: '一个会为了转场多停两秒的人。',
+    portfolio_review: '作品区的气质被认真收进来了。',
+    latest_game_id: 'between-two-pages',
+    avatar_id: 'tree',
+    latest_medal_id: '/images/PurpleMedal02.png',
+    latest_date: 'MAY 12, 2026',
+    created_at: '2026-05-12T15:20:00.000Z',
+    updated_at: '2026-05-12T15:20:00.000Z',
+    is_published: true,
+  });
+
+  assert.deepEqual(entry, {
+    id: '348dd626-e18c-4de9-8186-91c70f81aa4d',
+    nickname: '站台风景员',
+    identityIntro: '一个会为了转场多停两秒的人。',
+    portfolioReview: '作品区的气质被认真收进来了。',
+    latestGameId: 'between-two-pages',
+    avatarId: 'tree',
+    latestMedalId: '/images/PurpleMedal02.png',
+    latestDate: 'MAY 12, 2026',
+    updatedAt: '2026-05-12T15:20:00.000Z',
+  });
+});
+
+test('drops invalid remote rows before they reach the book UI', () => {
+  assert.equal(
+    mapFriendBookRemoteRowToEntry({
+      id: 'bad',
+      nickname: '',
+      identity_intro: 'identity',
+      portfolio_review: 'review',
+      latest_game_id: 'moon-run',
+      avatar_id: 'cat',
+      latest_medal_id: null,
+      latest_date: null,
+      created_at: '2026-05-12T15:20:00.000Z',
+      updated_at: '2026-05-12T15:20:00.000Z',
+      is_published: true,
+    }),
+    null,
+  );
+});
+
+test('builds a trimmed insert payload for Supabase', () => {
+  assert.deepEqual(
+    createFriendBookRemoteInsertPayload({
+      nickname: ' 小辞 ',
+      identityIntro: ' 访客 ',
+      portfolioReview: ' 很喜欢作品集 ',
+      latestGameId: 'moon-run',
+      avatarId: 'cat',
+      medalId: '/images/GreenMedal01.png',
+      displayDate: 'MAY 12, 2026',
+      clientId: 'client-1',
+    }),
+    {
+      nickname: '小辞',
+      identity_intro: '访客',
+      portfolio_review: '很喜欢作品集',
+      latest_game_id: 'moon-run',
+      avatar_id: 'cat',
+      latest_medal_id: '/images/GreenMedal01.png',
+      latest_date: 'MAY 12, 2026',
+      client_id: 'client-1',
+      is_published: true,
+    },
+  );
+});
+
+test('merges remote entries into progress without keeping seed rows', () => {
+  const progress = createDefaultFriendBookProgress();
+  const next = mergeFriendBookRemoteEntries(progress, [
+    {
+      id: 'remote-1',
+      nickname: 'Dawn',
+      identityIntro: 'Remote visitor',
+      portfolioReview: 'Remote review',
+      latestGameId: 'moon-run',
+      avatarId: 'dog',
+      latestMedalId: '/images/GreenMedal01.png',
+      latestDate: 'MAY 12, 2026',
+      updatedAt: '2026-05-12T15:20:00.000Z',
+    },
+  ]);
+
+  assert.equal(next.guestbookEntries.length, 1);
+  assert.equal(next.guestbookEntries[0]?.nickname, 'Dawn');
+});
