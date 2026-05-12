@@ -17,6 +17,7 @@ import {
   type FriendBookProgress,
   type FriendBookStage,
   FRIEND_BOOK_GUESTBOOK_PAGE_SIZE,
+  FRIEND_BOOK_PENDING_GUESTBOOK_DRAFT_KEY,
   answerFriendBookQuizQuestion,
   advanceFriendBookQuizQuestion,
   completeBetweenTwoPagesRound,
@@ -29,12 +30,21 @@ import {
   getFriendBookGameStartStage,
   getFriendBookMedalIdForGame,
   getNextBetweenTwoPagesSceneRotation,
+  hydrateFriendBookPendingGuestbookDraft,
   hydrateFriendBookProgress,
+  hydrateFriendBookRemoteGuestbookCache,
   persistFriendBookProgress,
+  persistFriendBookPendingGuestbookDraft,
+  persistFriendBookRemoteGuestbookCache,
   resolveBetweenTwoPagesSpotSelection,
   selectFriendBookAvatar,
   upsertFriendBookGuestbookEntry,
 } from './FriendBookFinalSection.logic';
+import { mergeFriendBookRemoteEntries } from './FriendBookFinalSection.remote';
+import {
+  createDefaultFriendBookSupabaseRepository,
+  type FriendBookRemoteRepository,
+} from './FriendBookFinalSection.supabase';
 import FriendBookGameOverlay from './FriendBookGameOverlay';
 import FriendBookMoonRunStage from './FriendBookMoonRunStage';
 
@@ -646,6 +656,7 @@ interface FriendBookFinalSectionProps {
   initialNicknameDraft?: string;
   initialIdentityIntroDraft?: string;
   initialPortfolioReviewDraft?: string;
+  remoteRepository?: FriendBookRemoteRepository | null;
 }
 
 function createInitialFriendBookGameSession(
@@ -683,7 +694,11 @@ export default function FriendBookFinalSection({
   initialNicknameDraft = '',
   initialIdentityIntroDraft = '',
   initialPortfolioReviewDraft = '',
+  remoteRepository,
 }: FriendBookFinalSectionProps = {}) {
+  const [resolvedRemoteRepository] = useState(
+    () => remoteRepository ?? createDefaultFriendBookSupabaseRepository(),
+  );
   const [progress, setProgress] = useState(() => initialProgress ?? createDefaultFriendBookProgress());
   const [stage, setStage] = useState<FriendBookStage>(initialStage);
   const [activeGameId, setActiveGameId] = useState<FriendBookGameId | null>(initialActiveGameId);
@@ -699,6 +714,8 @@ export default function FriendBookFinalSection({
   );
   const [roundSummary, setRoundSummary] = useState('');
   const [isHydrated, setIsHydrated] = useState(false);
+  const [remoteStatus, setRemoteStatus] = useState<'idle' | 'loading' | 'ready' | 'error' | 'saving'>('idle');
+  const [remoteErrorMessage, setRemoteErrorMessage] = useState('');
   const [showBetweenTwoPagesHints, setShowBetweenTwoPagesHints] = useState(false);
   const [seenBetweenTwoPagesSceneIds, setSeenBetweenTwoPagesSceneIds] = useState<string[]>([]);
   const [currentGuestbookPage, setCurrentGuestbookPage] = useState(initialGuestbookPage);
@@ -712,6 +729,7 @@ export default function FriendBookFinalSection({
   const latestGuestbookEntry = progress.guestbookEntries[progress.guestbookEntries.length - 1] ?? null;
   const matchingGuestbookEntry =
     progress.guestbookEntries.find((entry) => entry.nickname === nicknameDraft.trim()) ?? null;
+  const canDeleteGuestbookEntry = Boolean(matchingGuestbookEntry && !resolvedRemoteRepository?.isEnabled);
   const guestbookPage = getFriendBookGuestbookPage(progress.guestbookEntries, currentGuestbookPage);
   const availableAvatarIds = getAvailableFriendBookAvatarIds(progress);
   const betweenTwoPagesScene =
@@ -729,9 +747,59 @@ export default function FriendBookFinalSection({
       return;
     }
 
-    setProgress(hydrateFriendBookProgress(window.localStorage));
+    const localProgress = hydrateFriendBookProgress(window.localStorage);
+    const cachedRemoteEntries = hydrateFriendBookRemoteGuestbookCache(window.localStorage);
+    setProgress(
+      cachedRemoteEntries.length > 0
+        ? mergeFriendBookRemoteEntries(localProgress, cachedRemoteEntries)
+        : localProgress,
+    );
+
+    const pendingDraft = hydrateFriendBookPendingGuestbookDraft(window.localStorage);
+    if (pendingDraft) {
+      setNicknameDraft(pendingDraft.nickname);
+      setIdentityIntroDraft(pendingDraft.identityIntro);
+      setPortfolioReviewDraft(pendingDraft.portfolioReview);
+    }
+
     setIsHydrated(true);
   }, []);
+
+  useEffect(() => {
+    if (!isHydrated || !resolvedRemoteRepository?.isEnabled || typeof window === 'undefined') {
+      return;
+    }
+
+    let isActive = true;
+    setRemoteStatus('loading');
+    setRemoteErrorMessage('');
+
+    resolvedRemoteRepository.fetchEntries()
+      .then((entries) => {
+        if (!isActive) {
+          return;
+        }
+
+        if (entries.length > 0) {
+          setProgress((currentProgress) => mergeFriendBookRemoteEntries(currentProgress, entries));
+          persistFriendBookRemoteGuestbookCache(entries, window.localStorage);
+        }
+
+        setRemoteStatus('ready');
+      })
+      .catch((error: unknown) => {
+        if (!isActive) {
+          return;
+        }
+
+        setRemoteStatus('error');
+        setRemoteErrorMessage(error instanceof Error ? error.message : 'Guestbook sync failed.');
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [isHydrated, resolvedRemoteRepository]);
 
   useEffect(() => {
     if (!isHydrated || typeof window === 'undefined') {
@@ -979,7 +1047,7 @@ export default function FriendBookFinalSection({
     }
   }
 
-  function handleNoteSubmit() {
+  async function handleNoteSubmit() {
     if (
       !activeGameId ||
       !pendingMedalId ||
@@ -992,30 +1060,77 @@ export default function FriendBookFinalSection({
 
     const displayDate = formatFriendBookArchiveDate(new Date());
     let nextGuestbookPageIndex = 0;
+    const noteDraft = {
+      nickname: nicknameDraft,
+      identityIntro: identityIntroDraft,
+      portfolioReview: portfolioReviewDraft,
+      latestGameId: activeGameId,
+      avatarId: progress.selectedAvatarId,
+      medalId: pendingMedalId,
+      displayDate,
+    };
 
-    setProgress((currentProgress) => {
-      const nextProgress = completeFriendBookGameSession(currentProgress, {
-        gameId: activeGameId,
-        displayDate,
-        medalId: pendingMedalId,
+    if (resolvedRemoteRepository?.isEnabled && typeof window !== 'undefined') {
+      try {
+        setRemoteStatus('saving');
+        setRemoteErrorMessage('');
+        const remoteEntry = await resolvedRemoteRepository.createEntry(noteDraft);
+
+        setProgress((currentProgress) => {
+          const completedProgress = completeFriendBookGameSession(currentProgress, {
+            gameId: activeGameId,
+            displayDate,
+            medalId: pendingMedalId,
+          });
+          const nextProgress = mergeFriendBookRemoteEntries(completedProgress, [
+            ...completedProgress.guestbookEntries.filter(
+              (entry) => !entry.id.startsWith('seed-') && entry.id !== remoteEntry.id,
+            ),
+            remoteEntry,
+          ]);
+
+          nextGuestbookPageIndex = getFriendBookGuestbookPage(
+            nextProgress.guestbookEntries,
+            Number.MAX_SAFE_INTEGER,
+          ).pageIndex;
+          persistFriendBookRemoteGuestbookCache(nextProgress.guestbookEntries, window.localStorage);
+
+          return nextProgress;
+        });
+        window.localStorage.removeItem(FRIEND_BOOK_PENDING_GUESTBOOK_DRAFT_KEY);
+        setRemoteStatus('ready');
+      } catch (error) {
+        persistFriendBookPendingGuestbookDraft(noteDraft, window.localStorage);
+        setRemoteStatus('error');
+        setRemoteErrorMessage(error instanceof Error ? error.message : 'Guestbook publish failed.');
+        return;
+      }
+    } else {
+      setProgress((currentProgress) => {
+        const nextProgress = completeFriendBookGameSession(currentProgress, {
+          gameId: activeGameId,
+          displayDate,
+          medalId: pendingMedalId,
+        });
+        const nextProgressWithGuestbook = upsertFriendBookGuestbookEntry(nextProgress, {
+          nickname: nicknameDraft,
+          identityIntro: identityIntroDraft,
+          portfolioReview: portfolioReviewDraft,
+          latestGameId: activeGameId,
+          avatarId: nextProgress.selectedAvatarId,
+          medalId: pendingMedalId,
+          displayDate,
+        });
+
+        nextGuestbookPageIndex = getFriendBookGuestbookPage(
+          nextProgressWithGuestbook.guestbookEntries,
+          Number.MAX_SAFE_INTEGER,
+        ).pageIndex;
+
+        return nextProgressWithGuestbook;
       });
-      const nextProgressWithGuestbook = upsertFriendBookGuestbookEntry(nextProgress, {
-        nickname: nicknameDraft,
-        identityIntro: identityIntroDraft,
-        portfolioReview: portfolioReviewDraft,
-        latestGameId: activeGameId,
-        avatarId: nextProgress.selectedAvatarId,
-        medalId: pendingMedalId,
-        displayDate,
-      });
+    }
 
-      nextGuestbookPageIndex = getFriendBookGuestbookPage(
-        nextProgressWithGuestbook.guestbookEntries,
-        Number.MAX_SAFE_INTEGER,
-      ).pageIndex;
-
-      return nextProgressWithGuestbook;
-    });
     setCurrentGuestbookPage(nextGuestbookPageIndex);
     setStage('landing');
     setPendingMedalId(null);
@@ -1654,6 +1769,7 @@ export default function FriendBookFinalSection({
                       type="button"
                       onClick={handleNoteSubmit}
                       disabled={
+                        remoteStatus === 'saving' ||
                         !nicknameDraft.trim() ||
                         !identityIntroDraft.trim() ||
                         !portfolioReviewDraft.trim()
@@ -1663,7 +1779,18 @@ export default function FriendBookFinalSection({
                       <PenLine className="h-4 w-4" strokeWidth={1.8} />
                       <span>Write into the guestbook</span>
                     </button>
-                    {matchingGuestbookEntry ? (
+                    {resolvedRemoteRepository?.isEnabled ? (
+                      <p className="text-sm leading-6 text-[#7a5d4d]" role="status">
+                        {remoteStatus === 'loading'
+                          ? 'Syncing public guestbook...'
+                          : remoteStatus === 'saving'
+                            ? 'Publishing to the public guestbook...'
+                            : remoteStatus === 'error'
+                              ? `Guestbook sync failed. ${remoteErrorMessage}`
+                              : 'This note will be saved to the public guestbook.'}
+                      </p>
+                    ) : null}
+                    {canDeleteGuestbookEntry && matchingGuestbookEntry ? (
                       <>
                         <button
                           type="button"

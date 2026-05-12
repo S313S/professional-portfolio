@@ -67,11 +67,11 @@ export interface FriendBookRemoteRepository {
 }
 
 export function getFriendBookSupabaseConfig(
-  env: Record<string, string | undefined>,
+  env: Record<string, string | undefined> | undefined,
 ): FriendBookRemoteConfig {
   return {
-    url: env.VITE_SUPABASE_URL,
-    publishableKey: env.VITE_SUPABASE_PUBLISHABLE_KEY,
+    url: env?.VITE_SUPABASE_URL,
+    publishableKey: env?.VITE_SUPABASE_PUBLISHABLE_KEY,
   };
 }
 
@@ -142,7 +142,7 @@ export function createFriendBookSupabaseRepository(options: {
 }
 
 export function createDefaultFriendBookSupabaseRepository(): FriendBookRemoteRepository {
-  const env = import.meta.env as Record<string, string | undefined>;
+  const env = (import.meta as unknown as { env?: Record<string, string | undefined> }).env;
 
   return createFriendBookSupabaseRepository({
     config: getFriendBookSupabaseConfig(env),

@@ -553,6 +553,28 @@ test('renders the unified guestbook editor with nickname, identity intro, and po
   assert.doesNotMatch(markup, /Tonight&#x27;s note/);
 });
 
+test('renders public guestbook sync status without blocking the editor', () => {
+  const markup = renderToStaticMarkup(
+    <FriendBookFinalSection
+      initialStage="note-entry"
+      initialActiveGameId="between-two-pages"
+      initialNicknameDraft="小辞"
+      initialIdentityIntroDraft="访客"
+      initialPortfolioReviewDraft="很喜欢作品集。"
+      remoteRepository={{
+        isEnabled: true,
+        fetchEntries: async () => [],
+        createEntry: async () => {
+          throw new Error('not used during static render');
+        },
+      }}
+    />,
+  );
+
+  assert.match(markup, /Leave a page in the guestbook/);
+  assert.match(markup, /This note will be saved to the public guestbook\./);
+});
+
 test('shows a delete action in the guestbook editor when the typed nickname already exists', { concurrency: false }, () => {
   let progress = createDefaultFriendBookProgress({ includeSeedGuestbook: false });
   progress = upsertFriendBookGuestbookEntry(progress, {
