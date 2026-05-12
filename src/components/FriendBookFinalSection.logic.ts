@@ -138,10 +138,22 @@ interface StorageLike {
 }
 
 export const FRIEND_BOOK_STORAGE_KEY = 'friend-book-progress:v2';
+export const FRIEND_BOOK_REMOTE_CACHE_KEY = 'friend-book-remote-cache:v1';
+export const FRIEND_BOOK_PENDING_GUESTBOOK_DRAFT_KEY = 'friend-book-pending-guestbook-draft:v1';
 export const FRIEND_BOOK_HIDDEN_AVATAR_ID = 'hidden-cat';
 export const FRIEND_BOOK_GUESTBOOK_PAGE_SIZE = 3;
 export const FRIEND_BOOK_QUIZ_ROUND_SIZE = 5;
 export const FRIEND_BOOK_DEFAULT_GUESTBOOK_ENTRY_COUNT = 5;
+
+export interface FriendBookPendingGuestbookDraft {
+  nickname: string;
+  identityIntro: string;
+  portfolioReview: string;
+  latestGameId: FriendBookGameId | null;
+  avatarId: FriendBookAvatarId | null;
+  medalId: string | null;
+  displayDate: string | null;
+}
 
 const FRIEND_BOOK_LEGACY_STORAGE_KEY = 'friend-book-progress:v1';
 
@@ -559,6 +571,90 @@ export function persistFriendBookProgress(
   storage?: StorageLike | null,
 ): void {
   storage?.setItem(FRIEND_BOOK_STORAGE_KEY, JSON.stringify(progress));
+}
+
+export function hydrateFriendBookRemoteGuestbookCache(
+  storage?: StorageLike | null,
+): FriendBookGuestbookEntry[] {
+  const raw = storage?.getItem(FRIEND_BOOK_REMOTE_CACHE_KEY);
+
+  if (!raw) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as Partial<FriendBookGuestbookEntry>[];
+
+    return Array.isArray(parsed)
+      ? parsed
+        .map((entry) => sanitizeGuestbookEntry(entry))
+        .filter((entry): entry is FriendBookGuestbookEntry => entry !== null)
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+export function persistFriendBookRemoteGuestbookCache(
+  entries: readonly FriendBookGuestbookEntry[],
+  storage?: StorageLike | null,
+): void {
+  storage?.setItem(FRIEND_BOOK_REMOTE_CACHE_KEY, JSON.stringify(entries));
+}
+
+function sanitizePendingGuestbookDraft(
+  value: Partial<FriendBookPendingGuestbookDraft> | null,
+): FriendBookPendingGuestbookDraft | null {
+  const nickname = sanitizeText(value?.nickname);
+  const identityIntro = sanitizeText(value?.identityIntro);
+  const portfolioReview = sanitizeText(value?.portfolioReview);
+
+  if (!nickname || !identityIntro || !portfolioReview) {
+    return null;
+  }
+
+  return {
+    nickname,
+    identityIntro,
+    portfolioReview,
+    latestGameId:
+      typeof value?.latestGameId === 'string' &&
+      FRIEND_BOOK_GAME_IDS.includes(value.latestGameId as FriendBookGameId)
+        ? (value.latestGameId as FriendBookGameId)
+        : null,
+    avatarId: sanitizeFriendBookAvatarId(value?.avatarId),
+    medalId: typeof value?.medalId === 'string' ? value.medalId : null,
+    displayDate: typeof value?.displayDate === 'string' ? value.displayDate : null,
+  };
+}
+
+export function hydrateFriendBookPendingGuestbookDraft(
+  storage?: StorageLike | null,
+): FriendBookPendingGuestbookDraft | null {
+  const raw = storage?.getItem(FRIEND_BOOK_PENDING_GUESTBOOK_DRAFT_KEY);
+
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    return sanitizePendingGuestbookDraft(JSON.parse(raw));
+  } catch {
+    return null;
+  }
+}
+
+export function persistFriendBookPendingGuestbookDraft(
+  draft: FriendBookPendingGuestbookDraft,
+  storage?: StorageLike | null,
+): void {
+  const sanitizedDraft = sanitizePendingGuestbookDraft(draft);
+
+  if (!sanitizedDraft) {
+    return;
+  }
+
+  storage?.setItem(FRIEND_BOOK_PENDING_GUESTBOOK_DRAFT_KEY, JSON.stringify(sanitizedDraft));
 }
 
 export function getAvailableFriendBookAvatarIds(
