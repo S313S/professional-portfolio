@@ -6,11 +6,13 @@ export interface InitialScrollResetState {
   scrollRestoration: 'auto' | 'manual';
 }
 
+export const COVER_AND_SELF_INTRO_AUDIO_SRC = '/audio/CoverAndSelf-introduction.mp3';
 export const HOMETOWN_SERIES_1_AUDIO_SRC = '/audio/Hometown_Series1.MP3';
 export const HOMETOWN_AUDIO_SRC = HOMETOWN_SERIES_1_AUDIO_SRC;
 export const HOMETOWN_SERIES_2_AUDIO_SRC = '/audio/Hometown_Series2.MP3';
 export const PORTFOLIO_AUDIO_TRACK_CHANGE_EVENT = 'portfolio-audio-track-change';
 export const PORTFOLIO_AUDIO_HOME_RESTART_SCROLL_Y = 24;
+export const PORTFOLIO_AUDIO_EXPERIENCE_LANDING_TOLERANCE_PX = 6;
 
 export interface PortfolioAudioTrackChangeDetail {
   src: string;
@@ -114,4 +116,22 @@ export function getPortfolioAudioPlaybackIntent({
   }
 
   return 'continue';
+}
+
+export function getPortfolioAudioTrackForExperienceLanding({
+  scrollY,
+  experienceSectionTop,
+  tolerancePx = PORTFOLIO_AUDIO_EXPERIENCE_LANDING_TOLERANCE_PX,
+}: {
+  scrollY: number;
+  experienceSectionTop: number;
+  tolerancePx?: number;
+}): string | null {
+  if (!Number.isFinite(scrollY) || !Number.isFinite(experienceSectionTop) || tolerancePx < 0) {
+    return null;
+  }
+
+  return Math.abs(scrollY - experienceSectionTop) <= tolerancePx
+    ? HOMETOWN_SERIES_1_AUDIO_SRC
+    : null;
 }

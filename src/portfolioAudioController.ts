@@ -1,4 +1,5 @@
 import {
+  COVER_AND_SELF_INTRO_AUDIO_SRC,
   HOMETOWN_SERIES_1_AUDIO_SRC,
   HOMETOWN_SERIES_2_AUDIO_SRC,
 } from './App.logic';
@@ -16,6 +17,7 @@ export interface PortfolioAudioElement {
 type PortfolioAudioFactory = (src: string) => PortfolioAudioElement | null;
 
 const SUPPORTED_AUDIO_SRCS = [
+  COVER_AND_SELF_INTRO_AUDIO_SRC,
   HOMETOWN_SERIES_1_AUDIO_SRC,
   HOMETOWN_SERIES_2_AUDIO_SRC,
 ] as const;
@@ -30,7 +32,7 @@ function createBrowserAudio(src: string): PortfolioAudioElement | null {
 
 export class PortfolioAudioController {
   private activeAudio: PortfolioAudioElement | null = null;
-  private activeSrc = HOMETOWN_SERIES_1_AUDIO_SRC;
+  private activeSrc = COVER_AND_SELF_INTRO_AUDIO_SRC;
   private audioBySrc = new Map<string, PortfolioAudioElement>();
   private initialized = false;
   private soundPreference: PortfolioAudioPreference = 'unset';
@@ -41,9 +43,9 @@ export class PortfolioAudioController {
     return this.soundPreference;
   }
 
-  enableSeries1() {
+  enableCoverAndSelfIntro() {
     this.soundPreference = 'enabled';
-    this.switchToTrack(HOMETOWN_SERIES_1_AUDIO_SRC, true);
+    this.switchToTrack(COVER_AND_SELF_INTRO_AUDIO_SRC, true);
   }
 
   disable() {
@@ -56,25 +58,25 @@ export class PortfolioAudioController {
     this.audioBySrc.forEach((audio) => this.stopAudio(audio));
   }
 
-  startSeries1ForAppMount() {
+  startCoverAndSelfIntroForAppMount() {
     if (this.soundPreference === 'disabled') {
       return;
     }
 
-    if (this.soundPreference === 'enabled' && this.activeSrc === HOMETOWN_SERIES_1_AUDIO_SRC) {
+    if (this.soundPreference === 'enabled' && this.activeSrc === COVER_AND_SELF_INTRO_AUDIO_SRC) {
       this.retryActiveTrack();
       return;
     }
 
-    this.switchToTrack(HOMETOWN_SERIES_1_AUDIO_SRC, true);
+    this.switchToTrack(COVER_AND_SELF_INTRO_AUDIO_SRC, true);
   }
 
-  restartSeries1() {
+  restartCoverAndSelfIntro() {
     if (this.soundPreference === 'disabled') {
       return;
     }
 
-    this.switchToTrack(HOMETOWN_SERIES_1_AUDIO_SRC, true);
+    this.switchToTrack(COVER_AND_SELF_INTRO_AUDIO_SRC, true);
   }
 
   requestTrackChange(src: string) {
@@ -118,8 +120,8 @@ export class PortfolioAudioController {
       this.audioBySrc.set(src, audio);
     }
 
-    this.activeAudio = this.audioBySrc.get(HOMETOWN_SERIES_1_AUDIO_SRC) ?? null;
-    this.activeSrc = HOMETOWN_SERIES_1_AUDIO_SRC;
+    this.activeAudio = this.audioBySrc.get(COVER_AND_SELF_INTRO_AUDIO_SRC) ?? null;
+    this.activeSrc = COVER_AND_SELF_INTRO_AUDIO_SRC;
     this.initialized = true;
     return true;
   }

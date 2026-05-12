@@ -2,11 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  COVER_AND_SELF_INTRO_AUDIO_SRC,
   getDevStandaloneRoute,
   getInitialFocusTarget,
   getInitialScrollResetState,
   getPortfolioAudioPlaybackIntent,
+  getPortfolioAudioTrackForExperienceLanding,
   HOMETOWN_AUDIO_SRC,
+  HOMETOWN_SERIES_1_AUDIO_SRC,
   HOMETOWN_SERIES_2_AUDIO_SRC,
   PORTFOLIO_AUDIO_TRACK_CHANGE_EVENT,
 } from './App.logic';
@@ -66,9 +69,31 @@ test('uses the hometown audio asset for portfolio background playback', () => {
   assert.equal(HOMETOWN_AUDIO_SRC, '/audio/Hometown_Series1.MP3');
 });
 
+test('uses the cover and self-introduction audio asset before the experience page', () => {
+  assert.equal(COVER_AND_SELF_INTRO_AUDIO_SRC, '/audio/CoverAndSelf-introduction.mp3');
+});
+
 test('defines the second hometown audio asset and track-change event for the page switch', () => {
   assert.equal(HOMETOWN_SERIES_2_AUDIO_SRC, '/audio/Hometown_Series2.MP3');
   assert.equal(PORTFOLIO_AUDIO_TRACK_CHANGE_EVENT, 'portfolio-audio-track-change');
+});
+
+test('requests the first hometown track when the experience page is fully landed', () => {
+  assert.equal(
+    getPortfolioAudioTrackForExperienceLanding({
+      scrollY: 1998,
+      experienceSectionTop: 2000,
+    }),
+    HOMETOWN_SERIES_1_AUDIO_SRC,
+  );
+
+  assert.equal(
+    getPortfolioAudioTrackForExperienceLanding({
+      scrollY: 1920,
+      experienceSectionTop: 2000,
+    }),
+    null,
+  );
 });
 
 test('restarts the portfolio audio when the page returns to the homepage top', () => {

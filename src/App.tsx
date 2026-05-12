@@ -14,6 +14,7 @@ import FriendBookFinalSection from './components/FriendBookFinalSection';
 import {
   getInitialFocusTarget,
   getPortfolioAudioPlaybackIntent,
+  getPortfolioAudioTrackForExperienceLanding,
   PORTFOLIO_AUDIO_TRACK_CHANGE_EVENT,
   type PortfolioAudioTrackChangeDetail,
 } from './App.logic';
@@ -27,8 +28,9 @@ export default function App() {
     }
 
     let previousScrollY = window.scrollY;
+    let hasRequestedExperienceAudio = false;
 
-    const handleHomeReturn = () => {
+    const handlePortfolioAudioScroll = () => {
       const nextScrollY = window.scrollY;
       const playbackIntent = getPortfolioAudioPlaybackIntent({
         previousScrollY,
@@ -38,8 +40,32 @@ export default function App() {
       previousScrollY = nextScrollY;
 
       if (playbackIntent === 'restart') {
-        portfolioAudioController.restartSeries1();
+        hasRequestedExperienceAudio = false;
+        portfolioAudioController.restartCoverAndSelfIntro();
+        return;
       }
+
+      if (hasRequestedExperienceAudio) {
+        return;
+      }
+
+      const experienceSection = document.getElementById('experience');
+      if (!experienceSection) {
+        return;
+      }
+
+      const experienceSectionTop = experienceSection.getBoundingClientRect().top + window.scrollY;
+      const nextTrackSrc = getPortfolioAudioTrackForExperienceLanding({
+        scrollY: nextScrollY,
+        experienceSectionTop,
+      });
+
+      if (!nextTrackSrc || portfolioAudioController.getSoundPreference() === 'disabled') {
+        return;
+      }
+
+      portfolioAudioController.requestTrackChange(nextTrackSrc);
+      hasRequestedExperienceAudio = true;
     };
 
     const handleFirstUserGesture = () => {
@@ -51,16 +77,16 @@ export default function App() {
       portfolioAudioController.requestTrackChange(src);
     };
 
-    portfolioAudioController.startSeries1ForAppMount();
+    portfolioAudioController.startCoverAndSelfIntroForAppMount();
 
-    window.addEventListener('scroll', handleHomeReturn, { passive: true });
+    window.addEventListener('scroll', handlePortfolioAudioScroll, { passive: true });
     window.addEventListener(PORTFOLIO_AUDIO_TRACK_CHANGE_EVENT, handleAudioTrackChange);
     window.addEventListener('pointerdown', handleFirstUserGesture, { once: true });
     window.addEventListener('keydown', handleFirstUserGesture, { once: true });
     window.addEventListener('touchstart', handleFirstUserGesture, { once: true });
 
     return () => {
-      window.removeEventListener('scroll', handleHomeReturn);
+      window.removeEventListener('scroll', handlePortfolioAudioScroll);
       window.removeEventListener(PORTFOLIO_AUDIO_TRACK_CHANGE_EVENT, handleAudioTrackChange);
       window.removeEventListener('pointerdown', handleFirstUserGesture);
       window.removeEventListener('keydown', handleFirstUserGesture);

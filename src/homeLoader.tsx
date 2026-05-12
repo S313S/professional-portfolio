@@ -386,7 +386,7 @@ function HomeLoaderScreen({
       return;
     }
 
-    portfolioAudioController.enableSeries1();
+    portfolioAudioController.enableCoverAndSelfIntro();
     setIsSoundEnabled(true);
   };
 
