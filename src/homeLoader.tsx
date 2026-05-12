@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from 'react';
 
-import { friendBookFinalSectionData } from './data';
+import { friendBookFinalSectionData, personalData } from './data';
 import { WORKS_DETAIL_LOADING_SRC } from './components/WorksDetailSection.logic';
 import { portfolioAudioController } from './portfolioAudioController';
 import { COVER_AND_SELF_INTRO_AUDIO_SRC } from './App.logic';
@@ -58,6 +58,16 @@ const dedupeLoaderAssets = (assets: LoaderAsset[]) => {
     return true;
   });
 };
+
+const createFeaturedWorkLoaderAssets = () =>
+  personalData.featuredWorks.map((work, index) =>
+    createLoaderAsset(
+      `works-detail-visual-work-${String(index + 1).padStart(2, '0')}`,
+      work.image,
+      'image',
+      2,
+    ),
+  );
 
 export const BLOCKING_HOME_LOADER_ASSETS: LoaderAsset[] = dedupeLoaderAssets([
   createLoaderAsset(
@@ -120,6 +130,7 @@ export const BLOCKING_HOME_LOADER_ASSETS: LoaderAsset[] = dedupeLoaderAssets([
   createLoaderAsset('works-detail-left-button', '/images/workDetail_left_icon.png.png', 'image', 1),
   createLoaderAsset('works-detail-right-button', '/images/workDetail_rigtht_icon.png', 'image', 1),
   createLoaderAsset('works-detail-loading-document', WORKS_DETAIL_LOADING_SRC, 'document', 4),
+  ...createFeaturedWorkLoaderAssets(),
 
   createLoaderAsset(
     'friend-book-section-background',

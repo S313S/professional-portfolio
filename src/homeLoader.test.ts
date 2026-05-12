@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { COVER_AND_SELF_INTRO_AUDIO_SRC } from './App.logic';
+import { personalData } from './data';
 import {
   BLOCKING_HOME_LOADER_ASSETS,
   createInitialHomeLoaderAssetStatuses,
@@ -49,6 +50,21 @@ test('blocks on direct section images, posters, and videos but not hidden intera
   assert.ok(!assetUrls.includes('/videos/Lofi-girl.mov'));
 
   assert.equal(new Set(assetUrls).size, assetUrls.length);
+});
+
+test('blocks on every featured VisualWorks image before opening the homepage', () => {
+  const assetUrls = BLOCKING_HOME_LOADER_ASSETS.map((asset) => asset.url);
+  const featuredVisualWorkUrls = personalData.featuredWorks.map((work) => work.image);
+
+  assert.ok(featuredVisualWorkUrls.length > 0);
+  assert.ok(
+    featuredVisualWorkUrls.every((url) => url.startsWith('/images/VisualWorks/')),
+  );
+
+  assert.deepEqual(
+    featuredVisualWorkUrls.filter((url) => !assetUrls.includes(url)),
+    [],
+  );
 });
 
 test('preloads the cover and self-introduction audio before opening the homepage', () => {
