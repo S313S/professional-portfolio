@@ -9,13 +9,14 @@
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
+    "start:friend-book-api": "node server/friend-book-api.js",
+    "test:friend-book-api": "node --test server/friend-book-api.test.js",
     "test:video-scroll": "node --import tsx --test src/components/VideoScrollTransition.test.ts",
     "test:video-refresh": "node test-video-transition-refresh.cjs",
     "test:video-wheel": "node test-video-transition-wheel.cjs"
   },
   "dependencies": {
     "@google/genai": "^1.29.0",
-    "@supabase/supabase-js": "^2.105.4",
     "@tailwindcss/vite": "^4.1.14",
     "@vitejs/plugin-react": "^5.0.4",
     "better-sqlite3": "^12.4.1",

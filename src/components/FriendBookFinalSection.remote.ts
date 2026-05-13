@@ -20,11 +20,6 @@ const FRIEND_BOOK_REMOTE_AVATAR_IDS: FriendBookAvatarId[] = [
   'hidden-cat',
 ];
 
-export interface FriendBookRemoteConfig {
-  url?: string;
-  publishableKey?: string;
-}
-
 export interface FriendBookRemoteRow {
   id: string;
   nickname: string | null;
@@ -49,10 +44,6 @@ export interface FriendBookRemoteInsertPayload {
   latest_date: string | null;
   client_id: string | null;
   is_published: true;
-}
-
-export function isFriendBookRemoteConfigured(config: FriendBookRemoteConfig): boolean {
-  return Boolean(config.url?.trim() && config.publishableKey?.trim());
 }
 
 function trimString(value: string | null | undefined): string {

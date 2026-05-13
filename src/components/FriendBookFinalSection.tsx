@@ -42,9 +42,9 @@ import {
 } from './FriendBookFinalSection.logic';
 import { mergeFriendBookRemoteEntries } from './FriendBookFinalSection.remote';
 import {
-  createDefaultFriendBookSupabaseRepository,
+  createDefaultFriendBookApiRepository,
   type FriendBookRemoteRepository,
-} from './FriendBookFinalSection.supabase';
+} from './FriendBookFinalSection.api';
 import FriendBookGameOverlay from './FriendBookGameOverlay';
 import FriendBookMoonRunStage from './FriendBookMoonRunStage';
 
@@ -697,7 +697,7 @@ export default function FriendBookFinalSection({
   remoteRepository,
 }: FriendBookFinalSectionProps = {}) {
   const [resolvedRemoteRepository] = useState(
-    () => remoteRepository ?? createDefaultFriendBookSupabaseRepository(),
+    () => remoteRepository ?? createDefaultFriendBookApiRepository(),
   );
   const [progress, setProgress] = useState(() => initialProgress ?? createDefaultFriendBookProgress());
   const [stage, setStage] = useState<FriendBookStage>(initialStage);

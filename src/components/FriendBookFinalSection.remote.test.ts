@@ -3,28 +3,12 @@ import assert from 'node:assert/strict';
 
 import {
   createFriendBookRemoteInsertPayload,
-  isFriendBookRemoteConfigured,
   mapFriendBookRemoteRowToEntry,
   mergeFriendBookRemoteEntries,
 } from './FriendBookFinalSection.remote.ts';
 import { createDefaultFriendBookProgress } from './FriendBookFinalSection.logic.ts';
 
-test('remote config is enabled only when url and publishable key are present', () => {
-  assert.equal(isFriendBookRemoteConfigured({ url: '', publishableKey: 'key' }), false);
-  assert.equal(
-    isFriendBookRemoteConfigured({ url: 'https://example.supabase.co', publishableKey: '' }),
-    false,
-  );
-  assert.equal(
-    isFriendBookRemoteConfigured({
-      url: 'https://example.supabase.co',
-      publishableKey: 'public-key',
-    }),
-    true,
-  );
-});
-
-test('maps a published Supabase row into a guestbook entry', () => {
+test('maps a published API row into a guestbook entry', () => {
   const entry = mapFriendBookRemoteRowToEntry({
     id: '348dd626-e18c-4de9-8186-91c70f81aa4d',
     nickname: '站台风景员',
@@ -71,7 +55,7 @@ test('drops invalid remote rows before they reach the book UI', () => {
   );
 });
 
-test('builds a trimmed insert payload for Supabase', () => {
+test('builds a trimmed insert payload for the friend-book API', () => {
   assert.deepEqual(
     createFriendBookRemoteInsertPayload({
       nickname: ' 小辞 ',

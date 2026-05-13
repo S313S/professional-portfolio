@@ -594,6 +594,13 @@ test('shows a delete action in the guestbook editor when the typed nickname alre
       initialStage="note-entry"
       initialActiveGameId="moon-run"
       initialNicknameDraft="小辞"
+      remoteRepository={{
+        isEnabled: false,
+        fetchEntries: async () => [],
+        createEntry: async () => {
+          throw new Error('not used during static render');
+        },
+      }}
     />,
   );
 
