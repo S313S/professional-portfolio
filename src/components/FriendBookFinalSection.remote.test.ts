@@ -101,3 +101,58 @@ test('merges remote entries into progress while keeping seed rows', () => {
   assert.equal(next.guestbookEntries[0]?.id, 'seed-forest-page-turner');
   assert.equal(next.guestbookEntries.at(-1)?.nickname, 'Dawn');
 });
+
+test('drops stale remote entries that are missing from the latest API response', () => {
+  const progress = mergeFriendBookRemoteEntries(createDefaultFriendBookProgress(), [
+    {
+      id: 'stale-remote',
+      nickname: '浮躁的都市浮萍',
+      identityIntro: 'Cached visitor',
+      portfolioReview: 'Cached review',
+      latestGameId: 'between-two-pages',
+      avatarId: 'tree',
+      latestMedalId: '/images/Animalmedals02.png',
+      latestDate: 'MAY 13, 2026',
+      updatedAt: '2026-05-13T06:07:02.619Z',
+    },
+  ]);
+
+  const next = mergeFriendBookRemoteEntries(progress, [
+    {
+      id: 'fresh-remote',
+      nickname: '小绿兔',
+      identityIntro: 'Fresh visitor',
+      portfolioReview: 'Fresh review',
+      latestGameId: 'between-two-pages',
+      avatarId: 'cat-pi',
+      latestMedalId: '/images/Animalmedals05.png',
+      latestDate: 'MAY 13, 2026',
+      updatedAt: '2026-05-13T07:04:03.618Z',
+    },
+  ]);
+
+  assert.equal(next.guestbookEntries.some((entry) => entry.nickname === '浮躁的都市浮萍'), false);
+  assert.equal(next.guestbookEntries.some((entry) => entry.nickname === '小绿兔'), true);
+  assert.equal(next.guestbookEntries.filter((entry) => entry.id.startsWith('seed-')).length, 5);
+});
+
+test('clears stale remote entries when the latest API response is empty', () => {
+  const progress = mergeFriendBookRemoteEntries(createDefaultFriendBookProgress(), [
+    {
+      id: 'stale-remote',
+      nickname: '浮躁的都市浮萍',
+      identityIntro: 'Cached visitor',
+      portfolioReview: 'Cached review',
+      latestGameId: 'between-two-pages',
+      avatarId: 'tree',
+      latestMedalId: '/images/Animalmedals02.png',
+      latestDate: 'MAY 13, 2026',
+      updatedAt: '2026-05-13T06:07:02.619Z',
+    },
+  ]);
+
+  const next = mergeFriendBookRemoteEntries(progress, []);
+
+  assert.equal(next.guestbookEntries.some((entry) => entry.nickname === '浮躁的都市浮萍'), false);
+  assert.equal(next.guestbookEntries.length, 5);
+});

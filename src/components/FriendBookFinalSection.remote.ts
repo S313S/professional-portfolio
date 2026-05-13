@@ -114,13 +114,8 @@ export function mergeFriendBookRemoteEntries(
   progress: FriendBookProgress,
   remoteEntries: readonly FriendBookGuestbookEntry[],
 ): FriendBookProgress {
-  if (remoteEntries.length === 0) {
-    return progress;
-  }
-
-  const remoteEntryIds = new Set(remoteEntries.map((entry) => entry.id));
   const localEntries = progress.guestbookEntries.filter(
-    (entry) => !remoteEntryIds.has(entry.id),
+    (entry) => entry.id.startsWith('seed-'),
   );
 
   return {

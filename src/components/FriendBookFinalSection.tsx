@@ -791,10 +791,8 @@ export default function FriendBookFinalSection({
           return;
         }
 
-        if (entries.length > 0) {
-          setProgress((currentProgress) => mergeFriendBookRemoteEntries(currentProgress, entries));
-          persistFriendBookRemoteGuestbookCache(entries, window.localStorage);
-        }
+        setProgress((currentProgress) => mergeFriendBookRemoteEntries(currentProgress, entries));
+        persistFriendBookRemoteGuestbookCache(entries, window.localStorage);
 
         setRemoteStatus('ready');
       })
