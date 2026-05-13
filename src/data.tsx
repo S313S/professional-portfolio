@@ -285,7 +285,7 @@ const codingCategories: CodingCategory[] = [
     sequence: '01',
     title: 'Workflow',
     description:
-      'Systems for keeping AI-assisted delivery reliable, reviewable, and calm under iteration.',
+      'Reusable agent workflows for backup, research capture, social fetching, monitoring, and prompt-library operations.',
     iconLabel: 'WF',
     accent: '#62d98d',
   },
@@ -294,7 +294,7 @@ const codingCategories: CodingCategory[] = [
     sequence: '02',
     title: 'Vibecoding',
     description:
-      'Fast prototype loops where product direction, interface polish, and implementation move together.',
+      'Live-built portfolio, commerce, and visual-generation prototypes where interaction decisions become working code.',
     iconLabel: 'VC',
     accent: '#8ad9ff',
   },
@@ -303,7 +303,7 @@ const codingCategories: CodingCategory[] = [
     sequence: '03',
     title: 'AI product',
     description:
-      'Applied product ideas that turn model capabilities into clearer user value and operational leverage.',
+      'AI products and playbooks that turn AIGC signals, visual briefs, commerce scripts, and model strategy into usable decisions.',
     iconLabel: 'AI',
     accent: '#f4c46b',
   },
@@ -312,386 +312,386 @@ const codingCategories: CodingCategory[] = [
 const codingProjects: Record<CodingCategoryId, CodingProjectCard[]> = {
   workflow: [
     {
-      id: 'handoff-radar',
+      id: 'openclaw-backup-skill',
       categoryId: 'workflow',
-      title: 'Handoff Radar',
+      title: 'OpenClaw Backup Skill',
       description:
-        'A release handoff board that made ownership gaps, blockers, and review state visible before they slowed the team down.',
+        'Natural-language backup automation for turning a repeat local agent operation into a reusable skill.',
       detail: {
         problem:
-          'Release work was moving through scattered threads, so blockers and owner gaps surfaced too late for calm correction.',
+          'OpenClaw assets needed a repeatable GitHub backup path, but doing it manually risked missed folders, noisy commits, and accidental secret exposure.',
         approach: [
-          'Grouped every handoff by owner, blocker state, and review readiness.',
-          'Separated urgent risks from routine progress so the board could be scanned quickly.',
-          'Kept next actions visible beside each item instead of burying them in notes.',
+          'Packaged the backup flow as an installable skill with a shell script, docs, and a focused test harness.',
+          'Synced only selected workspace, skill, and extension assets while excluding runtime state, logs, queues, databases, and credentials.',
+          'Converted a plain-language request into Git diff review, Chinese update summary, commit message generation, commit, and push.',
         ],
         outcome:
-          'The team could spot fragile handoffs earlier and turn review follow-up into a visible operating rhythm.',
+          'The workflow became a reusable agent operation instead of a fragile personal checklist, with safer defaults and repeatable validation.',
       },
-      tags: ['Workflow', 'Review Ops'],
+      tags: ['Skill', 'Backup', 'Git'],
       image: '/images/career_bg.png',
-      link: '#',
+      link: 'https://github.com/S313S/openclaw-backup-skill',
     },
     {
-      id: 'prompt-qa-sheet',
+      id: 'product-content-analyst',
       categoryId: 'workflow',
-      title: 'Prompt QA Sheet',
+      title: 'Product Content Analyst',
       description:
-        'A structured prompt review surface for checking assumptions, model drift, and expected output shape before shipping.',
+        'A Streamlit MVP that turns a product link into selling points, a short video script, and Xiaohongshu copy.',
       detail: {
         problem:
-          'Prompt changes were easy to approve on tone while missing assumptions, regressions, and output-shape drift.',
+          'Commerce content work starts with scattered product links, media, and manual interpretation before a creator can write anything useful.',
         approach: [
-          'Split review into assumptions, expected format, model behavior, and edge-case checks.',
-          'Created a repeatable acceptance pass that could be reused across prompt iterations.',
-          'Made failure notes short enough to feed directly into the next revision.',
+          'Built a two-layer scraping flow: static requests first, then Playwright rendering when title, image, or video data is missing.',
+          'Added login-state reuse and manual confirmation for links that require authenticated browsing.',
+          'Used AI output with a local-template fallback so the tool still produces a usable draft without a configured model key.',
         ],
         outcome:
-          'Prompt reviews became easier to compare across versions, reducing subjective approvals and late fixes.',
+          'A product URL can become an inspectable content brief, reducing the gap between raw product material and creator-ready scripts.',
       },
-      tags: ['Prompting', 'QA'],
+      tags: ['Streamlit', 'Scraping', 'Commerce'],
       image: '/images/careerDetail_bg.png',
-      link: '#',
+      link: 'https://github.com/S313S/pd-data-analyst',
     },
     {
-      id: 'signal-archive',
+      id: 'social-fetch-pipeline',
       categoryId: 'workflow',
-      title: 'Signal Archive',
+      title: 'Social Fetch Pipeline',
       description:
-        'An internal archive flow for capturing working decisions, visual references, and implementation notes without losing context.',
+        'A GitHub-backed workflow for fetching Xiaohongshu and Twitter/X signals into a searchable AIGC content vault.',
       detail: {
         problem:
-          'Useful decisions and references were getting lost between chat history, screenshots, and implementation notes.',
+          'AIGC trend research depends on fast-moving social posts, but manual collection loses source context and makes later comparison hard.',
         approach: [
-          'Turned raw signals into lightweight entries with source, decision, and follow-up context.',
-          'Grouped visual references and build notes around the project moment where they mattered.',
-          'Kept the archive searchable without forcing a heavy documentation workflow.',
+          'Connected platform fetch and search endpoints to a single content-management interface.',
+          'Normalized notes, covers, tags, and source metadata so different social platforms can be reviewed together.',
+          'Kept provider fallbacks configurable for Xiaohongshu search and single-note fetches.',
         ],
         outcome:
-          'Past decisions became easier to recover, making future edits less dependent on memory or repeated explanations.',
+          'Research moved from isolated links into a vault that can be searched, filtered, and reused for product insight work.',
       },
-      tags: ['Documentation', 'Knowledge'],
+      tags: ['XHS', 'Twitter', 'Pipeline'],
       image: '/images/bg_growpath.jpeg',
-      link: '#',
+      link: 'https://github.com/S313S/AIGC_InsightVault',
     },
     {
-      id: 'review-rail',
+      id: 'quality-filter-spec',
       categoryId: 'workflow',
-      title: 'Review Rail',
+      title: 'Quality Filter Spec',
       description:
-        'A reviewer-first layout that compressed diffs, rationale, and next actions into one faster inspection loop.',
+        'A documented filtering layer for separating high-signal AIGC posts from noisy trend data.',
       detail: {
         problem:
-          'Reviewers needed to jump between diff context, intent, and follow-up actions before they could make a decision.',
+          'A raw pile of viral posts is not automatically useful; product decisions need semantic quality, platform context, and evidence.',
         approach: [
-          'Placed rationale, changed surface, and next action in a single inspection path.',
-          'Prioritized unresolved questions over passive status text.',
-          'Kept the layout dense enough for repeated review without feeling like a dashboard wall.',
+          'Wrote a quality-filter specification covering structure, semantic tags, source reliability, and reviewer decisions.',
+          'Separated trend evidence from generated summaries so weak model output can still be challenged.',
+          'Added test scripts around data snapshots, prompt tagging, fallback covers, and URL normalization.',
         ],
         outcome:
-          'Review sessions became more direct, with fewer context switches and clearer decision points.',
+          'The vault became more than a bookmark list: it gained a reviewable signal-processing workflow.',
       },
-      tags: ['Review', 'Decision Making'],
+      tags: ['Filtering', 'Spec', 'Signals'],
       image: '/images/video-transition-poster.png',
-      link: '#',
+      link: 'https://github.com/S313S/AIGC_InsightVault',
     },
     {
-      id: 'execution-docket',
+      id: 'cron-monitor',
       categoryId: 'workflow',
-      title: 'Execution Docket',
+      title: 'Cron Monitor',
       description:
-        'A task flow that paired small implementation batches with explicit validation, making AI assistance safer to scale.',
+        'A scheduled monitoring surface for keeping AIGC signal collection alive without manual checking.',
       detail: {
         problem:
-          'AI-assisted implementation could move quickly, but work became harder to trust when validation was not attached to each batch.',
+          'Trend monitoring loses value when collection only happens during a manual research session.',
         approach: [
-          'Broke implementation into small batches with an explicit verification command per batch.',
-          'Kept acceptance notes close to the task list so checks did not become an afterthought.',
-          'Made blockers visible before they turned into hidden scope changes.',
+          'Added cron-oriented API logic and response guidance for scheduled social-content monitoring.',
+          'Stored run logs and handled timeout behavior so failures are visible instead of silent.',
+          'Kept owner and RLS setup explicit for safer multi-user data access.',
         ],
         outcome:
-          'The workflow made faster delivery more reviewable and reduced uncertainty around what had actually been validated.',
+          'The research system can keep collecting and reporting signals as an operational workflow.',
       },
-      tags: ['Delivery', 'Automation'],
+      tags: ['Cron', 'Monitoring', 'Supabase'],
       image: '/images/growPath_03.png',
-      link: '#',
+      link: 'https://github.com/S313S/AIGC_InsightVault',
     },
     {
-      id: 'ops-playbook',
+      id: 'vibe-coding-workstation',
       categoryId: 'workflow',
-      title: 'Ops Playbook',
+      title: 'Vibe Coding Workstation',
       description:
-        'A reusable playbook for turning ambiguous product requests into testable, sequenced implementation work.',
+        'A Chinese Vibe Coding workstation that combines translated development practice with a prompt library.',
       detail: {
         problem:
-          'Ambiguous requests were jumping straight into build mode before scope, constraints, and verification were stable.',
+          'AI-assisted coding knowledge is often scattered across English references, prompt fragments, and personal notes.',
         approach: [
-          'Converted fuzzy intent into concrete success criteria and implementation steps.',
-          'Separated product decisions from discoverable repo facts to avoid unnecessary questions.',
-          'Included test checkpoints so the playbook could be handed to another builder.',
+          'Organized Vibe Coding concepts into a Chinese learning and practice surface.',
+          'Added prompt-library framing so patterns can be reused instead of rediscovered in every session.',
+          'Kept the material close to hands-on building rather than only conceptual translation.',
         ],
         outcome:
-          'The playbook helped turn open-ended asks into work that was easier to execute, review, and continue later.',
+          'The project works as a personal operating manual for faster, more structured AI-assisted development.',
       },
-      tags: ['Planning', 'Ops System'],
+      tags: ['Prompt Library', 'Learning', 'Ops'],
       image: '/images/growPath_04.png',
-      link: '#',
+      link: 'https://github.com/S313S/vibe-coding-cn',
     },
   ],
   vibecoding: [
     {
-      id: 'motion-sprint',
+      id: 'professional-portfolio',
       categoryId: 'vibecoding',
-      title: 'Motion Sprint',
+      title: 'Professional Portfolio',
       description:
-        'A rapid interaction prototype where animation timing and copy changed in the same loop as code.',
+        'A long-form immersive portfolio built as a product surface, not a static resume.',
       detail: {
         problem:
-          'Motion ideas were hard to judge from static references, and copy changes often shifted the timing after the fact.',
+          'A normal resume page could not show AI product judgment, visual taste, interaction craft, and real coding workflow in one place.',
         approach: [
-          'Built the interaction as a live prototype so timing, copy, and layout could be tuned together.',
-          'Used small animation passes to compare pacing without rewriting the whole scene.',
-          'Kept the prototype close to production markup to reduce translation loss.',
+          'Built full-screen narrative sections with scroll state machines, motion transitions, audio switching, and local media loading.',
+          'Created standalone debug routes for complex sections so detail views can be inspected without replaying the whole page.',
+          'Backed fragile interactions with logic tests and Playwright scripts for refresh, wheel, zoom, and navigation behavior.',
         ],
         outcome:
-          'The team could make faster decisions about motion feel because the prototype showed the real interaction rhythm.',
+          'The site makes the personal brand inspectable through the product itself: story, visuals, interaction, and engineering all reinforce one another.',
       },
-      tags: ['Prototype', 'Motion'],
+      tags: ['React', 'Motion', 'Portfolio'],
       image: '/images/after.png',
-      link: '#',
+      link: 'https://github.com/S313S/professional-portfolio',
     },
     {
-      id: 'portfolio-remix',
+      id: 'works-detail-system',
       categoryId: 'vibecoding',
-      title: 'Portfolio Remix',
+      title: 'Works Detail System',
       description:
-        'A concept page built from mood, references, and implementation experiments in a single focused session.',
+        'The portfolio detail section that switches between visual works and coding projects inside one immersive stage.',
       detail: {
         problem:
-          'The page needed a sharper direction, but the strongest visual ideas were still split across references and rough notes.',
+          'The works page needed to present visual artifacts and engineering projects without feeling like two unrelated galleries.',
         approach: [
-          'Translated mood references into concrete layout, color, and component experiments.',
-          'Tested the visual hierarchy directly in the browser instead of extending static mockups.',
-          'Removed ideas that looked interesting but did not support the portfolio story.',
+          'Used a shared detail stage with separate gallery and coding modes, each tuned to its own visual language.',
+          'Kept project expansion inside the same card grid so scanning and deep reading stay connected.',
+          'Added render tests for structure, compact expanded cards, night-sky palette, and diagonal gallery alignment.',
         ],
         outcome:
-          'The remix turned scattered inspiration into a usable direction with clearer hierarchy and faster iteration paths.',
+          'Coding projects can now be browsed as part of the same portfolio world instead of a detached technical appendix.',
       },
-      tags: ['Creative Coding', 'UI'],
+      tags: ['Detail View', 'Testing', 'UI'],
       image: '/images/before.png',
-      link: '#',
+      link: 'https://github.com/S313S/professional-portfolio',
     },
     {
-      id: 'hero-lab',
+      id: 'friendbook-finale',
       categoryId: 'vibecoding',
-      title: 'Hero Lab',
+      title: 'FriendBook Finale',
       description:
-        'A hero-section playground for testing typography, scene layering, and interaction feel before settling visual direction.',
+        'A final interactive friend-book scene with mini games, local progress, avatars, medals, and a message board.',
       detail: {
         problem:
-          'Hero directions looked promising in isolation, but it was unclear which one would hold up with real type and interaction.',
+          'The ending of the portfolio needed to feel personal and memorable rather than becoming a plain contact form.',
         approach: [
-          'Created a playground for swapping type scale, image depth, and foreground controls.',
-          'Compared scenes at multiple viewport sizes before choosing the final direction.',
-          'Kept test variants lightweight so weak ideas could be discarded quickly.',
+          'Designed three small games around attention, timing, and recognition rather than pure decoration.',
+          'Modeled game state in testable logic files so interaction rules can be verified outside the browser.',
+          'Used local storage progress, hidden avatars, and medals to make the final section feel collectible.',
         ],
         outcome:
-          'The final hero direction was selected from working interaction evidence rather than static preference alone.',
+          'The portfolio ends with an interaction that invites participation and makes the visitor relationship part of the work.',
       },
-      tags: ['Landing Page', 'Experiment'],
+      tags: ['Game UI', 'State', 'Finale'],
       image: '/images/growPath_01.png',
-      link: '#',
+      link: 'https://github.com/S313S/professional-portfolio',
     },
     {
-      id: 'scene-builder',
+      id: 'shopping-remix',
       categoryId: 'vibecoding',
-      title: 'Scene Builder',
+      title: 'Shopping Remix',
       description:
-        'A layout sketching flow where product ideas were validated through live-coded scene composition instead of static comps.',
+        'An e-commerce prototype that combines product input, AI analysis, upload flow, and generated creative output.',
       detail: {
         problem:
-          'Early product ideas needed spatial validation, but static comps were too slow for rapid scene-level exploration.',
+          'A commerce tool needed to show how competitor references and product material could become an interactive AI generation workflow.',
         approach: [
-          'Turned layout sketches into reusable scene blocks that could be rearranged quickly.',
-          'Validated density, focus, and scrolling behavior in the same environment as the final page.',
-          'Kept experiments constrained to the decision being tested.',
+          'Built form, uploader, analysis-result, and generated-gallery components around a single product workflow.',
+          'Connected Gemini service logic to structured product analysis and content generation.',
+          'Kept the prototype small enough to evaluate core interaction before expanding into a full commerce platform.',
         ],
         outcome:
-          'The scene builder made abstract product ideas easier to evaluate before committing to a full implementation.',
+          'The project demonstrates a fast path from competitor/product reference to a usable AI commerce interface.',
       },
-      tags: ['Layout', 'Iteration'],
+      tags: ['E-commerce', 'Prototype', 'Gemini'],
       image: '/images/growPath_02.png',
-      link: '#',
+      link: 'https://github.com/S313S/shopping',
     },
     {
-      id: 'interface-jam',
+      id: 'visual-bridge-v2',
       categoryId: 'vibecoding',
-      title: 'Interface Jam',
+      title: 'Visual Bridge V2',
       description:
-        'A collaborative build session that used fast component swaps to test tone, density, and hierarchy live.',
+        'A pure frontend image-direction prototype using OpenRouter image and text models.',
       detail: {
         problem:
-          'Stakeholders needed to compare interface tone and density, but async screenshots made feedback slow and fragmented.',
+          'Visual ideation tools often hide the prompt-to-image process, making it hard to refine direction quickly.',
         approach: [
-          'Prepared component alternatives that could be swapped live during the session.',
-          'Focused discussion on hierarchy, scan speed, and emotional tone instead of isolated styling.',
-          'Captured decisions immediately as implementation changes.',
+          'Kept model configuration explicit through VITE OpenRouter environment variables.',
+          'Used a lightweight Vite app so prompt, model, and result iteration can happen inside a fast local loop.',
+          'Separated the prototype from production backend concerns while documenting why browser-exposed keys need a backend later.',
         ],
         outcome:
-          'The session compressed visual alignment into a shorter loop and left behind a clearer component direction.',
+          'The project is a quick proving ground for image-generation product direction before hardening the architecture.',
       },
-      tags: ['Component', 'Collaboration'],
+      tags: ['OpenRouter', 'Image Gen', 'Prototype'],
       image: '/images/works-detail-07-square.png',
-      link: '#',
+      link: 'https://github.com/S313S/Visual-Bridge-V2',
     },
     {
-      id: 'contrast-pass',
+      id: 'portfolio-debug-routes',
       categoryId: 'vibecoding',
-      title: 'Contrast Pass',
+      title: 'Portfolio Debug Routes',
       description:
-        'A series of quick contrast and surface studies that made a rough interface feel intentional without slowing down delivery.',
+        'Development-only routes that make complex portfolio scenes easier to test, inspect, and repair.',
       detail: {
         problem:
-          'The interface worked structurally, but weak contrast and uneven surfaces made it feel unfinished.',
+          'Immersive scroll scenes are expensive to debug when every change requires manually reaching the right page state.',
         approach: [
-          'Audited text, borders, and background surfaces for hierarchy breaks.',
-          'Adjusted contrast in small passes so the existing layout did not need to be rebuilt.',
-          'Kept accent colors restrained to avoid turning polish into a new visual system.',
+          'Added standalone debug entries for friend-book, works detail, career detail, and codex report views.',
+          'Allowed query parameters to open coding mode or a specific active project directly.',
+          'Kept debug routing limited to development mode so production visitors only see the intended narrative flow.',
         ],
         outcome:
-          'The pass made the interface feel more deliberate while preserving delivery speed and existing structure.',
+          'The workflow makes high-motion UI repair faster and reduces the chance of fixing one scene while breaking another.',
       },
-      tags: ['Polish', 'Visual System'],
+      tags: ['Debugging', 'Routes', 'QA'],
       image: '/images/workDetail_bg.jpeg',
-      link: '#',
+      link: 'https://github.com/S313S/professional-portfolio',
     },
   ],
   'ai-product': [
     {
-      id: 'agent-console',
+      id: 'aigc-insight-vault',
       categoryId: 'ai-product',
-      title: 'Agent Console',
+      title: 'AIGC Insight Vault',
       description:
-        'A product concept for making agent status, confidence, and next-step recommendations understandable to operators.',
+        'A research product for collecting, monitoring, and interpreting viral AIGC content signals.',
       detail: {
         problem:
-          'Agent workflows could feel opaque when operators could not quickly read state, confidence, or the next best action.',
+          'AIGC product ideas need evidence from real social behavior, but viral posts are noisy, perishable, and hard to compare manually.',
         approach: [
-          'Separated current status, confidence cues, and recommended actions into distinct visual zones.',
-          'Used plain-language state labels instead of exposing raw model or system details.',
-          'Designed the console around operator decisions rather than agent activity alone.',
+          'Built dashboard, detail, search-results, monitoring, settings, and chat views around a single insight workflow.',
+          'Integrated social fetch/search APIs, Supabase persistence, authentication, fallback covers, and semantic tagging.',
+          'Used docs and tests to keep platform-specific fetching, quality filtering, and fallback rendering reviewable.',
         ],
         outcome:
-          'The concept made agent behavior easier to supervise and turned uncertain states into clearer operator choices.',
+          'The product turns scattered AIGC posts into a reusable research layer for trend discovery and product judgment.',
       },
-      tags: ['AI Product', 'Console'],
+      tags: ['Insight', 'Dashboard', 'AIGC'],
       image: '/images/careerDetail_litteleBg_01.png',
-      link: '#',
+      link: 'https://github.com/S313S/AIGC_InsightVault',
     },
     {
-      id: 'brief-copilot',
+      id: 'visual-bridge-assistance',
       categoryId: 'ai-product',
-      title: 'Brief Copilot',
+      title: 'Visual Bridge Assistance',
       description:
-        'A guided brief generator that translated vague requests into structured execution inputs with less back-and-forth.',
+        'An AI visual communication assistant for turning vague client intent into concrete image references.',
       detail: {
         problem:
-          'Vague requests caused repeated clarification loops before a builder had enough structure to start safely.',
+          'Clients often know the feeling they want but cannot express it in language that designers can directly execute.',
         approach: [
-          'Guided users from intent to constraints, scope, and acceptance criteria.',
-          'Turned missing details into focused prompts instead of open-ended forms.',
-          'Formatted the output as an execution-ready brief.',
+          'Built a chat-first React app with image gallery, thought panel, settings, and a local knowledge base.',
+          'Connected Gemini and Volcengine service layers so text understanding and visual generation can work together.',
+          'Added GitHub Pages and Cloudflare Worker deployment paths to make the prototype easier to share.',
         ],
         outcome:
-          'The copilot reduced back-and-forth by producing clearer inputs for planning, implementation, and review.',
+          'The tool reframes generation as communication support: it helps both sides inspect and align on visual direction.',
       },
-      tags: ['Copilot', 'Workflow'],
+      tags: ['Visual Brief', 'Gemini', 'Design'],
       image: '/images/careerDetail_litteleBg_02.png',
-      link: '#',
+      link: 'https://github.com/S313S/Visual-Bridge-assistance',
     },
     {
-      id: 'insight-merge',
+      id: 'commerce-script-generator',
       categoryId: 'ai-product',
-      title: 'Insight Merge',
+      title: 'Commerce Script Generator',
       description:
-        'A synthesis surface that grouped user signals, model output, and strategic framing into a single product readout.',
+        'A product-content workflow that converts raw item pages into platform-ready selling scripts.',
       detail: {
         problem:
-          'Research signals and model summaries were useful separately, but product decisions needed a combined readout.',
+          'Small commerce teams need repeatable content output, but product analysis, script structure, and platform tone are usually handled separately.',
         approach: [
-          'Grouped raw user signals beside synthesized themes and strategic implications.',
-          'Made source context visible so summaries could be challenged or trusted quickly.',
-          'Used concise sections to keep the surface useful for repeated product review.',
+          'Pulled product title, main image, and video signals from a pasted link or shared text.',
+          'Generated selling-point breakdowns, 30-second video scripts, and Xiaohongshu-style rewrites in one flow.',
+          'Added scraping fallbacks and browser login reuse to survive real-world page variation.',
         ],
         outcome:
-          'The surface helped move from scattered insight capture to a clearer product interpretation layer.',
+          'The project shows how AI can move from generic writing to a practical commerce operations assistant.',
       },
-      tags: ['Insights', 'Synthesis'],
+      tags: ['Commerce', 'Script', 'Ops'],
       image: '/images/careerDetail_litteleBg_03.png',
-      link: '#',
+      link: 'https://github.com/S313S/pd-data-analyst',
     },
     {
-      id: 'spec-orbit',
+      id: 'social-trend-monitor',
       categoryId: 'ai-product',
-      title: 'Spec Orbit',
+      title: 'Social Trend Monitor',
       description:
-        'A planning tool that linked prompts, UI states, and test expectations so product decisions stayed traceable.',
+        'A monitoring product concept for watching AIGC topics instead of manually checking platforms.',
       detail: {
         problem:
-          'Prompt decisions, UI states, and validation notes were drifting apart as implementation evolved.',
+          'Knowing which AI formats are rising requires repeated platform checking, but manual collection is too inconsistent for product work.',
         approach: [
-          'Linked each prompt or behavior decision to the UI state it affected.',
-          'Attached expected outcomes and test notes to the same planning surface.',
-          'Kept the structure lightweight enough for iterative product work.',
+          'Added monitoring UI and cron-oriented API routes around saved topics and collection runs.',
+          'Stored run logs, normalized provider responses, and surfaced fetch failures as product states.',
+          'Connected the idea back to the Feishu research method: search keywords, filter high-engagement content, tag features, then extract common patterns.',
         ],
         outcome:
-          'Spec changes became easier to trace, reducing confusion when implementation and prompt behavior changed together.',
+          'The monitor makes AIGC trend discovery an operating system rather than an occasional research sprint.',
       },
-      tags: ['Specs', 'Traceability'],
+      tags: ['Monitoring', 'Trends', 'Signals'],
       image: '/images/careerDetail_map.png',
-      link: '#',
+      link: 'https://github.com/S313S/AIGC_InsightVault',
     },
     {
-      id: 'launch-sentinel',
+      id: 'model-customization-playbook',
       categoryId: 'ai-product',
-      title: 'Launch Sentinel',
+      title: 'Model Customization Playbook',
       description:
-        'A launch assistant concept focused on preflight validation, rollback readiness, and team alignment for AI features.',
+        'A product-thinking framework for choosing between prompt engineering, fine-tuning, and feedback training.',
       detail: {
         problem:
-          'AI feature launches needed stronger preflight checks because behavior risk was not limited to UI bugs.',
+          'AI product discussions often jump to model training before clarifying data, task difficulty, expected outputs, and evaluation criteria.',
         approach: [
-          'Organized readiness around validation, rollback, monitoring, and communication checks.',
-          'Highlighted incomplete launch criteria before a feature reached the final approval moment.',
-          'Kept team alignment visible beside technical readiness.',
+          'Structured the decision path from prompt engineering to SFT, CPT, DPO, and manual/model-assisted evaluation.',
+          'Separated low-cost validation from expensive customization so product teams can prove value earlier.',
+          'Kept domain data, positive/negative examples, and scoring criteria visible as product requirements.',
         ],
         outcome:
-          'The concept framed launch readiness as an operational surface, not just a final checklist.',
+          'The framework helps explain AI implementation choices in product language instead of only model terminology.',
       },
-      tags: ['Launch', 'Reliability'],
+      tags: ['PE', 'Fine-tuning', 'Evaluation'],
       image: '/images/top-title.png',
-      link: '#',
+      link: 'https://github.com/S313S/AIGC_InsightVault',
     },
     {
-      id: 'memory-thread',
+      id: 'aigc-creation-toolchain',
       categoryId: 'ai-product',
-      title: 'Memory Thread',
+      title: 'AIGC Creation Toolchain',
       description:
-        'A product idea for preserving thread context across edits so agent collaboration felt less fragile over time.',
+        'A documented creator workflow covering image generation, image-to-video, character motion, and marketing video tests.',
       detail: {
         problem:
-          'Long-running agent work could lose important context when plans, edits, and decisions stretched across sessions.',
+          'AIGC creation is easy to demo once, but hard to turn into repeatable product value without knowing which tool fits which creative need.',
         approach: [
-          'Captured durable context as a thread timeline with decisions, changed files, and pending questions.',
-          'Separated stable project facts from temporary conversation state.',
-          'Made resume points explicit so future work could continue without restarting discovery.',
+          'Mapped creative needs to tools such as Midjourney, ComfyUI, Jimeng, Kling, Pika, Veo, and Live Portrait.',
+          'Recorded inputs, prompts, outputs, limitations, and recovery patterns like tail-frame stitching for longer AI videos.',
+          'Connected creator experiments to product thinking: lower learning cost, workflow the viral play, and build community support.',
         ],
         outcome:
-          'The idea made agent collaboration feel more continuous and less dependent on fragile conversational memory.',
+          'The material supports both personal creation and AI product judgment by showing how workflows become repeatable.',
       },
-      tags: ['Memory', 'Product Strategy'],
+      tags: ['AIGC', 'Video', 'Workflow'],
       image: '/images/easel-removebg.png',
-      link: '#',
+      link: 'https://github.com/S313S/professional-portfolio',
     },
   ],
 };

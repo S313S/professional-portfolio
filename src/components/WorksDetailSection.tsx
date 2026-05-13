@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import gsap from 'gsap';
+import { ExternalLink } from 'lucide-react';
 
 import { personalData, type CodingCategoryId } from '../data';
 import {
@@ -1408,6 +1409,7 @@ export default function WorksDetailSection({
                     >
                       {visibleCodingProjects.map((project) => {
                         const isProjectExpanded = activeCodingProjectId === project.id;
+                        const hasProjectLink = hasCodingProjectLink(project.link);
 
                         return (
                           <article
@@ -1439,7 +1441,23 @@ export default function WorksDetailSection({
                                   <span className="works-detail-coding__project-category">
                                     {activeCodingCategory?.title ?? 'Workflow'}
                                   </span>
-                                  <h4 className="works-detail-coding__project-title">{project.title}</h4>
+                                  <div className="works-detail-coding__project-title-row">
+                                    <h4 className="works-detail-coding__project-title">{project.title}</h4>
+                                    {isProjectExpanded && hasProjectLink ? (
+                                      <a
+                                        href={project.link}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        aria-label={`Open ${project.title} project`}
+                                        className="works-detail-coding__project-title-link"
+                                        onClick={(event) => {
+                                          event.stopPropagation();
+                                        }}
+                                      >
+                                        <ExternalLink aria-hidden="true" size={15} strokeWidth={1.9} />
+                                      </a>
+                                    ) : null}
+                                  </div>
                                 </div>
                                 {isProjectExpanded ? (
                                   <button
@@ -1481,19 +1499,6 @@ export default function WorksDetailSection({
                                     <span>Outcome</span>
                                     <p>{project.detail.outcome}</p>
                                   </section>
-                                  {hasCodingProjectLink(project.link) ? (
-                                    <a
-                                      href={project.link}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      className="works-detail-coding__project-link"
-                                      onClick={(event) => {
-                                        event.stopPropagation();
-                                      }}
-                                    >
-                                      Open project
-                                    </a>
-                                  ) : null}
                                 </div>
                               ) : null}
                             </div>

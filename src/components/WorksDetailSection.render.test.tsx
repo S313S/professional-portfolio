@@ -139,6 +139,40 @@ test('uses the real VisualMemory works in narrative order', () => {
   assert.equal(personalData.featuredWorks[9]!.title, 'Night Sense');
 });
 
+test('uses real coding project material instead of placeholder project cards', () => {
+  const allCodingProjects = Object.values(personalData.codingProjects).flat();
+  const codingMarkup = renderToStaticMarkup(
+    <WorksDetailSection
+      initialPhase="settled"
+      initialView="detail"
+      initialDetailMode="coding"
+      initialTransitionProgress={1}
+    />,
+  );
+
+  assert.equal(personalData.codingProjects.workflow[0]!.title, 'OpenClaw Backup Skill');
+  assert.equal(personalData.codingProjects.vibecoding[0]!.title, 'Professional Portfolio');
+  assert.equal(personalData.codingProjects['ai-product'][0]!.title, 'AIGC Insight Vault');
+  assert.equal(
+    personalData.codingCategories[0]!.description,
+    'Reusable agent workflows for backup, research capture, social fetching, monitoring, and prompt-library operations.',
+  );
+  assert.equal(
+    personalData.codingCategories[1]!.description,
+    'Live-built portfolio, commerce, and visual-generation prototypes where interaction decisions become working code.',
+  );
+  assert.equal(
+    personalData.codingCategories[2]!.description,
+    'AI products and playbooks that turn AIGC signals, visual briefs, commerce scripts, and model strategy into usable decisions.',
+  );
+  assert.match(codingMarkup, /OpenClaw Backup Skill/);
+  assert.match(codingMarkup, /Natural-language backup automation/);
+  assert.doesNotMatch(codingMarkup, /Handoff Radar|Prompt QA Sheet|Motion Sprint|Agent Console/);
+  assert.ok(
+    allCodingProjects.every((project) => project.link.startsWith('https://github.com/S313S/')),
+  );
+});
+
 test('keeps the left entry button clickable once the reveal is visually complete', () => {
   const markup = renderToStaticMarkup(
     <WorksDetailSection initialPhase="revealing" initialTransitionProgress={0.8} />,
@@ -262,18 +296,25 @@ test('renders only the active coding project when a coding card is expanded', ()
       initialView="detail"
       initialTransitionProgress={1}
       initialDetailMode="coding"
-      initialActiveCodingProjectId="handoff-radar"
+      initialActiveCodingProjectId="openclaw-backup-skill"
     />,
   );
+  const componentSource = readFileSync(new URL('./WorksDetailSection.tsx', import.meta.url), 'utf8');
 
   assert.match(markup, /data-coding-project-grid-state="expanded"/);
-  assert.match(markup, /data-coding-project-card="handoff-radar"/);
+  assert.match(markup, /data-coding-project-card="openclaw-backup-skill"/);
   assert.match(markup, /data-coding-project-expanded="true"/);
   assert.match(markup, /aria-expanded="true"/);
+  assert.match(markup, /works-detail-coding__project-title-link/);
+  assert.match(markup, /aria-label="Open OpenClaw Backup Skill project"/);
+  assert.match(markup, /lucide-external-link/);
+  assert.doesNotMatch(markup, />Open project</);
+  assert.match(componentSource, /ExternalLink/);
+  assert.match(componentSource, /works-detail-coding__project-title-row/);
   assert.match(markup, />Problem</);
   assert.match(markup, />Approach</);
   assert.match(markup, />Outcome</);
-  assert.doesNotMatch(markup, /data-coding-project-card="prompt-qa-sheet"/);
+  assert.doesNotMatch(markup, /data-coding-project-card="product-content-analyst"/);
   assert.doesNotMatch(markup, /data-coding-project-muted="true"/);
   const codingCards = markup.match(/data-coding-project-card=/g) ?? [];
   assert.equal(codingCards.length, 1);
