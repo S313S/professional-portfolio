@@ -59,11 +59,35 @@ const dedupeLoaderAssets = (assets: LoaderAsset[]) => {
   });
 };
 
+const CODING_WORK_IMAGE_URLS = [
+  '/images/CodingWorks/AIGC_InsightVault_dashboard.png',
+  '/images/CodingWorks/Al TeachingVideo.png',
+  '/images/CodingWorks/Coze_SocialDataFetch.png',
+  '/images/CodingWorks/Visual Bridge Assistance_chat.png',
+  "/images/CodingWorks/XiaoHongShu'sTranslation.png",
+  '/images/CodingWorks/comfyui-aigc-workflow-cover.svg',
+  '/images/CodingWorks/openclaw-backup-skill.png',
+  '/images/CodingWorks/pd-data-analyst.png',
+  '/images/CodingWorks/portfolioWorks.jpg',
+  '/images/CodingWorks/shopping-vibecoding-cover.svg',
+  '/images/CodingWorks/vibe-coding-workstation-cover.svg',
+] as const;
+
 const createFeaturedWorkLoaderAssets = () =>
   personalData.featuredWorks.map((work, index) =>
     createLoaderAsset(
       `works-detail-visual-work-${String(index + 1).padStart(2, '0')}`,
       work.image,
+      'image',
+      2,
+    ),
+  );
+
+const createCodingWorkLoaderAssets = () =>
+  CODING_WORK_IMAGE_URLS.map((url, index) =>
+    createLoaderAsset(
+      `works-detail-coding-work-${String(index + 1).padStart(2, '0')}`,
+      url,
       'image',
       2,
     ),
@@ -131,6 +155,7 @@ export const BLOCKING_HOME_LOADER_ASSETS: LoaderAsset[] = dedupeLoaderAssets([
   createLoaderAsset('works-detail-right-button', '/images/workDetail_rigtht_icon.png', 'image', 1),
   createLoaderAsset('works-detail-loading-document', WORKS_DETAIL_LOADING_SRC, 'document', 4),
   ...createFeaturedWorkLoaderAssets(),
+  ...createCodingWorkLoaderAssets(),
 
   createLoaderAsset(
     'friend-book-section-background',

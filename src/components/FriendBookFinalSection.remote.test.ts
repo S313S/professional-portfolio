@@ -81,7 +81,7 @@ test('builds a trimmed insert payload for the friend-book API', () => {
   );
 });
 
-test('merges remote entries into progress without keeping seed rows', () => {
+test('merges remote entries into progress while keeping seed rows', () => {
   const progress = createDefaultFriendBookProgress();
   const next = mergeFriendBookRemoteEntries(progress, [
     {
@@ -97,6 +97,7 @@ test('merges remote entries into progress without keeping seed rows', () => {
     },
   ]);
 
-  assert.equal(next.guestbookEntries.length, 1);
-  assert.equal(next.guestbookEntries[0]?.nickname, 'Dawn');
+  assert.equal(next.guestbookEntries.length, 6);
+  assert.equal(next.guestbookEntries[0]?.id, 'seed-forest-page-turner');
+  assert.equal(next.guestbookEntries.at(-1)?.nickname, 'Dawn');
 });

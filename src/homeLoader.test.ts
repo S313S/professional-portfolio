@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readdirSync, statSync } from 'node:fs';
+import { join, relative, sep } from 'node:path';
 
 import { COVER_AND_SELF_INTRO_AUDIO_SRC } from './App.logic';
 import { personalData } from './data';
@@ -12,6 +14,25 @@ import {
   shouldEnableHomeLoader,
   type LoaderAsset,
 } from './homeLoader';
+
+const PUBLIC_ROOT = join(process.cwd(), 'public');
+const PUBLIC_IMAGE_EXTENSIONS = /\.(?:avif|gif|jpe?g|png|svg|webp)$/i;
+
+function listPublicImageUrls(directory: string) {
+  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const entryPath = join(directory, entry.name);
+
+    if (entry.isDirectory()) {
+      return listPublicImageUrls(entryPath);
+    }
+
+    if (!entry.isFile() || !PUBLIC_IMAGE_EXTENSIONS.test(entry.name)) {
+      return [];
+    }
+
+    return [`/${relative(PUBLIC_ROOT, entryPath).split(sep).join('/')}`];
+  });
+}
 
 test('enables the home loader only for the Tencent Cloud production hostnames', () => {
   assert.equal(shouldEnableHomeLoader('xiaoci-ai.com'), true);
@@ -62,6 +83,20 @@ test('blocks on every featured VisualWorks image before opening the homepage', (
   );
 
   for (const url of featuredVisualWorkUrls) {
+    assert.equal(assetByUrl.get(url)?.kind, 'image');
+    assert.equal(assetByUrl.get(url)?.blocking, true);
+  }
+});
+
+test('blocks on every CodingWorks image before opening the homepage', () => {
+  const assetByUrl = new Map(BLOCKING_HOME_LOADER_ASSETS.map((asset) => [asset.url, asset]));
+  const codingWorkUrls = listPublicImageUrls(join(PUBLIC_ROOT, 'images/CodingWorks'));
+
+  assert.ok(codingWorkUrls.length > 0);
+  assert.ok(codingWorkUrls.every((url) => url.startsWith('/images/CodingWorks/')));
+
+  for (const url of codingWorkUrls) {
+    assert.equal(statSync(join(PUBLIC_ROOT, url.slice(1))).isFile(), true);
     assert.equal(assetByUrl.get(url)?.kind, 'image');
     assert.equal(assetByUrl.get(url)?.blocking, true);
   }

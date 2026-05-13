@@ -118,8 +118,13 @@ export function mergeFriendBookRemoteEntries(
     return progress;
   }
 
+  const remoteEntryIds = new Set(remoteEntries.map((entry) => entry.id));
+  const localEntries = progress.guestbookEntries.filter(
+    (entry) => !remoteEntryIds.has(entry.id),
+  );
+
   return {
     ...progress,
-    guestbookEntries: [...remoteEntries],
+    guestbookEntries: [...localEntries, ...remoteEntries],
   };
 }

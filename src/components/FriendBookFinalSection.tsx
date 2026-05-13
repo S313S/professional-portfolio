@@ -1082,18 +1082,19 @@ export default function FriendBookFinalSection({
             displayDate,
             medalId: pendingMedalId,
           });
-          const nextProgress = mergeFriendBookRemoteEntries(completedProgress, [
+          const remoteEntries = [
             ...completedProgress.guestbookEntries.filter(
               (entry) => !entry.id.startsWith('seed-') && entry.id !== remoteEntry.id,
             ),
             remoteEntry,
-          ]);
+          ];
+          const nextProgress = mergeFriendBookRemoteEntries(completedProgress, remoteEntries);
 
           nextGuestbookPageIndex = getFriendBookGuestbookPage(
             nextProgress.guestbookEntries,
             Number.MAX_SAFE_INTEGER,
           ).pageIndex;
-          persistFriendBookRemoteGuestbookCache(nextProgress.guestbookEntries, window.localStorage);
+          persistFriendBookRemoteGuestbookCache(remoteEntries, window.localStorage);
 
           return nextProgress;
         });
