@@ -17,6 +17,8 @@ import {
   type FriendBookProgress,
   type FriendBookStage,
   FRIEND_BOOK_GUESTBOOK_PAGE_SIZE,
+  FRIEND_BOOK_NICKNAME_MAX_ASCII_CHARACTERS,
+  FRIEND_BOOK_NICKNAME_MAX_DISPLAY_UNITS,
   FRIEND_BOOK_PENDING_GUESTBOOK_DRAFT_KEY,
   answerFriendBookQuizQuestion,
   advanceFriendBookQuizQuestion,
@@ -33,6 +35,8 @@ import {
   hydrateFriendBookPendingGuestbookDraft,
   hydrateFriendBookProgress,
   hydrateFriendBookRemoteGuestbookCache,
+  isFriendBookNicknameWithinLimit,
+  limitFriendBookNicknameDraft,
   persistFriendBookProgress,
   persistFriendBookPendingGuestbookDraft,
   persistFriendBookRemoteGuestbookCache,
@@ -318,6 +322,7 @@ const FRIEND_BOOK_GUESTBOOK_RIGHT_ROW_ORDER: FriendBookGameId[] = [
   'moon-run',
   'one-stroke-mark',
 ];
+const FRIEND_BOOK_NICKNAME_HELP_TEXT = `Up to ${FRIEND_BOOK_NICKNAME_MAX_DISPLAY_UNITS} Chinese characters; English letters and numbers count as half. Extra characters will be truncated.`;
 
 /**
  * Friend Book Finale 按钮位置参数
@@ -714,7 +719,7 @@ export default function FriendBookFinalSection({
   );
   const [roundSummary, setRoundSummary] = useState('');
   const [isHydrated, setIsHydrated] = useState(false);
-  const [remoteStatus, setRemoteStatus] = useState<'idle' | 'loading' | 'ready' | 'error' | 'saving'>('idle');
+  const [remoteStatus, setRemoteStatus] = useState<'idle' | 'loading' | 'ready' | 'error' | 'saving' | 'deleting'>('idle');
   const [remoteErrorMessage, setRemoteErrorMessage] = useState('');
   const [showBetweenTwoPagesHints, setShowBetweenTwoPagesHints] = useState(false);
   const [seenBetweenTwoPagesSceneIds, setSeenBetweenTwoPagesSceneIds] = useState<string[]>([]);
@@ -727,9 +732,15 @@ export default function FriendBookFinalSection({
     ? friendBookFinalSectionData.gameCards.find((game) => game.id === activeGameId) ?? null
     : null;
   const latestGuestbookEntry = progress.guestbookEntries[progress.guestbookEntries.length - 1] ?? null;
+  const trimmedNicknameDraft = nicknameDraft.trim();
+  const isNicknameDraftWithinLimit = isFriendBookNicknameWithinLimit(trimmedNicknameDraft);
+  const canUseNicknameDraft = Boolean(trimmedNicknameDraft && isNicknameDraftWithinLimit);
   const matchingGuestbookEntry =
-    progress.guestbookEntries.find((entry) => entry.nickname === nicknameDraft.trim()) ?? null;
-  const canDeleteGuestbookEntry = Boolean(matchingGuestbookEntry && !resolvedRemoteRepository?.isEnabled);
+    progress.guestbookEntries.find((entry) => entry.nickname === trimmedNicknameDraft) ?? null;
+  const canDeleteGuestbookEntry = Boolean(
+    matchingGuestbookEntry &&
+    (!resolvedRemoteRepository?.isEnabled || resolvedRemoteRepository.deleteEntry),
+  );
   const guestbookPage = getFriendBookGuestbookPage(progress.guestbookEntries, currentGuestbookPage);
   const availableAvatarIds = getAvailableFriendBookAvatarIds(progress);
   const betweenTwoPagesScene =
@@ -883,6 +894,10 @@ export default function FriendBookFinalSection({
     setNicknameDraft(entry?.nickname ?? '');
     setIdentityIntroDraft(entry?.identityIntro ?? '');
     setPortfolioReviewDraft(entry?.portfolioReview ?? '');
+  }
+
+  function handleNicknameDraftChange(value: string) {
+    setNicknameDraft(limitFriendBookNicknameDraft(value));
   }
 
   function resetGameState(gameId: FriendBookGameId) {
@@ -1051,7 +1066,7 @@ export default function FriendBookFinalSection({
     if (
       !activeGameId ||
       !pendingMedalId ||
-      !nicknameDraft.trim() ||
+      !canUseNicknameDraft ||
       !identityIntroDraft.trim() ||
       !portfolioReviewDraft.trim()
     ) {
@@ -1061,7 +1076,7 @@ export default function FriendBookFinalSection({
     const displayDate = formatFriendBookArchiveDate(new Date());
     let nextGuestbookPageIndex = 0;
     const noteDraft = {
-      nickname: nicknameDraft,
+      nickname: trimmedNicknameDraft,
       identityIntro: identityIntroDraft,
       portfolioReview: portfolioReviewDraft,
       latestGameId: activeGameId,
@@ -1114,7 +1129,7 @@ export default function FriendBookFinalSection({
           medalId: pendingMedalId,
         });
         const nextProgressWithGuestbook = upsertFriendBookGuestbookEntry(nextProgress, {
-          nickname: nicknameDraft,
+          nickname: trimmedNicknameDraft,
           identityIntro: identityIntroDraft,
           portfolioReview: portfolioReviewDraft,
           latestGameId: activeGameId,
@@ -1141,8 +1156,8 @@ export default function FriendBookFinalSection({
     scrollToTarget('friend-book-preview');
   }
 
-  function handleDeleteRecord() {
-    const targetNickname = nicknameDraft.trim();
+  async function handleDeleteRecord() {
+    const targetNickname = trimmedNicknameDraft;
 
     if (!targetNickname || !matchingGuestbookEntry) {
       return;
@@ -1157,6 +1172,18 @@ export default function FriendBookFinalSection({
       return;
     }
 
+    if (resolvedRemoteRepository?.isEnabled && resolvedRemoteRepository.deleteEntry) {
+      try {
+        setRemoteStatus('deleting');
+        setRemoteErrorMessage('');
+        await resolvedRemoteRepository.deleteEntry(matchingGuestbookEntry.id);
+      } catch (error) {
+        setRemoteStatus('error');
+        setRemoteErrorMessage(error instanceof Error ? error.message : 'Guestbook delete failed.');
+        return;
+      }
+    }
+
     let nextGuestbookPageIndex = 0;
     setProgress((currentProgress) => {
       const nextProgress = deleteFriendBookGuestbookEntry(currentProgress, targetNickname);
@@ -1164,6 +1191,12 @@ export default function FriendBookFinalSection({
         nextProgress.guestbookEntries,
         Math.min(currentGuestbookPage, Number.MAX_SAFE_INTEGER),
       ).pageIndex;
+      if (resolvedRemoteRepository?.isEnabled && typeof window !== 'undefined') {
+        persistFriendBookRemoteGuestbookCache(
+          nextProgress.guestbookEntries.filter((entry) => !entry.id.startsWith('seed-')),
+          window.localStorage,
+        );
+      }
       return nextProgress;
     });
     setCurrentGuestbookPage(nextGuestbookPageIndex);
@@ -1175,6 +1208,9 @@ export default function FriendBookFinalSection({
     setActiveGameId(null);
     setGameSession(null);
     setRoundSummary('');
+    if (resolvedRemoteRepository?.isEnabled) {
+      setRemoteStatus('ready');
+    }
     scrollToTarget('friend-book-preview');
   }
 
@@ -1735,10 +1771,19 @@ export default function FriendBookFinalSection({
                   <input
                     id="friend-book-nickname"
                     value={nicknameDraft}
-                    onChange={(event) => setNicknameDraft(event.target.value)}
+                    onChange={(event) => handleNicknameDraftChange(event.target.value)}
+                    maxLength={FRIEND_BOOK_NICKNAME_MAX_ASCII_CHARACTERS}
+                    aria-describedby="friend-book-nickname-help"
                     placeholder="How should this page address you?"
                     className="mt-4 h-12 w-full rounded-[1rem] border border-[#d9c8b3] bg-[rgba(255,251,246,0.92)] px-4 text-base text-[#3f312b] outline-none transition focus:border-[#8a654f]"
                   />
+                  <p
+                    id="friend-book-nickname-help"
+                    data-friend-book-nickname-limit="true"
+                    className="mt-2 text-sm leading-6 text-[#7a5d4d]"
+                  >
+                    {FRIEND_BOOK_NICKNAME_HELP_TEXT}
+                  </p>
                   <label
                     htmlFor="friend-book-identity-intro"
                     className="mt-5 block font-mono text-[0.68rem] uppercase tracking-[0.28em] text-[#7a5d4d]"
@@ -1771,7 +1816,8 @@ export default function FriendBookFinalSection({
                       onClick={handleNoteSubmit}
                       disabled={
                         remoteStatus === 'saving' ||
-                        !nicknameDraft.trim() ||
+                        remoteStatus === 'deleting' ||
+                        !canUseNicknameDraft ||
                         !identityIntroDraft.trim() ||
                         !portfolioReviewDraft.trim()
                       }
@@ -1786,9 +1832,11 @@ export default function FriendBookFinalSection({
                           ? 'Syncing public guestbook...'
                           : remoteStatus === 'saving'
                             ? 'Publishing to the public guestbook...'
-                            : remoteStatus === 'error'
-                              ? `Guestbook sync failed. ${remoteErrorMessage}`
-                              : 'This note will be saved to the public guestbook.'}
+                            : remoteStatus === 'deleting'
+                              ? 'Deleting from the public guestbook...'
+                              : remoteStatus === 'error'
+                                ? `Guestbook sync failed. ${remoteErrorMessage}`
+                                : 'This note will be saved to the public guestbook.'}
                       </p>
                     ) : null}
                     {canDeleteGuestbookEntry && matchingGuestbookEntry ? (
@@ -1801,7 +1849,9 @@ export default function FriendBookFinalSection({
                           <span>Delete This Record</span>
                         </button>
                         <p className="text-sm leading-6 text-[#7a5d4d]">
-                          {`This will remove ${matchingGuestbookEntry.nickname} from the guestbook only.`}
+                          {resolvedRemoteRepository?.isEnabled
+                            ? `This will remove ${matchingGuestbookEntry.nickname} from the public guestbook.`
+                            : `This will remove ${matchingGuestbookEntry.nickname} from the guestbook only.`}
                         </p>
                       </>
                     ) : null}

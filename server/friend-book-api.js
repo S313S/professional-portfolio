@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import Database from 'better-sqlite3';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, timingSafeEqual } from 'node:crypto';
 import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -78,6 +78,23 @@ function validateEntryPayload(payload) {
   };
 }
 
+function isAdminTokenValid(candidate, expected) {
+  const candidateToken = text(candidate);
+  const expectedToken = text(expected);
+
+  if (!candidateToken || !expectedToken) {
+    return false;
+  }
+
+  const candidateBuffer = Buffer.from(candidateToken);
+  const expectedBuffer = Buffer.from(expectedToken);
+
+  return (
+    candidateBuffer.length === expectedBuffer.length &&
+    timingSafeEqual(candidateBuffer, expectedBuffer)
+  );
+}
+
 export function ensureFriendBookSchema(db) {
   db.exec(`
     create table if not exists friend_book_entries (
@@ -107,6 +124,7 @@ export function createFriendBookApiApp({
   db,
   now = () => new Date(),
   createId = randomUUID,
+  adminToken = process.env.FRIEND_BOOK_ADMIN_TOKEN,
 } = {}) {
   if (!db) {
     throw new Error('createFriendBookApiApp requires a better-sqlite3 database instance.');
@@ -191,6 +209,32 @@ export function createFriendBookApiApp({
     });
 
     res.status(201).json({ entry: rowToApiEntry(entry) });
+  });
+
+  app.delete(`${FRIEND_BOOK_API_PATH}/:id`, (req, res) => {
+    if (!isAdminTokenValid(req.get('x-friend-book-admin-token'), adminToken)) {
+      res.status(403).json({ error: 'A valid admin token is required to delete a guestbook entry.' });
+      return;
+    }
+
+    const id = text(req.params.id);
+
+    if (!id) {
+      res.status(400).json({ error: 'entry id is required.' });
+      return;
+    }
+
+    const result = db.prepare(`
+      delete from friend_book_entries
+      where id = ?
+    `).run(id);
+
+    if (result.changes === 0) {
+      res.status(404).json({ error: 'guestbook entry not found.' });
+      return;
+    }
+
+    res.json({ ok: true, id });
   });
 
   return app;

@@ -11,6 +11,20 @@ import {
   normalizeCodexGuideDocument,
 } from './src/codexReport';
 
+const FRIEND_BOOK_PRODUCTION_API_ORIGIN = 'https://xiaoci-ai.com';
+
+export function getFriendBookApiProxyConfig(
+  env: Record<string, string | undefined>,
+) {
+  return {
+    target:
+      env.FRIEND_BOOK_API_PROXY_TARGET?.trim() ||
+      FRIEND_BOOK_PRODUCTION_API_ORIGIN,
+    changeOrigin: true,
+    secure: true,
+  };
+}
+
 export default defineConfig(({mode}) => {
   const env = loadEnv(mode, '.', '');
   const debugHotspotOutputPath = path.resolve(
@@ -173,6 +187,9 @@ export default defineConfig(({mode}) => {
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
       // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',
+      proxy: {
+        '/api/friend-book-entries': getFriendBookApiProxyConfig(env),
+      },
     },
   };
 });

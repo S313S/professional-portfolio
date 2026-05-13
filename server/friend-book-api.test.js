@@ -20,7 +20,7 @@ function createTestDatabase() {
 }
 
 async function withTestServer(app, callback) {
-  const server = app.listen(0);
+  const server = app.listen(0, '127.0.0.1');
   await new Promise((resolve) => server.once('listening', resolve));
 
   try {
@@ -139,6 +139,73 @@ test('friend-book API rejects invalid entries', async () => {
 
     assert.equal(response.status, 400);
     assert.match(payload.error, /nickname/i);
+    assert.equal(
+      db.prepare('select count(*) as count from friend_book_entries').get().count,
+      0,
+    );
+  });
+});
+
+test('friend-book API requires an admin token before deleting an entry', async () => {
+  const db = createTestDatabase();
+  db.prepare(`
+    insert into friend_book_entries (
+      id, nickname, identity_intro, portfolio_review, is_published, created_at, updated_at
+    ) values (?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    'entry-1',
+    'Dawn',
+    'Remote visitor',
+    'Remote review',
+    1,
+    '2026-05-13T02:20:00.000Z',
+    '2026-05-13T02:20:00.000Z',
+  );
+  const app = createFriendBookApiApp({ db, adminToken: 'secret-token' });
+
+  await withTestServer(app, async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/friend-book-entries/entry-1`, {
+      method: 'DELETE',
+    });
+    const payload = await response.json();
+
+    assert.equal(response.status, 403);
+    assert.match(payload.error, /admin token/i);
+    assert.equal(
+      db.prepare('select count(*) as count from friend_book_entries').get().count,
+      1,
+    );
+  });
+});
+
+test('friend-book API deletes a published entry with a valid admin token', async () => {
+  const db = createTestDatabase();
+  db.prepare(`
+    insert into friend_book_entries (
+      id, nickname, identity_intro, portfolio_review, is_published, created_at, updated_at
+    ) values (?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    'entry-1',
+    'Dawn',
+    'Remote visitor',
+    'Remote review',
+    1,
+    '2026-05-13T02:20:00.000Z',
+    '2026-05-13T02:20:00.000Z',
+  );
+  const app = createFriendBookApiApp({ db, adminToken: 'secret-token' });
+
+  await withTestServer(app, async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/friend-book-entries/entry-1`, {
+      method: 'DELETE',
+      headers: {
+        'x-friend-book-admin-token': 'secret-token',
+      },
+    });
+    const payload = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(payload, { ok: true, id: 'entry-1' });
     assert.equal(
       db.prepare('select count(*) as count from friend_book_entries').get().count,
       0,

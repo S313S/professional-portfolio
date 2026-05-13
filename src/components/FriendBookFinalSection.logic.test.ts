@@ -8,6 +8,7 @@ import {
   deleteFriendBookGuestbookEntry,
   FRIEND_BOOK_GUESTBOOK_PAGE_SIZE,
   FRIEND_BOOK_HIDDEN_AVATAR_ID,
+  FRIEND_BOOK_NICKNAME_MAX_DISPLAY_UNITS,
   FRIEND_BOOK_PENDING_GUESTBOOK_DRAFT_KEY,
   FRIEND_BOOK_REMOTE_CACHE_KEY,
   FRIEND_BOOK_STORAGE_KEY,
@@ -22,9 +23,11 @@ import {
   getAvailableFriendBookAvatarIds,
   getFriendBookGameStartStage,
   getNextBetweenTwoPagesSceneRotation,
+  getFriendBookNicknameDisplayUnits,
   hydrateFriendBookPendingGuestbookDraft,
   hydrateFriendBookProgress,
   hydrateFriendBookRemoteGuestbookCache,
+  limitFriendBookNicknameDraft,
   persistFriendBookProgress,
   persistFriendBookPendingGuestbookDraft,
   persistFriendBookRemoteGuestbookCache,
@@ -49,6 +52,14 @@ function createMemoryStorage(seed: Record<string, string> = {}) {
     },
   };
 }
+
+test('limits guestbook nickname drafts to five Chinese display units', () => {
+  assert.equal(FRIEND_BOOK_NICKNAME_MAX_DISPLAY_UNITS, 5);
+  assert.equal(getFriendBookNicknameDisplayUnits('浮躁的都市浮萍'), 7);
+  assert.equal(limitFriendBookNicknameDraft('浮躁的都市浮萍'), '浮躁的都市');
+  assert.equal(limitFriendBookNicknameDraft('ArchiveWalker'), 'ArchiveWal');
+  assert.equal(limitFriendBookNicknameDraft('小CiBuilder'), '小CiBuilde');
+});
 
 test('hydrate merges persisted friend-book progress with default slots and avatars', () => {
   const storage = createMemoryStorage({

@@ -144,6 +144,9 @@ export const FRIEND_BOOK_HIDDEN_AVATAR_ID = 'hidden-cat';
 export const FRIEND_BOOK_GUESTBOOK_PAGE_SIZE = 3;
 export const FRIEND_BOOK_QUIZ_ROUND_SIZE = 5;
 export const FRIEND_BOOK_DEFAULT_GUESTBOOK_ENTRY_COUNT = 5;
+export const FRIEND_BOOK_NICKNAME_MAX_DISPLAY_UNITS = 5;
+export const FRIEND_BOOK_NICKNAME_MAX_ASCII_CHARACTERS =
+  FRIEND_BOOK_NICKNAME_MAX_DISPLAY_UNITS * 2;
 
 export interface FriendBookPendingGuestbookDraft {
   nickname: string;
@@ -322,6 +325,39 @@ function createGuestbookEntryId(nickname: string, updatedAt: string): string {
 
 function sanitizeText(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
+}
+
+function getFriendBookNicknameCharacterUnits(character: string): number {
+  return /^[\x00-\x7F]$/.test(character) ? 0.5 : 1;
+}
+
+export function getFriendBookNicknameDisplayUnits(value: string): number {
+  return Array.from(value).reduce(
+    (total, character) => total + getFriendBookNicknameCharacterUnits(character),
+    0,
+  );
+}
+
+export function limitFriendBookNicknameDraft(value: string): string {
+  let nextValue = '';
+  let nextUnits = 0;
+
+  for (const character of Array.from(value)) {
+    const characterUnits = getFriendBookNicknameCharacterUnits(character);
+
+    if (nextUnits + characterUnits > FRIEND_BOOK_NICKNAME_MAX_DISPLAY_UNITS) {
+      break;
+    }
+
+    nextValue += character;
+    nextUnits += characterUnits;
+  }
+
+  return nextValue;
+}
+
+export function isFriendBookNicknameWithinLimit(value: string): boolean {
+  return getFriendBookNicknameDisplayUnits(value) <= FRIEND_BOOK_NICKNAME_MAX_DISPLAY_UNITS;
 }
 
 function sanitizeGuestbookEntry(

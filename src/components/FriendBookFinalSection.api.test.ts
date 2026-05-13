@@ -10,11 +10,16 @@ import {
 test('api config defaults to the same-origin friend-book endpoint', () => {
   assert.deepEqual(getFriendBookApiConfig({}), {
     endpoint: '/api/friend-book-entries',
+    adminToken: null,
   });
   assert.deepEqual(
-    getFriendBookApiConfig({ VITE_FRIEND_BOOK_API_ENDPOINT: '/custom/friend-book' }),
+    getFriendBookApiConfig({
+      VITE_FRIEND_BOOK_API_ENDPOINT: '/custom/friend-book',
+      VITE_FRIEND_BOOK_ADMIN_TOKEN: ' secret-token ',
+    }),
     {
       endpoint: '/custom/friend-book',
+      adminToken: 'secret-token',
     },
   );
 });
@@ -109,6 +114,29 @@ test('api repository surfaces HTTP errors', async () => {
   });
 
   await assert.rejects(repository.fetchEntries(), /write failed/);
+});
+
+test('api repository deletes an entry with the configured admin token', async () => {
+  const calls: Array<{ input: string; init?: RequestInit }> = [];
+  const repository = createFriendBookApiRepository({
+    endpoint: '/api/friend-book-entries',
+    adminToken: 'secret-token',
+    fetcher: async (input, init) => {
+      calls.push({ input: String(input), init });
+
+      return new Response(JSON.stringify({ ok: true, id: 'entry/1' }), { status: 200 });
+    },
+  });
+
+  assert.equal(typeof repository.deleteEntry, 'function');
+  await repository.deleteEntry?.('entry/1');
+
+  assert.equal(calls[0]?.input, '/api/friend-book-entries/entry%2F1');
+  assert.equal(calls[0]?.init?.method, 'DELETE');
+  assert.equal(
+    (calls[0]?.init?.headers as Record<string, string>)['x-friend-book-admin-token'],
+    'secret-token',
+  );
 });
 
 test('default api repository is enabled for same-origin deployment', () => {

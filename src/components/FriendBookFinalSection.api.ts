@@ -22,10 +22,12 @@ export interface FriendBookRemoteRepository {
     displayDate: string | null;
     clientId?: string | null;
   }): Promise<FriendBookGuestbookEntry>;
+  deleteEntry?: (id: string) => Promise<void>;
 }
 
 export interface FriendBookApiConfig {
   endpoint: string;
+  adminToken: string | null;
 }
 
 type FriendBookFetch = typeof fetch;
@@ -37,6 +39,7 @@ export function getFriendBookApiConfig(
 ): FriendBookApiConfig {
   return {
     endpoint: env?.VITE_FRIEND_BOOK_API_ENDPOINT?.trim() || DEFAULT_FRIEND_BOOK_API_ENDPOINT,
+    adminToken: env?.VITE_FRIEND_BOOK_ADMIN_TOKEN?.trim() || null,
   };
 }
 
@@ -56,12 +59,14 @@ async function parseApiResponse<T>(response: Response): Promise<T> {
 
 export function createFriendBookApiRepository(options: {
   endpoint: string;
+  adminToken?: string | null;
   fetcher?: FriendBookFetch;
 }): FriendBookRemoteRepository {
   const endpoint = options.endpoint.trim() || DEFAULT_FRIEND_BOOK_API_ENDPOINT;
+  const adminToken = options.adminToken?.trim() || null;
   const fetcher = options.fetcher ?? fetch;
 
-  return {
+  const repository: FriendBookRemoteRepository = {
     isEnabled: true,
     async fetchEntries() {
       const payload = await parseApiResponse<{ entries?: FriendBookRemoteRow[] }>(
@@ -91,12 +96,29 @@ export function createFriendBookApiRepository(options: {
       return entry;
     },
   };
+
+  if (adminToken) {
+    repository.deleteEntry = async (id: string) => {
+      await parseApiResponse<{ ok?: boolean; id?: string }>(
+        await fetcher(`${endpoint}/${encodeURIComponent(id)}`, {
+          method: 'DELETE',
+          headers: {
+            'x-friend-book-admin-token': adminToken,
+          },
+        }),
+      );
+    };
+  }
+
+  return repository;
 }
 
 export function createDefaultFriendBookApiRepository(): FriendBookRemoteRepository {
   const env = (import.meta as unknown as { env?: Record<string, string | undefined> }).env;
+  const config = getFriendBookApiConfig(env);
 
   return createFriendBookApiRepository({
-    endpoint: getFriendBookApiConfig(env).endpoint,
+    endpoint: config.endpoint,
+    adminToken: config.adminToken,
   });
 }
