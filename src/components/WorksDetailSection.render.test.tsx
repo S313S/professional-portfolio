@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { renderToStaticMarkup } from 'react-dom/server';
 
 import { personalData } from '../data';
@@ -153,6 +153,30 @@ test('uses real coding project material instead of placeholder project cards', (
   assert.equal(personalData.codingProjects.workflow[0]!.title, 'OpenClaw Backup Skill');
   assert.equal(personalData.codingProjects.vibecoding[0]!.title, 'Professional Portfolio');
   assert.equal(personalData.codingProjects['ai-product'][0]!.title, 'AIGC Insight Vault');
+  assert.equal(personalData.codingProjects.workflow[0]!.image, '/images/CodingWorks/openclaw-backup-skill.png');
+  assert.equal(personalData.codingProjects.workflow[0]!.link, 'https://github.com/S313S/openclaw-backup-skill');
+  assert.equal(personalData.codingProjects.workflow[1]!.image, '/images/CodingWorks/pd-data-analyst.png');
+  assert.equal(personalData.codingProjects.workflow[1]!.link, '#');
+  assert.equal(personalData.codingProjects.vibecoding[0]!.image, '/images/CodingWorks/portfolioWorks.jpg');
+  assert.equal(personalData.codingProjects.vibecoding[0]!.link, 'http://xiaoci-ai.com/');
+  assert.equal(personalData.codingProjects.vibecoding[3]!.link, '#');
+  assert.equal(
+    personalData.codingProjects.vibecoding[4]!.image,
+    '/images/CodingWorks/Visual Bridge Assistance_chat.png',
+  );
+  assert.equal(personalData.codingProjects.vibecoding[4]!.link, 'https://s313s.github.io/Visual-Bridge-V2/');
+  assert.equal(
+    personalData.codingProjects['ai-product'][0]!.image,
+    '/images/CodingWorks/AIGC_InsightVault_dashboard.png',
+  );
+  assert.equal(personalData.codingProjects['ai-product'][0]!.link, 'https://aigc-insight-vault.vercel.app/');
+  assert.equal(
+    personalData.codingProjects['ai-product'][1]!.image,
+    '/images/CodingWorks/Visual Bridge Assistance_chat.png',
+  );
+  assert.equal(personalData.codingProjects['ai-product'][1]!.link, 'https://s313s.github.io/Visual-Bridge-V2/');
+  assert.equal(personalData.codingProjects['ai-product'][2]!.image, '/images/CodingWorks/pd-data-analyst.png');
+  assert.equal(personalData.codingProjects['ai-product'][2]!.link, '#');
   assert.equal(
     personalData.codingCategories[0]!.description,
     'Reusable agent workflows for backup, research capture, social fetching, monitoring, and prompt-library operations.',
@@ -168,9 +192,8 @@ test('uses real coding project material instead of placeholder project cards', (
   assert.match(codingMarkup, /OpenClaw Backup Skill/);
   assert.match(codingMarkup, /Natural-language backup automation/);
   assert.doesNotMatch(codingMarkup, /Handoff Radar|Prompt QA Sheet|Motion Sprint|Agent Console/);
-  assert.ok(
-    allCodingProjects.every((project) => project.link.startsWith('https://github.com/S313S/')),
-  );
+  assert.ok(allCodingProjects.every((project) => project.link === '#' || project.link.startsWith('http')));
+  assert.ok(existsSync('public/images/CodingWorks/openclaw-backup-skill.png'));
 });
 
 test('keeps the left entry button clickable once the reveal is visually complete', () => {
@@ -307,6 +330,11 @@ test('renders only the active coding project when a coding card is expanded', ()
   assert.match(markup, /aria-expanded="true"/);
   assert.match(markup, /works-detail-coding__project-title-link/);
   assert.match(markup, /aria-label="Open OpenClaw Backup Skill project"/);
+  assert.match(
+    markup,
+    /<a href="https:\/\/github\.com\/S313S\/openclaw-backup-skill" target="_blank" rel="noreferrer" aria-label="Open OpenClaw Backup Skill project" class="works-detail-coding__project-title-link"/,
+  );
+  assert.match(componentSource, /window\.open\(project\.link, '_blank', 'noopener,noreferrer'\)/);
   assert.match(markup, /lucide-external-link/);
   assert.doesNotMatch(markup, />Open project</);
   assert.match(componentSource, /ExternalLink/);

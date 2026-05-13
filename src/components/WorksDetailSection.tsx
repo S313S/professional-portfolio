@@ -1451,7 +1451,9 @@ export default function WorksDetailSection({
                                         aria-label={`Open ${project.title} project`}
                                         className="works-detail-coding__project-title-link"
                                         onClick={(event) => {
+                                          event.preventDefault();
                                           event.stopPropagation();
+                                          window.open(project.link, '_blank', 'noopener,noreferrer');
                                         }}
                                       >
                                         <ExternalLink aria-hidden="true" size={15} strokeWidth={1.9} />
