@@ -34,8 +34,13 @@
 
 - `GEMINI_API_KEY`：Gemini API key，AI Studio 运行时会注入。
 - `APP_URL`：应用托管地址，用于自引用链接、OAuth 回调或 API 端点。
+- `VITE_FRIEND_BOOK_API_ENDPOINT`：友人帐前端请求入口，默认 `/api/friend-book-entries`。
+- `VITE_FRIEND_BOOK_ADMIN_TOKEN`：仅本地/私有调试用的友人帐删除 token。不要放进公开生产前端构建，否则 token 会被打进浏览器包。
+- `FRIEND_BOOK_API_PORT`、`FRIEND_BOOK_DB_PATH`、`FRIEND_BOOK_ADMIN_TOKEN`：友人帐 Node API 服务端配置，其中 `FRIEND_BOOK_ADMIN_TOKEN` 用于保护远程删除接口。
 
 当前主要作品集交互不应默认依赖远程 API。修改代码时避免把本地页面渲染变成必须联网。
+
+当前例外是友人帐公开留言册：本地开发服务器会通过 Vite proxy 把 `/api/friend-book-entries` 转发到 `https://xiaoci-ai.com`，用于验证线上真实留言数据。本地如果需要显示并执行删除按钮，必须在私有 `.env.local` 中设置 `VITE_FRIEND_BOOK_ADMIN_TOKEN`，并重启 `npm run dev`。
 
 ## 目录结构
 
@@ -169,6 +174,7 @@ https://portfolio-static-1259451604.cos.ap-shanghai.myqcloud.com/images/VisualWo
 ```text
 GET /api/friend-book-entries
 POST /api/friend-book-entries
+DELETE /api/friend-book-entries/:id
 ```
 
 线上 API 部署信息：
@@ -183,7 +189,23 @@ systemd 服务：xiaoci-friend-book-api.service
 运行用户：www
 API 监听：127.0.0.1:3008
 Node 运行时：/opt/node-v24.15.0-linux-x64/bin/node
+删除接口鉴权：FRIEND_BOOK_ADMIN_TOKEN，通过 systemd drop-in 注入
 ```
+
+本地开发说明：
+
+- `vite.config.ts` 中的 `/api/friend-book-entries` proxy 默认指向 `https://xiaoci-ai.com`，因此本地新增留言会写入线上腾讯云 SQLite。
+- 如需改为本地 API，可在私有环境变量中设置 `FRIEND_BOOK_API_PROXY_TARGET=http://127.0.0.1:3008` 后重启 Vite。
+- `/debug/friend-book-finale` 使用默认远程 repository，所以本地调试页也会读取/提交线上留言。
+- 删除按钮只在前端 repository 拿到 `VITE_FRIEND_BOOK_ADMIN_TOKEN` 后显示；没有 token 时仅能新增和读取。
+- `VITE_FRIEND_BOOK_ADMIN_TOKEN` 只能放在 `.env.local` 等私有本地文件里，不要配置进线上静态站构建环境。
+
+远程删除接口规则：
+
+- 删除请求为 `DELETE /api/friend-book-entries/:id`。
+- 必须带 header `x-friend-book-admin-token: <token>`。
+- 无 token 或 token 错误返回 `403`；token 正确但 id 不存在返回 `404`；删除成功返回 `{ ok: true, id }`。
+- 后端用 `FRIEND_BOOK_ADMIN_TOKEN` 校验 token，当前线上通过 `/etc/systemd/system/xiaoci-friend-book-api.service.d/admin-token.conf` 注入。
 
 服务器是 OpenCloudOS + 宝塔环境。Nginx 不在 `/etc/nginx`，主配置和站点配置在：
 
@@ -214,6 +236,18 @@ ssh root@106.54.13.225 'curl -fsS http://127.0.0.1:3008/api/friend-book-entries'
 ssh root@106.54.13.225 'sqlite3 /var/lib/xiaoci-portfolio/friend-book.sqlite ".tables"'
 ```
 
+删除接口的非破坏性验证方式：
+
+```bash
+# 错误 token 应返回 403
+curl -i -s -X DELETE -H 'x-friend-book-admin-token: wrong-token' \
+  https://xiaoci-ai.com/api/friend-book-entries/__codex-nonexistent__
+
+# 正确 token + 不存在 id 应返回 404，表示鉴权通过但没有删除真实记录
+curl -i -s -X DELETE -H "x-friend-book-admin-token: $FRIEND_BOOK_ADMIN_TOKEN" \
+  https://xiaoci-ai.com/api/friend-book-entries/__codex-nonexistent__
+```
+
 如果修改 Nginx 配置，先备份站点配置，再测试并 reload：
 
 ```bash
@@ -226,7 +260,9 @@ ssh root@106.54.13.225 '/www/server/nginx/sbin/nginx -s reload -c /www/server/ng
 
 - 不要直接发布带有未提交用户改动的 dirty worktree；如有未提交改动，先用干净 worktree 从目标 commit 构建。
 - 服务器系统源的 Node 18 不满足 `better-sqlite3@12.4.1` 的运行要求，API 服务显式使用 `/opt/node-v24.15.0-linux-x64/bin/node`。
+- 部署 API 删除能力时，除了同步 `server/friend-book-api.js`，还要确认 systemd drop-in 里有 `FRIEND_BOOK_ADMIN_TOKEN`，并执行 `systemctl daemon-reload && systemctl restart xiaoci-friend-book-api.service`。
 - 若 Codex 无法用本机 `id_rsa` 自动 SSH，通常是私钥有 passphrase；可通过腾讯云网页终端临时追加一把无密码部署公钥，部署完必须从 `/root/.ssh/authorized_keys` 移除。
+- 本机已有可用腾讯云部署 key 时，可用 `ssh -i ~/.ssh/xiaoci_tencent_deploy -o IdentitiesOnly=yes root@106.54.13.225 ...`。
 - API 只绑定 `127.0.0.1`，不要把 `3008` 端口直接暴露到公网。
 
 ## 协作约定
