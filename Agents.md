@@ -162,6 +162,73 @@ https://portfolio-static-1259451604.cos.ap-shanghai.myqcloud.com/images/VisualWo
 
 文件名大小写和后缀必须与代码引用完全一致。新增阻塞预加载资源时，除了 `rsync dist/`，也要确认被 Nginx 转发到 COS 的资源已经同步到 COS，否则首页加载门会被卡住。
 
+## 友人帐腾讯云 API
+
+友人帐公开共享留言册已经从纯前端本地数据升级为腾讯云服务器自建 API + SQLite。前端默认请求同域接口：
+
+```text
+GET /api/friend-book-entries
+POST /api/friend-book-entries
+```
+
+线上 API 部署信息：
+
+```text
+服务器：106.54.13.225
+域名：https://xiaoci-ai.com
+API 应用目录：/var/www/xiaoci-friend-book-api
+静态站点目录：/var/www/xiaoci-portfolio
+SQLite 数据库：/var/lib/xiaoci-portfolio/friend-book.sqlite
+systemd 服务：xiaoci-friend-book-api.service
+运行用户：www
+API 监听：127.0.0.1:3008
+Node 运行时：/opt/node-v24.15.0-linux-x64/bin/node
+```
+
+服务器是 OpenCloudOS + 宝塔环境。Nginx 不在 `/etc/nginx`，主配置和站点配置在：
+
+```text
+/www/server/nginx/conf/nginx.conf
+/www/server/panel/vhost/nginx/www.xiaoci-ai.com.conf
+```
+
+`www.xiaoci-ai.com.conf` 中需要保留 `/api/friend-book-entries` 的反向代理，并放在 `location /` 之前：
+
+```nginx
+location ^~ /api/friend-book-entries {
+    proxy_pass http://127.0.0.1:3008/api/friend-book-entries;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+```
+
+常用验证命令：
+
+```bash
+curl -fsS https://xiaoci-ai.com/api/friend-book-entries
+ssh root@106.54.13.225 'systemctl status xiaoci-friend-book-api.service --no-pager'
+ssh root@106.54.13.225 'curl -fsS http://127.0.0.1:3008/api/friend-book-entries'
+ssh root@106.54.13.225 'sqlite3 /var/lib/xiaoci-portfolio/friend-book.sqlite ".tables"'
+```
+
+如果修改 Nginx 配置，先备份站点配置，再测试并 reload：
+
+```bash
+ssh root@106.54.13.225 'cp /www/server/panel/vhost/nginx/www.xiaoci-ai.com.conf /www/server/panel/vhost/nginx/www.xiaoci-ai.com.conf.bak.$(date +%Y%m%d-%H%M%S)'
+ssh root@106.54.13.225 '/www/server/nginx/sbin/nginx -t -c /www/server/nginx/conf/nginx.conf'
+ssh root@106.54.13.225 '/www/server/nginx/sbin/nginx -s reload -c /www/server/nginx/conf/nginx.conf'
+```
+
+部署注意事项：
+
+- 不要直接发布带有未提交用户改动的 dirty worktree；如有未提交改动，先用干净 worktree 从目标 commit 构建。
+- 服务器系统源的 Node 18 不满足 `better-sqlite3@12.4.1` 的运行要求，API 服务显式使用 `/opt/node-v24.15.0-linux-x64/bin/node`。
+- 若 Codex 无法用本机 `id_rsa` 自动 SSH，通常是私钥有 passphrase；可通过腾讯云网页终端临时追加一把无密码部署公钥，部署完必须从 `/root/.ssh/authorized_keys` 移除。
+- API 只绑定 `127.0.0.1`，不要把 `3008` 端口直接暴露到公网。
+
 ## 协作约定
 
 - 在创建实施计划时，请用中文描述。

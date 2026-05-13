@@ -285,7 +285,7 @@ const codingCategories: CodingCategory[] = [
     sequence: '01',
     title: 'Workflow',
     description:
-      'Reusable agent workflows for backup, research capture, social fetching, monitoring, and prompt-library operations.',
+      'Node-based AI workflows built with ComfyUI, Coze, and Wordware to connect inputs, model steps, data handling, and repeatable outputs.',
     iconLabel: 'WF',
     accent: '#62d98d',
   },
@@ -294,7 +294,7 @@ const codingCategories: CodingCategory[] = [
     sequence: '02',
     title: 'Vibecoding',
     description:
-      'Live-built portfolio, commerce, and visual-generation prototypes where interaction decisions become working code.',
+      'AI-assisted builds outside the workflow and product buckets: portfolio systems, commerce demos, reusable skills, and learning workstations.',
     iconLabel: 'VC',
     accent: '#8ad9ff',
   },
@@ -303,7 +303,7 @@ const codingCategories: CodingCategory[] = [
     sequence: '03',
     title: 'AI product',
     description:
-      'AI products and playbooks that turn AIGC signals, visual briefs, commerce scripts, and model strategy into usable decisions.',
+      'Deployed or product-shaped AI applications with persistent data, structured interaction logic, and clear user workflows.',
     iconLabel: 'AI',
     accent: '#f4c46b',
   },
@@ -312,130 +312,67 @@ const codingCategories: CodingCategory[] = [
 const codingProjects: Record<CodingCategoryId, CodingProjectCard[]> = {
   workflow: [
     {
-      id: 'openclaw-backup-skill',
+      id: 'comfyui-aigc-workflow',
       categoryId: 'workflow',
-      title: 'OpenClaw Backup Skill',
+      title: 'ComfyUI AIGC Creation Workflow',
       description:
-        'Natural-language backup automation for turning a repeat local agent operation into a reusable skill.',
+        'A node-based AIGC image and video creation workflow for making visual ideas repeatable instead of one-off prompts.',
       detail: {
         problem:
-          'OpenClaw assets needed a repeatable GitHub backup path, but doing it manually risked missed folders, noisy commits, and accidental secret exposure.',
+          'AIGC creation can look impressive once, but without a reusable node workflow it is hard to repeat style, inputs, motion, and recovery steps.',
         approach: [
-          'Packaged the backup flow as an installable skill with a shell script, docs, and a focused test harness.',
-          'Synced only selected workspace, skill, and extension assets while excluding runtime state, logs, queues, databases, and credentials.',
-          'Converted a plain-language request into Git diff review, Chinese update summary, commit message generation, commit, and push.',
+          'Used ComfyUI and Stable Diffusion style workflows to turn text, image references, model choices, and output checks into visible steps.',
+          'Documented image generation, image-to-video, tail-frame stitching, character motion, and marketing-video experiments from the Feishu portfolio.',
+          'Kept the workflow framed around creator needs: repeatability, lower learning cost, and clearer tool selection for different visual jobs.',
         ],
         outcome:
-          'The workflow became a reusable agent operation instead of a fragile personal checklist, with safer defaults and repeatable validation.',
+          'The material shows AIGC creation as an inspectable workflow, not just a gallery of final images.',
       },
-      tags: ['Skill', 'Backup', 'Git'],
-      image: '/images/CodingWorks/openclaw-backup-skill.png',
-      link: 'https://github.com/S313S/openclaw-backup-skill',
-    },
-    {
-      id: 'product-content-analyst',
-      categoryId: 'workflow',
-      title: 'Product Content Analyst',
-      description:
-        'A Streamlit MVP that turns a product link into selling points, a short video script, and Xiaohongshu copy.',
-      detail: {
-        problem:
-          'Commerce content work starts with scattered product links, media, and manual interpretation before a creator can write anything useful.',
-        approach: [
-          'Built a two-layer scraping flow: static requests first, then Playwright rendering when title, image, or video data is missing.',
-          'Added login-state reuse and manual confirmation for links that require authenticated browsing.',
-          'Used AI output with a local-template fallback so the tool still produces a usable draft without a configured model key.',
-        ],
-        outcome:
-          'A product URL can become an inspectable content brief, reducing the gap between raw product material and creator-ready scripts.',
-      },
-      tags: ['Streamlit', 'Scraping', 'Commerce'],
-      image: '/images/CodingWorks/pd-data-analyst.png',
+      tags: ['ComfyUI', 'AIGC', 'Nodes'],
+      image: '/images/CodingWorks/comfyui-aigc-workflow-cover.svg',
       link: '#',
     },
     {
-      id: 'social-fetch-pipeline',
+      id: 'coze-social-data-fetch',
       categoryId: 'workflow',
-      title: 'Social Fetch Pipeline',
+      title: 'Coze Social Data Fetch Workflow',
       description:
-        'A GitHub-backed workflow for fetching Xiaohongshu and Twitter/X signals into a searchable AIGC content vault.',
+        'A Coze workflow for fetching hot short-video data by keyword and writing structured results into Feishu Base.',
       detail: {
         problem:
-          'AIGC trend research depends on fast-moving social posts, but manual collection loses source context and makes later comparison hard.',
+          'Social trend research needs repeated keyword collection, but manual copying loses rank, author, title, and continuation context.',
         approach: [
-          'Connected platform fetch and search endpoints to a single content-management interface.',
-          'Normalized notes, covers, tags, and source metadata so different social platforms can be reviewed together.',
-          'Kept provider fallbacks configurable for Xiaohongshu search and single-note fetches.',
+          'Connected a Coze data-download workflow with a Feishu Base destination so collected items can append into a structured table.',
+          'Used cursor-style continuation because single workflow runs return limited batches under platform execution limits.',
+          'Let the model normalize string-like plugin output into fields such as title, author, and content before storage.',
         ],
         outcome:
-          'Research moved from isolated links into a vault that can be searched, filtered, and reused for product insight work.',
+          'The workflow turns platform search into a repeatable data-collection loop for later AIGC trend analysis.',
       },
-      tags: ['XHS', 'Twitter', 'Pipeline'],
-      image: '/images/CodingWorks/AIGC_InsightVault_dashboard.png',
-      link: 'https://aigc-insight-vault.vercel.app/',
+      tags: ['Coze', 'Feishu Base', 'Data'],
+      image: '/images/CodingWorks/Coze_SocialDataFetch.png',
+      link: 'https://www.coze.cn/work_flow?bot_id=7468859639569186879&space_id=7463017999541207052&workflow_id=7467024551915782180',
     },
     {
-      id: 'quality-filter-spec',
+      id: 'xhs-comment-translation-workflow',
       categoryId: 'workflow',
-      title: 'Quality Filter Spec',
+      title: 'XHS Comment Translation Workflow',
       description:
-        'A documented filtering layer for separating high-signal AIGC posts from noisy trend data.',
+        'A translation and reply workflow for the wave of international users who entered Xiaohongshu during the TikTok ban scare.',
       detail: {
         problem:
-          'A raw pile of viral posts is not automatically useful; product decisions need semantic quality, platform context, and evidence.',
+          'When TikTok faced a ban scare, many international users moved into Xiaohongshu, creating a real need for bilingual translation and reply support inside comment threads.',
         approach: [
-          'Wrote a quality-filter specification covering structure, semantic tags, source reliability, and reviewer decisions.',
-          'Separated trend evidence from generated summaries so weak model output can still be challenged.',
-          'Added test scripts around data snapshots, prompt tagging, fallback covers, and URL normalization.',
+          'Used a Coze crawler workflow as the data source when the app platform could not directly access Xiaohongshu comments.',
+          'Added a cursor marker to locate already-fetched comments across repeated workflow calls.',
+          'Designed prompts that preserve parent and child comment relationships while producing bilingual translation and reply-ready output.',
         ],
         outcome:
-          'The vault became more than a bookmark list: it gained a reviewable signal-processing workflow.',
+          'The workflow turned a sudden cross-cultural platform migration into a structured assistant for understanding and responding to comments.',
       },
-      tags: ['Filtering', 'Spec', 'Signals'],
-      image: '/images/CodingWorks/AIGC_InsightVault_dashboard.png',
-      link: 'https://aigc-insight-vault.vercel.app/',
-    },
-    {
-      id: 'cron-monitor',
-      categoryId: 'workflow',
-      title: 'Cron Monitor',
-      description:
-        'A scheduled monitoring surface for keeping AIGC signal collection alive without manual checking.',
-      detail: {
-        problem:
-          'Trend monitoring loses value when collection only happens during a manual research session.',
-        approach: [
-          'Added cron-oriented API logic and response guidance for scheduled social-content monitoring.',
-          'Stored run logs and handled timeout behavior so failures are visible instead of silent.',
-          'Kept owner and RLS setup explicit for safer multi-user data access.',
-        ],
-        outcome:
-          'The research system can keep collecting and reporting signals as an operational workflow.',
-      },
-      tags: ['Cron', 'Monitoring', 'Supabase'],
-      image: '/images/CodingWorks/AIGC_InsightVault_dashboard.png',
-      link: 'https://aigc-insight-vault.vercel.app/',
-    },
-    {
-      id: 'vibe-coding-workstation',
-      categoryId: 'workflow',
-      title: 'Vibe Coding Workstation',
-      description:
-        'A Chinese Vibe Coding workstation that combines translated development practice with a prompt library.',
-      detail: {
-        problem:
-          'AI-assisted coding knowledge is often scattered across English references, prompt fragments, and personal notes.',
-        approach: [
-          'Organized Vibe Coding concepts into a Chinese learning and practice surface.',
-          'Added prompt-library framing so patterns can be reused instead of rediscovered in every session.',
-          'Kept the material close to hands-on building rather than only conceptual translation.',
-        ],
-        outcome:
-          'The project works as a personal operating manual for faster, more structured AI-assisted development.',
-      },
-      tags: ['Prompt Library', 'Learning', 'Ops'],
-      image: '/images/growPath_04.png',
-      link: 'https://github.com/S313S/vibe-coding-cn',
+      tags: ['Wordware', 'Coze', 'Translation'],
+      image: "/images/CodingWorks/XiaoHongShu'sTranslation.png",
+      link: 'https://app.wordware.ai/explore/apps/aa67898c-7bc2-4bd8-916a-e76afbed664b?tab=playground',
     },
   ],
   vibecoding: [
@@ -444,126 +381,105 @@ const codingProjects: Record<CodingCategoryId, CodingProjectCard[]> = {
       categoryId: 'vibecoding',
       title: 'Professional Portfolio',
       description:
-        'A long-form immersive portfolio built as a product surface, not a static resume.',
+        'A long-form immersive portfolio built with AI-assisted iteration, custom interactions, and local verification routes.',
       detail: {
         problem:
           'A normal resume page could not show AI product judgment, visual taste, interaction craft, and real coding workflow in one place.',
         approach: [
-          'Built full-screen narrative sections with scroll state machines, motion transitions, audio switching, and local media loading.',
-          'Created standalone debug routes for complex sections so detail views can be inspected without replaying the whole page.',
-          'Backed fragile interactions with logic tests and Playwright scripts for refresh, wheel, zoom, and navigation behavior.',
+          'Built full-screen narrative sections with scroll state machines, motion transitions, audio switching, local media loading, and responsive debug entry points.',
+          'Folded works detail, FriendBook finale, and section-specific repair routes into one cohesive portfolio system instead of separate display cards.',
+          'Backed fragile interactions with logic tests and Playwright scripts for refresh, wheel, zoom, navigation, and detail-view behavior.',
         ],
         outcome:
-          'The site makes the personal brand inspectable through the product itself: story, visuals, interaction, and engineering all reinforce one another.',
+          'The site itself became the proof of work: story, visuals, interaction, and engineering all reinforce the personal brand.',
       },
       tags: ['React', 'Motion', 'Portfolio'],
       image: '/images/CodingWorks/portfolioWorks.jpg',
       link: 'http://xiaoci-ai.com/',
     },
     {
-      id: 'works-detail-system',
+      id: 'shopping',
       categoryId: 'vibecoding',
-      title: 'Works Detail System',
+      title: 'Shopping',
       description:
-        'The portfolio detail section that switches between visual works and coding projects inside one immersive stage.',
+        'An e-commerce competitor-remix prototype for practicing product page structure, interaction, and AI-assisted iteration.',
       detail: {
         problem:
-          'The works page needed to present visual artifacts and engineering projects without feeling like two unrelated galleries.',
+          'Commerce interfaces need many small product decisions before they feel usable: product hierarchy, visual emphasis, input flow, and conversion cues.',
         approach: [
-          'Used a shared detail stage with separate gallery and coding modes, each tuned to its own visual language.',
-          'Kept project expansion inside the same card grid so scanning and deep reading stay connected.',
-          'Added render tests for structure, compact expanded cards, night-sky palette, and diagonal gallery alignment.',
+          'Used the shopping repo as a fast vibecoding exercise around e-commerce layout and competitor reference reconstruction.',
+          'Kept the card here at project level rather than inventing separate sub-features without stronger material evidence.',
+          'Left the public URL unset until the project has a deployed or screenshot-backed browsing surface.',
         ],
         outcome:
-          'Coding projects can now be browsed as part of the same portfolio world instead of a detached technical appendix.',
+          'The project remains a useful coding sample for interface reconstruction, but still needs a dedicated screenshot before final publication polish.',
       },
-      tags: ['Detail View', 'Testing', 'UI'],
-      image: '/images/CodingWorks/portfolioWorks.jpg',
-      link: 'http://xiaoci-ai.com/',
+      tags: ['Commerce', 'Prototype', 'UI'],
+      image: '/images/CodingWorks/shopping-vibecoding-cover.svg',
+      link: 'https://github.com/S313S/shopping',
     },
     {
-      id: 'friendbook-finale',
+      id: 'openclaw-backup-skill',
       categoryId: 'vibecoding',
-      title: 'FriendBook Finale',
+      title: 'OpenClaw Backup Skill',
       description:
-        'A final interactive friend-book scene with mini games, local progress, avatars, medals, and a message board.',
+        'A reusable local agent skill that turns a natural-language backup request into a reviewed GitHub sync.',
       detail: {
         problem:
-          'The ending of the portfolio needed to feel personal and memorable rather than becoming a plain contact form.',
+          'OpenClaw assets needed a repeatable GitHub backup path, but manual syncs risked missed folders, noisy commits, and accidental secret exposure.',
         approach: [
-          'Designed three small games around attention, timing, and recognition rather than pure decoration.',
-          'Modeled game state in testable logic files so interaction rules can be verified outside the browser.',
-          'Used local storage progress, hidden avatars, and medals to make the final section feel collectible.',
+          'Packaged the operation as an installable skill with a shell script, docs, and a focused validation harness.',
+          'Synced selected workspace, skill, and extension assets while excluding runtime state, logs, queues, databases, and credentials.',
+          'Converted a plain-language request into Git diff review, Chinese update summary, commit-message generation, commit, and push.',
         ],
         outcome:
-          'The portfolio ends with an interaction that invites participation and makes the visitor relationship part of the work.',
+          'The backup flow became a reusable vibecoding operation instead of a fragile personal checklist.',
       },
-      tags: ['Game UI', 'State', 'Finale'],
-      image: '/images/CodingWorks/portfolioWorks.jpg',
-      link: 'http://xiaoci-ai.com/',
+      tags: ['Skill', 'Backup', 'Git'],
+      image: '/images/CodingWorks/openclaw-backup-skill.png',
+      link: 'https://github.com/S313S/openclaw-backup-skill',
     },
     {
-      id: 'shopping-remix',
+      id: 'vibe-coding-workstation',
       categoryId: 'vibecoding',
-      title: 'Shopping Remix',
+      title: 'Vibe Coding Workstation',
       description:
-        'An e-commerce prototype that combines product input, AI analysis, upload flow, and generated creative output.',
+        'A Chinese Vibe Coding workstation that combines translated development practice, experience notes, and prompt-library thinking.',
       detail: {
         problem:
-          'A commerce tool needed to show how competitor references and product material could become an interactive AI generation workflow.',
+          'AI-assisted coding knowledge is often scattered across English references, personal notes, and prompt fragments.',
         approach: [
-          'Built form, uploader, analysis-result, and generated-gallery components around a single product workflow.',
-          'Connected Gemini service logic to structured product analysis and content generation.',
-          'Kept the prototype small enough to evaluate core interaction before expanding into a full commerce platform.',
+          'Organized Vibe Coding concepts into a Chinese learning and practice surface.',
+          'Added prompt-library framing so useful development patterns can be reused instead of rediscovered every session.',
+          'Kept the material close to hands-on building rather than only conceptual translation.',
         ],
         outcome:
-          'The project demonstrates a fast path from competitor/product reference to a usable AI commerce interface.',
+          'The project works as a personal operating manual for faster, more structured AI-assisted development.',
       },
-      tags: ['E-commerce', 'Prototype', 'Gemini'],
-      image: '/images/growPath_02.png',
+      tags: ['Prompt Library', 'Learning', 'Ops'],
+      image: '/images/CodingWorks/vibe-coding-workstation-cover.svg',
+      link: 'https://github.com/S313S/vibe-coding-cn',
+    },
+    {
+      id: 'ai-teaching-video-interactive-lesson',
+      categoryId: 'vibecoding',
+      title: 'AI Teaching Video & Interactive Lesson',
+      description:
+        "A vibe-coded learning prototype that turns a learner's question into an auto-play HTML teaching animation and interactive lesson.",
+      detail: {
+        problem:
+          'When a learner meets an unfamiliar concept, dense reference text can be harder to absorb than a short visual explanation.',
+        approach: [
+          'Started from a topic and keywords, then asked a large model to generate auto-play HTML animation code instead of writing the frames by hand.',
+          'Iterated the prompt template with feedback so the model output could move closer to a clean teaching-video rhythm.',
+          'Extended the same idea into locally opened interactive HTML lessons, including a black-hole exploration example from the Feishu attachment.',
+        ],
+        outcome:
+          'The experiment shows how a question can become a lightweight animated or interactive learning material without a full production platform.',
+      },
+      tags: ['HTML Animation', 'Learning', 'Prompting'],
+      image: '/images/CodingWorks/Al TeachingVideo.png',
       link: '#',
-    },
-    {
-      id: 'visual-bridge-v2',
-      categoryId: 'vibecoding',
-      title: 'Visual Bridge V2',
-      description:
-        'A pure frontend image-direction prototype using OpenRouter image and text models.',
-      detail: {
-        problem:
-          'Visual ideation tools often hide the prompt-to-image process, making it hard to refine direction quickly.',
-        approach: [
-          'Kept model configuration explicit through VITE OpenRouter environment variables.',
-          'Used a lightweight Vite app so prompt, model, and result iteration can happen inside a fast local loop.',
-          'Separated the prototype from production backend concerns while documenting why browser-exposed keys need a backend later.',
-        ],
-        outcome:
-          'The project is a quick proving ground for image-generation product direction before hardening the architecture.',
-      },
-      tags: ['OpenRouter', 'Image Gen', 'Prototype'],
-      image: '/images/CodingWorks/Visual Bridge Assistance_chat.png',
-      link: 'https://s313s.github.io/Visual-Bridge-V2/',
-    },
-    {
-      id: 'portfolio-debug-routes',
-      categoryId: 'vibecoding',
-      title: 'Portfolio Debug Routes',
-      description:
-        'Development-only routes that make complex portfolio scenes easier to test, inspect, and repair.',
-      detail: {
-        problem:
-          'Immersive scroll scenes are expensive to debug when every change requires manually reaching the right page state.',
-        approach: [
-          'Added standalone debug entries for friend-book, works detail, career detail, and codex report views.',
-          'Allowed query parameters to open coding mode or a specific active project directly.',
-          'Kept debug routing limited to development mode so production visitors only see the intended narrative flow.',
-        ],
-        outcome:
-          'The workflow makes high-motion UI repair faster and reduces the chance of fixing one scene while breaking another.',
-      },
-      tags: ['Debugging', 'Routes', 'QA'],
-      image: '/images/CodingWorks/portfolioWorks.jpg',
-      link: 'http://xiaoci-ai.com/',
     },
   ],
   'ai-product': [
@@ -593,14 +509,14 @@ const codingProjects: Record<CodingCategoryId, CodingProjectCard[]> = {
       categoryId: 'ai-product',
       title: 'Visual Bridge Assistance',
       description:
-        'An AI visual communication assistant for turning vague client intent into concrete image references.',
+        'An AI visual-brief product for turning vague client intent into concrete prompts, references, and image-gallery decisions.',
       detail: {
         problem:
           'Clients often know the feeling they want but cannot express it in language that designers can directly execute.',
         approach: [
           'Built a chat-first React app with image gallery, thought panel, settings, and a local knowledge base.',
-          'Connected Gemini and Volcengine service layers so text understanding and visual generation can work together.',
-          'Added GitHub Pages and Cloudflare Worker deployment paths to make the prototype easier to share.',
+          'Connected the Visual Bridge repositories into one product story: early assistance prototype, then V2 sharing through GitHub Pages.',
+          'Kept the interaction centered on designer-client alignment rather than treating image generation as a standalone toy.',
         ],
         outcome:
           'The tool reframes generation as communication support: it helps both sides inspect and align on visual direction.',
@@ -610,88 +526,25 @@ const codingProjects: Record<CodingCategoryId, CodingProjectCard[]> = {
       link: 'https://s313s.github.io/Visual-Bridge-V2/',
     },
     {
-      id: 'commerce-script-generator',
+      id: 'pd-data-analyst',
       categoryId: 'ai-product',
-      title: 'Commerce Script Generator',
+      title: 'Product Data Analyst',
       description:
-        'A product-content workflow that converts raw item pages into platform-ready selling scripts.',
+        'A local Streamlit AI product that turns product links and materials into selling points, scripts, and creator-ready copy.',
       detail: {
         problem:
-          'Small commerce teams need repeatable content output, but product analysis, script structure, and platform tone are usually handled separately.',
+          'Commerce content work starts with scattered product links, media, and manual interpretation before a creator can write anything useful.',
         approach: [
-          'Pulled product title, main image, and video signals from a pasted link or shared text.',
-          'Generated selling-point breakdowns, 30-second video scripts, and Xiaohongshu-style rewrites in one flow.',
-          'Added scraping fallbacks and browser login reuse to survive real-world page variation.',
+          'Built a two-layer scraping flow: static requests first, then Playwright rendering when title, image, or video data is missing.',
+          'Generated selling-point breakdowns, 30-second video scripts, and Xiaohongshu-style rewrites in one inspectable result page.',
+          'Added AI output with a local-template fallback so the MVP still produces a usable draft without a configured model key.',
         ],
         outcome:
-          'The project shows how AI can move from generic writing to a practical commerce operations assistant.',
+          'The product turns raw product material into a structured content assistant, while staying local until a public deployment is ready.',
       },
-      tags: ['Commerce', 'Script', 'Ops'],
+      tags: ['Streamlit', 'Commerce', 'Local MVP'],
       image: '/images/CodingWorks/pd-data-analyst.png',
       link: '#',
-    },
-    {
-      id: 'social-trend-monitor',
-      categoryId: 'ai-product',
-      title: 'Social Trend Monitor',
-      description:
-        'A monitoring product concept for watching AIGC topics instead of manually checking platforms.',
-      detail: {
-        problem:
-          'Knowing which AI formats are rising requires repeated platform checking, but manual collection is too inconsistent for product work.',
-        approach: [
-          'Added monitoring UI and cron-oriented API routes around saved topics and collection runs.',
-          'Stored run logs, normalized provider responses, and surfaced fetch failures as product states.',
-          'Connected the idea back to the Feishu research method: search keywords, filter high-engagement content, tag features, then extract common patterns.',
-        ],
-        outcome:
-          'The monitor makes AIGC trend discovery an operating system rather than an occasional research sprint.',
-      },
-      tags: ['Monitoring', 'Trends', 'Signals'],
-      image: '/images/CodingWorks/AIGC_InsightVault_dashboard.png',
-      link: 'https://aigc-insight-vault.vercel.app/',
-    },
-    {
-      id: 'model-customization-playbook',
-      categoryId: 'ai-product',
-      title: 'Model Customization Playbook',
-      description:
-        'A product-thinking framework for choosing between prompt engineering, fine-tuning, and feedback training.',
-      detail: {
-        problem:
-          'AI product discussions often jump to model training before clarifying data, task difficulty, expected outputs, and evaluation criteria.',
-        approach: [
-          'Structured the decision path from prompt engineering to SFT, CPT, DPO, and manual/model-assisted evaluation.',
-          'Separated low-cost validation from expensive customization so product teams can prove value earlier.',
-          'Kept domain data, positive/negative examples, and scoring criteria visible as product requirements.',
-        ],
-        outcome:
-          'The framework helps explain AI implementation choices in product language instead of only model terminology.',
-      },
-      tags: ['PE', 'Fine-tuning', 'Evaluation'],
-      image: '/images/top-title.png',
-      link: 'https://github.com/S313S/AIGC_InsightVault',
-    },
-    {
-      id: 'aigc-creation-toolchain',
-      categoryId: 'ai-product',
-      title: 'AIGC Creation Toolchain',
-      description:
-        'A documented creator workflow covering image generation, image-to-video, character motion, and marketing video tests.',
-      detail: {
-        problem:
-          'AIGC creation is easy to demo once, but hard to turn into repeatable product value without knowing which tool fits which creative need.',
-        approach: [
-          'Mapped creative needs to tools such as Midjourney, ComfyUI, Jimeng, Kling, Pika, Veo, and Live Portrait.',
-          'Recorded inputs, prompts, outputs, limitations, and recovery patterns like tail-frame stitching for longer AI videos.',
-          'Connected creator experiments to product thinking: lower learning cost, workflow the viral play, and build community support.',
-        ],
-        outcome:
-          'The material supports both personal creation and AI product judgment by showing how workflows become repeatable.',
-      },
-      tags: ['AIGC', 'Video', 'Workflow'],
-      image: '/images/easel-removebg.png',
-      link: 'https://github.com/S313S/professional-portfolio',
     },
   ],
 };
