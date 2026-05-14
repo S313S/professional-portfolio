@@ -218,11 +218,11 @@ export const BLOCKING_HOME_LOADER_ASSETS: LoaderAsset[] = dedupeLoaderAssets([
   createLoaderAsset('friend-book-avatar-rabbit', '/images/Avatar_rabit01.png', 'image', 1),
   createLoaderAsset('friend-book-avatar-tree', '/images/Avatar_tree.png', 'image', 1),
   createLoaderAsset('friend-book-preview-avatar-01', '/images/Avatar_cat01.png', 'image', 1),
-  createLoaderAsset('friend-book-preview-medal-01', '/images/PurpleMedal01.png', 'image', 1),
+  createLoaderAsset('friend-book-preview-medal-01', '/images/PurpleMedal01.png', 'image', 1, false),
   createLoaderAsset('friend-book-preview-avatar-02', '/images/Avatar_tree.png', 'image', 1),
-  createLoaderAsset('friend-book-preview-medal-02', '/images/GreenMedal02.png', 'image', 1),
+  createLoaderAsset('friend-book-preview-medal-02', '/images/GreenMedal02.png', 'image', 1, false),
   createLoaderAsset('friend-book-preview-avatar-03', '/images/Avatar_dog01.png', 'image', 1),
-  createLoaderAsset('friend-book-preview-medal-03', '/images/Animalmedals04.png', 'image', 1),
+  createLoaderAsset('friend-book-preview-medal-03', '/images/Animalmedals04.png', 'image', 1, false),
 ]).filter((asset) => asset.url.length > 0);
 
 const HomeLoaderContext = createContext<HomeLoaderState | null>(null);

@@ -102,6 +102,18 @@ test('blocks on every CodingWorks image before opening the homepage', () => {
   }
 });
 
+test('does not block homepage opening on final friend-book preview medals', () => {
+  const previewMedalAssets = BLOCKING_HOME_LOADER_ASSETS.filter((asset) =>
+    asset.id.startsWith('friend-book-preview-medal-'),
+  );
+
+  assert.deepEqual(
+    previewMedalAssets.map((asset) => asset.url),
+    ['/images/PurpleMedal01.png', '/images/GreenMedal02.png', '/images/Animalmedals04.png'],
+  );
+  assert.ok(previewMedalAssets.every((asset) => asset.blocking === false));
+});
+
 test('preloads the cover and self-introduction audio before opening the homepage', () => {
   const coverAudioAsset = BLOCKING_HOME_LOADER_ASSETS.find(
     (asset) => asset.url === COVER_AND_SELF_INTRO_AUDIO_SRC,

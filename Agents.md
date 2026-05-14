@@ -199,6 +199,8 @@ Node 运行时：/opt/node-v24.15.0-linux-x64/bin/node
 - `/debug/friend-book-finale` 使用默认远程 repository，所以本地调试页也会读取/提交线上留言。
 - 删除按钮只在前端 repository 拿到 `VITE_FRIEND_BOOK_ADMIN_TOKEN` 后显示；没有 token 时仅能新增和读取。
 - `VITE_FRIEND_BOOK_ADMIN_TOKEN` 只能放在 `.env.local` 等私有本地文件里，不要配置进线上静态站构建环境。
+- 远程留言列表以线上 API 最新响应为权威来源：合并时只保留内置 `seed-` 初始记录，然后追加最新远程记录。不要把旧 `localStorage` remote cache 中已被线上删除的远程记录继续保留，否则删除后刷新仍会显示旧留言。
+- 如果删除后页面仍显示旧留言，优先检查 `FRIEND_BOOK_REMOTE_CACHE_KEY` 对应的本地缓存合并逻辑，而不是重复删除线上数据库。
 
 远程删除接口规则：
 
