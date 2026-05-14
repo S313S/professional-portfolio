@@ -35,6 +35,7 @@ import {
   type WorksDetailView,
 } from './WorksDetailSection.logic';
 import { armScrollMomentumLock } from '../scrollMomentumLock';
+import { trackAnalyticsEvent } from '../analytics';
 
 const TOUCH_STEP_TOLERANCE_PX = 4;
 const WORKS_DETAIL_REVEAL_STEP = 0.18;
@@ -1116,6 +1117,9 @@ export default function WorksDetailSection({
     const openState = openWorksDetailDesignView(viewRef.current);
     setDetailMode(openState.nextDetailMode);
     setView(openState.nextView);
+    trackAnalyticsEvent('works_detail_entry_click', {
+      targetId: 'design',
+    });
   };
 
   const handleEnterCodingDetailView = () => {
@@ -1130,6 +1134,9 @@ export default function WorksDetailSection({
     const openState = openWorksDetailCodingView(viewRef.current);
     setDetailMode(openState.nextDetailMode);
     setView(openState.nextView);
+    trackAnalyticsEvent('works_detail_entry_click', {
+      targetId: 'coding',
+    });
   };
 
   const handleCloseDetailView = () => {
@@ -1165,6 +1172,10 @@ export default function WorksDetailSection({
       projectCount: personalData.featuredWorks.length,
     });
 
+    trackAnalyticsEvent('works_detail_gallery_select', {
+      targetId: personalData.featuredWorks[selectionState.nextProjectIndex]?.id ?? String(selectionState.nextProjectIndex),
+      metadata: { index: selectionState.nextProjectIndex },
+    });
     transitionDetailState(selectionState.nextScene, selectionState.nextProjectIndex);
   };
 
@@ -1174,10 +1185,17 @@ export default function WorksDetailSection({
     }
 
     setEntryLandingState('visible');
+    trackAnalyticsEvent('works_detail_project_open', {
+      targetId: personalData.featuredWorks[nextProjectIndex]?.id ?? String(nextProjectIndex),
+      metadata: { index: nextProjectIndex },
+    });
     transitionDetailState('project', clampProjectIndex(nextProjectIndex));
   };
 
   const handleCodingCategorySelection = (categoryId: CodingCategoryId) => {
+    trackAnalyticsEvent('works_detail_coding_category_click', {
+      targetId: categoryId,
+    });
     setActiveCodingCategoryId(categoryId);
     setActiveCodingProjectId(null);
   };
@@ -1189,11 +1207,20 @@ export default function WorksDetailSection({
         ? Math.min(currentIndex + 1, personalData.codingCategories.length - 1)
         : Math.max(currentIndex - 1, 0);
 
-    setActiveCodingCategoryId(personalData.codingCategories[nextIndex]?.id ?? WORKS_DETAIL_DEFAULT_CODING_CATEGORY_ID);
+    const nextCategoryId = personalData.codingCategories[nextIndex]?.id ?? WORKS_DETAIL_DEFAULT_CODING_CATEGORY_ID;
+
+    setActiveCodingCategoryId(nextCategoryId);
+    trackAnalyticsEvent('works_detail_coding_category_shift', {
+      targetId: nextCategoryId,
+      metadata: { direction },
+    });
     setActiveCodingProjectId(null);
   };
 
   const handleCodingProjectToggle = (projectId: string) => {
+    trackAnalyticsEvent('works_detail_coding_project_toggle', {
+      targetId: projectId,
+    });
     setActiveCodingProjectId((currentProjectId) => (
       currentProjectId === projectId ? null : projectId
     ));
@@ -1454,6 +1481,9 @@ export default function WorksDetailSection({
                                         className="works-detail-coding__project-title-link"
                                         onClick={(event) => {
                                           event.stopPropagation();
+                                          trackAnalyticsEvent('works_detail_project_link_click', {
+                                            targetId: project.id,
+                                          });
                                         }}
                                       >
                                         <ExternalLink aria-hidden="true" size={15} strokeWidth={1.9} />
@@ -1667,6 +1697,11 @@ export default function WorksDetailSection({
                                     rel="noreferrer"
                                     aria-label={social.tooltip}
                                     data-tooltip={social.tooltip}
+                                    onClick={() => {
+                                      trackAnalyticsEvent('works_detail_social_click', {
+                                        targetId: social.id,
+                                      });
+                                    }}
                                   >
                                     {social.label}
                                   </a>
@@ -1677,6 +1712,9 @@ export default function WorksDetailSection({
                                     aria-label={social.tooltip}
                                     data-tooltip={social.tooltip}
                                     onClick={() => {
+                                      trackAnalyticsEvent('works_detail_social_click', {
+                                        targetId: social.id,
+                                      });
                                       setIsXhsCardOpen(true);
                                     }}
                                   >

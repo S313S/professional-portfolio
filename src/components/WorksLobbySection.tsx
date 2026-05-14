@@ -25,6 +25,7 @@ import {
 } from './WorksDetailSection.logic';
 import { useHomeLoaderAssetStatus } from '../homeLoader';
 import { armScrollMomentumLock } from '../scrollMomentumLock';
+import { trackAnalyticsEvent } from '../analytics';
 
 const MOBILE_MEDIA_QUERY = '(max-width: 767px), (pointer: coarse)';
 const WORKS_LOBBY_PIN_TOLERANCE_PX = 2;
@@ -446,6 +447,9 @@ export default function WorksLobbySection() {
     commitState({
       phase: 'navigating',
       progress: 1,
+    });
+    trackAnalyticsEvent('works_lobby_enter_click', {
+      targetId: 'works-detail-section',
     });
 
     window.dispatchEvent(new Event(WORKS_DETAIL_TRANSITION_START_EVENT));

@@ -51,6 +51,7 @@ import {
 } from './FriendBookFinalSection.api';
 import FriendBookGameOverlay from './FriendBookGameOverlay';
 import FriendBookMoonRunStage from './FriendBookMoonRunStage';
+import { trackAnalyticsEvent } from '../analytics';
 
 type FriendBookButtonOffset = {
   x: number;
@@ -934,8 +935,24 @@ export default function FriendBookFinalSection({
   }
 
   function beginGame(gameId: FriendBookGameId) {
+    trackAnalyticsEvent('friend_book_game_start', {
+      targetId: gameId,
+    });
     resetGameState(gameId);
     setStage(getFriendBookGameStartStage(progress, gameId));
+  }
+
+  function handleGuestbookPageClick(direction: 'previous' | 'next') {
+    trackAnalyticsEvent('friend_book_guestbook_page_click', {
+      targetId: direction,
+      metadata: { current_page: guestbookPage.pageIndex + 1 },
+    });
+
+    setCurrentGuestbookPage((page) =>
+      direction === 'previous'
+        ? Math.max(page - 1, 0)
+        : Math.min(page + 1, guestbookPage.totalPages - 1),
+    );
   }
 
   function continueAfterAvatarPick() {
@@ -1146,6 +1163,14 @@ export default function FriendBookFinalSection({
     }
 
     setCurrentGuestbookPage(nextGuestbookPageIndex);
+    trackAnalyticsEvent('friend_book_guestbook_submit', {
+      targetId: activeGameId,
+      metadata: {
+        avatar_id: progress.selectedAvatarId,
+        medal_id: pendingMedalId,
+        remote_enabled: Boolean(resolvedRemoteRepository?.isEnabled),
+      },
+    });
     setStage('landing');
     setPendingMedalId(null);
     setActiveGameId(null);
@@ -1288,7 +1313,12 @@ export default function FriendBookFinalSection({
                 <FriendBookImageButton
                   label="Start Playing"
                   asset={friendBookFinalSectionData.assets.buttons.startPlayingPrimary}
-                  onClick={() => scrollToTarget('friend-book-game-grid')}
+                  onClick={() => {
+                    trackAnalyticsEvent('friend_book_hero_cta_click', {
+                      targetId: 'start-playing-primary',
+                    });
+                    scrollToTarget('friend-book-game-grid');
+                  }}
                   className="w-full max-w-[320px]"
                 />
               </div>
@@ -1315,7 +1345,12 @@ export default function FriendBookFinalSection({
                       }
                       label={ctaLink.label}
                       asset={ctaLink.asset}
-                      onClick={() => scrollToTarget(ctaLink.href.slice(1))}
+                      onClick={() => {
+                        trackAnalyticsEvent('friend_book_hero_cta_click', {
+                          targetId: ctaLink.id,
+                        });
+                        scrollToTarget(ctaLink.href.slice(1));
+                      }}
                       className="w-[var(--friend-book-button-width-mobile)] sm:w-[var(--friend-book-button-width-desktop)]"
                       style={getResponsiveButtonWidthStyle(
                         ctaLink.id === 'friend-book-start-link'
@@ -2052,7 +2087,7 @@ export default function FriendBookFinalSection({
             >
               <button
                 type="button"
-                onClick={() => setCurrentGuestbookPage((page) => Math.max(page - 1, 0))}
+                onClick={() => handleGuestbookPageClick('previous')}
                 disabled={guestbookPage.pageIndex === 0}
                 className="rounded-full border border-[#c9b198] bg-[rgba(255,251,246,0.84)] px-3 py-1.5 text-[0.72rem] uppercase tracking-[0.14em] text-[#61483b] disabled:opacity-45"
               >
@@ -2066,11 +2101,7 @@ export default function FriendBookFinalSection({
               </span>
               <button
                 type="button"
-                onClick={() =>
-                  setCurrentGuestbookPage((page) =>
-                    Math.min(page + 1, guestbookPage.totalPages - 1),
-                  )
-                }
+                onClick={() => handleGuestbookPageClick('next')}
                 disabled={guestbookPage.pageIndex >= guestbookPage.totalPages - 1}
                 className="rounded-full border border-[#c9b198] bg-[rgba(255,251,246,0.84)] px-3 py-1.5 text-[0.72rem] uppercase tracking-[0.14em] text-[#61483b] disabled:opacity-45"
               >
@@ -2174,7 +2205,7 @@ export default function FriendBookFinalSection({
               >
                 <button
                   type="button"
-                  onClick={() => setCurrentGuestbookPage((page) => Math.max(page - 1, 0))}
+                  onClick={() => handleGuestbookPageClick('previous')}
                   disabled={guestbookPage.pageIndex === 0}
                   className="rounded-full border border-[#c9b198] bg-[rgba(255,251,246,0.84)] px-4 py-2 text-[0.72rem] uppercase tracking-[0.14em] text-[#61483b] disabled:opacity-45"
                 >
@@ -2188,11 +2219,7 @@ export default function FriendBookFinalSection({
                 </span>
                 <button
                   type="button"
-                  onClick={() =>
-                    setCurrentGuestbookPage((page) =>
-                      Math.min(page + 1, guestbookPage.totalPages - 1),
-                    )
-                  }
+                  onClick={() => handleGuestbookPageClick('next')}
                   disabled={guestbookPage.pageIndex >= guestbookPage.totalPages - 1}
                   className="rounded-full border border-[#c9b198] bg-[rgba(255,251,246,0.84)] px-4 py-2 text-[0.72rem] uppercase tracking-[0.14em] text-[#61483b] disabled:opacity-45"
                 >

@@ -102,16 +102,22 @@ test('blocks on every CodingWorks image before opening the homepage', () => {
   }
 });
 
-test('does not block homepage opening on final friend-book preview medals', () => {
-  const previewMedalAssets = BLOCKING_HOME_LOADER_ASSETS.filter((asset) =>
-    asset.id.startsWith('friend-book-preview-medal-'),
+test('uses lightweight webp assets for blocking grow-path cards', () => {
+  const growPathCardAssets = BLOCKING_HOME_LOADER_ASSETS.filter((asset) =>
+    asset.id.startsWith('grow-path-card-'),
   );
 
-  assert.deepEqual(
-    previewMedalAssets.map((asset) => asset.url),
-    ['/images/PurpleMedal01.png', '/images/GreenMedal02.png', '/images/Animalmedals04.png'],
-  );
-  assert.ok(previewMedalAssets.every((asset) => asset.blocking === false));
+  assert.equal(growPathCardAssets.length, 4);
+
+  for (const asset of growPathCardAssets) {
+    assert.equal(asset.kind, 'image');
+    assert.equal(asset.blocking, true);
+    assert.match(asset.url, /\.webp$/);
+
+    const assetPath = join(PUBLIC_ROOT, asset.url.slice(1));
+    assert.equal(statSync(assetPath).isFile(), true);
+    assert.ok(statSync(assetPath).size < 600_000, `${asset.url} should stay under 600KB`);
+  }
 });
 
 test('preloads the cover and self-introduction audio before opening the homepage', () => {

@@ -29,10 +29,10 @@ const GROW_PATH_FOCUS_SHADOW = '0 38px 100px rgba(74, 52, 36, 0.24)';
 const GROW_PATH_STORAGE_KEY = 'grow-path-state:v1';
 
 const CARD_IMAGE_BY_ID: Record<GrowPathCardId, string> = {
-  growPath_01: '/images/growPath_01.png',
-  growPath_02: '/images/growPath_02.png',
-  growPath_03: '/images/growPath_03.png',
-  growPath_04: '/images/growPath_04.png',
+  growPath_01: '/images/growPath_01.webp',
+  growPath_02: '/images/growPath_02.webp',
+  growPath_03: '/images/growPath_03.webp',
+  growPath_04: '/images/growPath_04.webp',
 };
 
 const DESKTOP_CARD_LAYOUTS: Record<

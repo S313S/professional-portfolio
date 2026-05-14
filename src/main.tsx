@@ -17,6 +17,7 @@ import {
   shouldEnableHomeLoader,
   shouldHoldHomeLoaderPreview,
 } from './homeLoader.tsx';
+import { startPortfolioAnalytics } from './analytics.ts';
 import './index.css';
 
 const standaloneRoute =
@@ -63,6 +64,10 @@ if (typeof window !== 'undefined') {
     resetScrollToTop();
     requestAnimationFrame(resetScrollToTop);
     window.addEventListener('load', resetScrollToTop, { once: true });
+  }
+
+  if (standaloneRoute === null) {
+    startPortfolioAnalytics();
   }
 }
 

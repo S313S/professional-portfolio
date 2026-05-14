@@ -111,10 +111,10 @@ export const BLOCKING_HOME_LOADER_ASSETS: LoaderAsset[] = dedupeLoaderAssets([
   createLoaderAsset('video-scroll-drag-icon', '/images/drag图标_灰色版.png', 'image', 1),
 
   createLoaderAsset('grow-path-background', '/images/bg_growpath.jpeg', 'image', 3),
-  createLoaderAsset('grow-path-card-01', '/images/growPath_01.png', 'image', 2),
-  createLoaderAsset('grow-path-card-02', '/images/growPath_02.png', 'image', 2),
-  createLoaderAsset('grow-path-card-03', '/images/growPath_03.png', 'image', 2),
-  createLoaderAsset('grow-path-card-04', '/images/growPath_04.png', 'image', 2),
+  createLoaderAsset('grow-path-card-01', '/images/growPath_01.webp', 'image', 2),
+  createLoaderAsset('grow-path-card-02', '/images/growPath_02.webp', 'image', 2),
+  createLoaderAsset('grow-path-card-03', '/images/growPath_03.webp', 'image', 2),
+  createLoaderAsset('grow-path-card-04', '/images/growPath_04.webp', 'image', 2),
 
   createLoaderAsset('career-journey-background', '/images/career_bg.png', 'image', 3),
   createLoaderAsset('career-journey-role', '/images/career_role.png', 'image', 2),
@@ -218,11 +218,11 @@ export const BLOCKING_HOME_LOADER_ASSETS: LoaderAsset[] = dedupeLoaderAssets([
   createLoaderAsset('friend-book-avatar-rabbit', '/images/Avatar_rabit01.png', 'image', 1),
   createLoaderAsset('friend-book-avatar-tree', '/images/Avatar_tree.png', 'image', 1),
   createLoaderAsset('friend-book-preview-avatar-01', '/images/Avatar_cat01.png', 'image', 1),
-  createLoaderAsset('friend-book-preview-medal-01', '/images/PurpleMedal01.png', 'image', 1, false),
+  createLoaderAsset('friend-book-preview-medal-01', '/images/PurpleMedal01.png', 'image', 1),
   createLoaderAsset('friend-book-preview-avatar-02', '/images/Avatar_tree.png', 'image', 1),
-  createLoaderAsset('friend-book-preview-medal-02', '/images/GreenMedal02.png', 'image', 1, false),
+  createLoaderAsset('friend-book-preview-medal-02', '/images/GreenMedal02.png', 'image', 1),
   createLoaderAsset('friend-book-preview-avatar-03', '/images/Avatar_dog01.png', 'image', 1),
-  createLoaderAsset('friend-book-preview-medal-03', '/images/Animalmedals04.png', 'image', 1, false),
+  createLoaderAsset('friend-book-preview-medal-03', '/images/Animalmedals04.png', 'image', 1),
 ]).filter((asset) => asset.url.length > 0);
 
 const HomeLoaderContext = createContext<HomeLoaderState | null>(null);
