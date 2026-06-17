@@ -175,6 +175,8 @@ https://portfolio-static-1259451604.cos.ap-shanghai.myqcloud.com/images/VisualWo
 GET /api/friend-book-entries
 POST /api/friend-book-entries
 DELETE /api/friend-book-entries/:id
+POST /api/analytics/events
+GET /api/analytics/summary?from=YYYY-MM-DD&to=YYYY-MM-DD
 ```
 
 线上 API 部署信息：
@@ -195,6 +197,7 @@ Node 运行时：/opt/node-v24.15.0-linux-x64/bin/node
 本地开发说明：
 
 - `vite.config.ts` 中的 `/api/friend-book-entries` proxy 默认指向 `https://xiaoci-ai.com`，因此本地新增留言会写入线上腾讯云 SQLite。
+- `vite.config.ts` 中的 `/api/analytics` proxy 也默认指向 `https://xiaoci-ai.com`，本地打开新版前端时会把访问统计写入线上 SQLite。
 - 如需改为本地 API，可在私有环境变量中设置 `FRIEND_BOOK_API_PROXY_TARGET=http://127.0.0.1:3008` 后重启 Vite。
 - `/debug/friend-book-finale` 使用默认远程 repository，所以本地调试页也会读取/提交线上留言。
 - 删除按钮只在前端 repository 拿到 `VITE_FRIEND_BOOK_ADMIN_TOKEN` 后显示；没有 token 时仅能新增和读取。
@@ -209,6 +212,13 @@ Node 运行时：/opt/node-v24.15.0-linux-x64/bin/node
 - 无 token 或 token 错误返回 `403`；token 正确但 id 不存在返回 `404`；删除成功返回 `{ ok: true, id }`。
 - 后端用 `FRIEND_BOOK_ADMIN_TOKEN` 校验 token，当前线上通过 `/etc/systemd/system/xiaoci-friend-book-api.service.d/admin-token.conf` 注入。
 
+访问统计接口规则：
+
+- 前端通过 `POST /api/analytics/events` 上报匿名统计事件。事件只记录匿名 `visitor_id`、`session_id`、路径、事件名、目标 id、少量非敏感 metadata，不记录真实姓名、IP、留言正文、昵称或身份介绍。
+- `GET /api/analytics/summary?from=YYYY-MM-DD&to=YYYY-MM-DD` 返回按天聚合的统计，并必须带 header `x-friend-book-admin-token: <token>`。
+- `uv` 是当日唯一匿名访客数，`sessions` 是会话数，`pv` 是页面访问次数，`clicks` 是关键点击次数，`cta_click_visitors` 是点过关键按钮的匿名访客数，`cta_click_rate` 是 `cta_click_visitors / uv`。
+- 如果 summary 返回 HTML，通常是 Nginx 没有把 `/api/analytics` 放在 `location /` 之前代理到 Node API；如果返回 JSON `403`，说明代理已通，只是 token 缺失或错误；如果返回 `Cannot GET /api/analytics/summary`，通常是线上 Node API 文件还没更新到 systemd 实际启动路径。
+
 服务器是 OpenCloudOS + 宝塔环境。Nginx 不在 `/etc/nginx`，主配置和站点配置在：
 
 ```text
@@ -216,11 +226,20 @@ Node 运行时：/opt/node-v24.15.0-linux-x64/bin/node
 /www/server/panel/vhost/nginx/www.xiaoci-ai.com.conf
 ```
 
-`www.xiaoci-ai.com.conf` 中需要保留 `/api/friend-book-entries` 的反向代理，并放在 `location /` 之前：
+`www.xiaoci-ai.com.conf` 中需要保留 `/api/friend-book-entries` 和 `/api/analytics` 的反向代理，并放在 `location /` 之前：
 
 ```nginx
 location ^~ /api/friend-book-entries {
     proxy_pass http://127.0.0.1:3008/api/friend-book-entries;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+
+location ^~ /api/analytics {
+    proxy_pass http://127.0.0.1:3008/api/analytics;
     proxy_http_version 1.1;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
@@ -236,6 +255,36 @@ curl -fsS https://xiaoci-ai.com/api/friend-book-entries
 ssh root@106.54.13.225 'systemctl status xiaoci-friend-book-api.service --no-pager'
 ssh root@106.54.13.225 'curl -fsS http://127.0.0.1:3008/api/friend-book-entries'
 ssh root@106.54.13.225 'sqlite3 /var/lib/xiaoci-portfolio/friend-book.sqlite ".tables"'
+```
+
+访问统计常用查询：
+
+```bash
+# 从服务器读取当前 admin token 到本机当前终端
+TOKEN=$(ssh -i ~/.ssh/xiaoci_tencent_deploy -o IdentitiesOnly=yes root@106.54.13.225 \
+  "grep -o 'FRIEND_BOOK_ADMIN_TOKEN=[^\" ]*' /etc/systemd/system/xiaoci-friend-book-api.service.d/admin-token.conf | cut -d= -f2-")
+
+# 查询今天
+TODAY=$(date +%F)
+curl -fsS \
+  -H "x-friend-book-admin-token: $TOKEN" \
+  "https://xiaoci-ai.com/api/analytics/summary?from=$TODAY&to=$TODAY"
+
+# 查询最近 7 天（macOS date 写法）
+FROM=$(date -v-6d +%F)
+TO=$(date +%F)
+curl -fsS \
+  -H "x-friend-book-admin-token: $TOKEN" \
+  "https://xiaoci-ai.com/api/analytics/summary?from=$FROM&to=$TO"
+```
+
+如果已经在服务器终端里，也可以直接从 systemd drop-in 读取 token：
+
+```bash
+TOKEN=$(grep -o 'FRIEND_BOOK_ADMIN_TOKEN=[^"]*' /etc/systemd/system/xiaoci-friend-book-api.service.d/admin-token.conf | cut -d= -f2-)
+curl -fsS \
+  -H "x-friend-book-admin-token: $TOKEN" \
+  "https://xiaoci-ai.com/api/analytics/summary?from=$(date +%F)&to=$(date +%F)"
 ```
 
 删除接口的非破坏性验证方式：
@@ -262,7 +311,8 @@ ssh root@106.54.13.225 '/www/server/nginx/sbin/nginx -s reload -c /www/server/ng
 
 - 不要直接发布带有未提交用户改动的 dirty worktree；如有未提交改动，先用干净 worktree 从目标 commit 构建。
 - 服务器系统源的 Node 18 不满足 `better-sqlite3@12.4.1` 的运行要求，API 服务显式使用 `/opt/node-v24.15.0-linux-x64/bin/node`。
-- 部署 API 删除能力时，除了同步 `server/friend-book-api.js`，还要确认 systemd drop-in 里有 `FRIEND_BOOK_ADMIN_TOKEN`，并执行 `systemctl daemon-reload && systemctl restart xiaoci-friend-book-api.service`。
+- 部署 API 删除或访问统计能力时，必须同步到服务器实际启动路径 `/var/www/xiaoci-friend-book-api/server/friend-book-api.js`。不要只把文件放在 `/var/www/xiaoci-friend-book-api/friend-book-api.js`，因为 systemd 的 `ExecStart` 是 `node server/friend-book-api.js`。
+- 部署 API 后确认 systemd drop-in 里有 `FRIEND_BOOK_ADMIN_TOKEN`，并执行 `systemctl daemon-reload && systemctl restart xiaoci-friend-book-api.service`。
 - 若 Codex 无法用本机 `id_rsa` 自动 SSH，通常是私钥有 passphrase；可通过腾讯云网页终端临时追加一把无密码部署公钥，部署完必须从 `/root/.ssh/authorized_keys` 移除。
 - 本机已有可用腾讯云部署 key 时，可用 `ssh -i ~/.ssh/xiaoci_tencent_deploy -o IdentitiesOnly=yes root@106.54.13.225 ...`。
 - API 只绑定 `127.0.0.1`，不要把 `3008` 端口直接暴露到公网。
