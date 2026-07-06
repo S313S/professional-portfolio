@@ -10,9 +10,11 @@ import {
   createInitialHomeLoaderAssetStatuses,
   getHomeLoaderProgress,
   hasBlockingHomeLoaderErrors,
+  preloadImageAsset,
   shouldHoldHomeLoaderPreview,
   shouldEnableHomeLoader,
   type LoaderAsset,
+  type LoaderAssetStatus,
 } from './homeLoader';
 
 const PUBLIC_ROOT = join(process.cwd(), 'public');
@@ -164,3 +166,111 @@ test('reports blocking asset failures without converting pending assets into a r
   assert.equal(statuses['failed-poster'], 'error');
   assert.equal(statuses['slow-video'], 'pending');
 });
+
+test('retries a failed home loader image twice before reporting it loaded', async () => {
+  const OriginalImage = globalThis.Image;
+  const createdImages: MockHomeLoaderImage[] = [];
+
+  globalThis.Image = createMockHomeLoaderImageClass(createdImages);
+
+  try {
+    const statuses: LoaderAssetStatus[] = [];
+
+    preloadImageAsset(
+      { id: 'retrying-image', url: '/images/example.png', kind: 'image', weight: 1, blocking: true },
+      (_assetId, status) => statuses.push(status),
+      0,
+    );
+
+    assert.equal(createdImages.length, 1);
+    assert.equal(createdImages[0]?.src, '/images/example.png');
+    createdImages[0]?.emit('error');
+
+    await waitForNextTimer();
+    assert.equal(createdImages.length, 2);
+    assert.equal(createdImages[1]?.src, '/images/example.png?homeLoaderRetry=1');
+    assert.deepEqual(statuses, []);
+    createdImages[1]?.emit('error');
+
+    await waitForNextTimer();
+    assert.equal(createdImages.length, 3);
+    assert.equal(createdImages[2]?.src, '/images/example.png?homeLoaderRetry=2');
+    assert.deepEqual(statuses, []);
+    createdImages[2]?.emit('load');
+
+    assert.deepEqual(statuses, ['loaded']);
+  } finally {
+    globalThis.Image = OriginalImage;
+  }
+});
+
+test('reports a home loader image error after the original request and two retries fail', async () => {
+  const OriginalImage = globalThis.Image;
+  const createdImages: MockHomeLoaderImage[] = [];
+
+  globalThis.Image = createMockHomeLoaderImageClass(createdImages);
+
+  try {
+    const statuses: LoaderAssetStatus[] = [];
+
+    preloadImageAsset(
+      { id: 'failed-image', url: '/images/example.png?existing=1', kind: 'image', weight: 1, blocking: true },
+      (_assetId, status) => statuses.push(status),
+      0,
+    );
+
+    createdImages[0]?.emit('error');
+    await waitForNextTimer();
+    createdImages[1]?.emit('error');
+    await waitForNextTimer();
+    createdImages[2]?.emit('error');
+
+    assert.equal(createdImages.length, 3);
+    assert.equal(createdImages[1]?.src, '/images/example.png?existing=1&homeLoaderRetry=1');
+    assert.equal(createdImages[2]?.src, '/images/example.png?existing=1&homeLoaderRetry=2');
+    assert.deepEqual(statuses, ['error']);
+  } finally {
+    globalThis.Image = OriginalImage;
+  }
+});
+
+class MockHomeLoaderImage {
+  complete = false;
+  naturalWidth = 0;
+  src = '';
+
+  private listeners = new Map<string, Set<() => void>>();
+
+  addEventListener(type: string, listener: () => void) {
+    const listeners = this.listeners.get(type) ?? new Set<() => void>();
+    listeners.add(listener);
+    this.listeners.set(type, listeners);
+  }
+
+  removeEventListener(type: string, listener: () => void) {
+    this.listeners.get(type)?.delete(listener);
+  }
+
+  emit(type: string) {
+    for (const listener of this.listeners.get(type) ?? []) {
+      listener();
+    }
+  }
+}
+
+function createMockHomeLoaderImageClass(createdImages: MockHomeLoaderImage[]) {
+  const MockImageClass = class extends MockHomeLoaderImage {
+    constructor() {
+      super();
+      createdImages.push(this);
+    }
+  };
+
+  return MockImageClass as unknown as typeof Image;
+}
+
+function waitForNextTimer() {
+  return new Promise((resolve) => {
+    setTimeout(resolve, 0);
+  });
+}

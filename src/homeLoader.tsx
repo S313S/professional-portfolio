@@ -31,6 +31,8 @@ export interface HomeLoaderState {
 }
 
 const HOME_LOADER_ENABLED_HOSTNAMES = new Set(['xiaoci-ai.com', '106.54.13.225']);
+const HOME_LOADER_IMAGE_RETRY_COUNT = 2;
+const HOME_LOADER_IMAGE_RETRY_DELAY_MS = 500;
 
 const createLoaderAsset = (
   id: string,
@@ -293,26 +295,85 @@ function getHomeLoaderLoadedAssetCount(
     .reduce((count, asset) => (statuses[asset.id] === 'loaded' ? count + 1 : count), 0);
 }
 
-function preloadImageAsset(
-  asset: LoaderAsset,
-  updateStatus: (id: string, status: LoaderAssetStatus) => void,
-) {
-  const image = new Image();
-
-  const handleLoad = () => updateStatus(asset.id, 'loaded');
-  const handleError = () => updateStatus(asset.id, 'error');
-
-  image.addEventListener('load', handleLoad);
-  image.addEventListener('error', handleError);
-  image.src = asset.url;
-
-  if (image.complete && image.naturalWidth > 0) {
-    updateStatus(asset.id, 'loaded');
+export function createHomeLoaderImageRetryUrl(url: string, attempt: number) {
+  if (attempt <= 0) {
+    return url;
   }
 
+  const hashIndex = url.indexOf('#');
+  const urlBeforeHash = hashIndex === -1 ? url : url.slice(0, hashIndex);
+  const hash = hashIndex === -1 ? '' : url.slice(hashIndex);
+  const separator = urlBeforeHash.includes('?') ? '&' : '?';
+
+  return `${urlBeforeHash}${separator}homeLoaderRetry=${attempt}${hash}`;
+}
+
+export function preloadImageAsset(
+  asset: LoaderAsset,
+  updateStatus: (id: string, status: LoaderAssetStatus) => void,
+  retryDelayMs = HOME_LOADER_IMAGE_RETRY_DELAY_MS,
+) {
+  let currentCleanup: (() => void) | null = null;
+  let retryTimer: ReturnType<typeof setTimeout> | null = null;
+  let hasResolved = false;
+
+  const startAttempt = (attempt: number) => {
+    if (hasResolved) {
+      return;
+    }
+
+    currentCleanup?.();
+
+    const image = new Image();
+
+    const handleLoad = () => {
+      if (hasResolved) {
+        return;
+      }
+
+      hasResolved = true;
+      updateStatus(asset.id, 'loaded');
+    };
+
+    const handleError = () => {
+      if (hasResolved) {
+        return;
+      }
+
+      if (attempt < HOME_LOADER_IMAGE_RETRY_COUNT) {
+        retryTimer = setTimeout(() => startAttempt(attempt + 1), retryDelayMs);
+        return;
+      }
+
+      hasResolved = true;
+      updateStatus(asset.id, 'error');
+    };
+
+    currentCleanup = () => {
+      image.removeEventListener('load', handleLoad);
+      image.removeEventListener('error', handleError);
+    };
+
+    image.addEventListener('load', handleLoad);
+    image.addEventListener('error', handleError);
+    image.src = createHomeLoaderImageRetryUrl(asset.url, attempt);
+
+    if (image.complete && image.naturalWidth > 0) {
+      handleLoad();
+    }
+  };
+
+  startAttempt(0);
+
   return () => {
-    image.removeEventListener('load', handleLoad);
-    image.removeEventListener('error', handleError);
+    hasResolved = true;
+    currentCleanup?.();
+    currentCleanup = null;
+
+    if (retryTimer !== null) {
+      clearTimeout(retryTimer);
+      retryTimer = null;
+    }
   };
 }
 
