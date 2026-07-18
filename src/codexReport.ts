@@ -321,6 +321,93 @@ export function getCodexEvidenceStage(
   return 'described';
 }
 
+export function formatCodexEvidenceMarkdown(
+  record: CodexVisualDebugEvidence,
+): string {
+  const lines = [
+    `## ${record.title}`,
+    '',
+    `**Stage:** ${getCodexEvidenceStage(record)}`,
+    '',
+    '### Problem',
+    '',
+    record.problem,
+    '',
+    '### Visual intent',
+    '',
+    record.visualIntent,
+  ];
+
+  if (record.debugRoute) {
+    lines.push('', `**Debug route:** \`${record.debugRoute}\``);
+  }
+
+  if (record.calibration) {
+    lines.push('', '### Human calibration', '', record.calibration.summary);
+    if (record.calibration.parameters.length > 0) {
+      lines.push(
+        '',
+        ...record.calibration.parameters.map(
+          (parameter) => `- \`${parameter.label}\`: ${parameter.value}`,
+        ),
+      );
+    }
+  }
+
+  if (record.implementation) {
+    lines.push('', '### Implementation', '', record.implementation.summary);
+    if (record.implementation.modelNote) {
+      lines.push('', `**Model note:** ${record.implementation.modelNote}`);
+    }
+    if (record.implementation.changedFiles.length > 0) {
+      lines.push(
+        '',
+        '**Changed files:**',
+        '',
+        ...record.implementation.changedFiles.map((file) => `- \`${file}\``),
+      );
+    }
+  }
+
+  if (record.verification) {
+    lines.push(
+      '',
+      '### Verification',
+      '',
+      `**Outcome:** ${record.verification.outcome}`,
+      '',
+      record.verification.summary,
+    );
+    if (record.verification.commands.length > 0) {
+      lines.push(
+        '',
+        '**Commands:**',
+        '',
+        ...record.verification.commands.map((command) => `- \`${command}\``),
+      );
+    }
+  }
+
+  const timeline = [
+    record.createdAt ? `- Created: ${record.createdAt}` : '',
+    record.calibration?.confirmedAt
+      ? `- Calibration confirmed: ${record.calibration.confirmedAt}`
+      : '',
+    record.implementation?.completedAt
+      ? `- Implementation completed: ${record.implementation.completedAt}`
+      : '',
+    record.verification?.completedAt
+      ? `- Verification completed: ${record.verification.completedAt}`
+      : '',
+  ].filter(Boolean);
+
+  if (timeline.length > 0) {
+    lines.push('', '### Timeline', '', ...timeline);
+  }
+
+  return `${lines.join('\n').trim()}\n`;
+}
+
 export function summarizeReportText(text: string, maxLength = 34): string {
   const normalized = text.replace(/\s+/g, ' ').trim();
   if (!normalized) {

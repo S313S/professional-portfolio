@@ -206,3 +206,61 @@ test('getCodexEvidenceStage reports the latest stage backed by recorded data', (
     'described',
   );
 });
+
+test('formatCodexEvidenceMarkdown exports the recorded evidence facts', () => {
+  const formatCodexEvidenceMarkdown = (
+    codexReportModule as typeof codexReportModule & {
+      formatCodexEvidenceMarkdown?: (value: unknown) => string;
+    }
+  ).formatCodexEvidenceMarkdown;
+  const verifiedEvidence = {
+    ...evidenceInput,
+    implementation: {
+      summary: 'Applied the confirmed values to the source.',
+      changedFiles: ['src/FriendBookDiffHotspotsDebugPage.tsx'],
+      modelNote: 'User-confirmed current Codex task used GPT-5.6.',
+      completedAt: '2026-07-18T05:00:00.000Z',
+    },
+    verification: {
+      summary: 'Focused tests passed.',
+      commands: [
+        'node --import tsx --test src/FriendBookDiffHotspotsDebugPage.render.test.tsx',
+      ],
+      outcome: 'passed',
+      completedAt: '2026-07-18T05:10:00.000Z',
+    },
+  };
+
+  assert.equal(typeof formatCodexEvidenceMarkdown, 'function');
+  const markdown = formatCodexEvidenceMarkdown?.(verifiedEvidence) ?? '';
+  assert.match(markdown, /## Friend Book hotspot calibration/);
+  assert.match(markdown, /\/debug\/friend-book-diff-hotspots/);
+  assert.match(markdown, /hotspot-1\.x.*42\.5%/s);
+  assert.match(markdown, /GPT-5\.6/);
+  assert.match(markdown, /src\/FriendBookDiffHotspotsDebugPage\.tsx/);
+  assert.match(markdown, /node --import tsx --test/);
+  assert.match(markdown, /passed/);
+  assert.doesNotMatch(markdown, /undefined|null/);
+});
+
+test('formatCodexEvidenceMarkdown omits stages that have not happened', () => {
+  const formatCodexEvidenceMarkdown = (
+    codexReportModule as typeof codexReportModule & {
+      formatCodexEvidenceMarkdown?: (value: unknown) => string;
+    }
+  ).formatCodexEvidenceMarkdown;
+
+  assert.equal(typeof formatCodexEvidenceMarkdown, 'function');
+  const markdown = formatCodexEvidenceMarkdown?.({
+    id: evidenceInput.id,
+    title: evidenceInput.title,
+    problem: evidenceInput.problem,
+    visualIntent: evidenceInput.visualIntent,
+    createdAt: evidenceInput.createdAt,
+  }) ?? '';
+
+  assert.doesNotMatch(markdown, /Human calibration/);
+  assert.doesNotMatch(markdown, /Implementation/);
+  assert.doesNotMatch(markdown, /Verification/);
+  assert.doesNotMatch(markdown, /undefined|null/);
+});
