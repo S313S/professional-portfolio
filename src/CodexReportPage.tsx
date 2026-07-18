@@ -5,11 +5,14 @@ import {
   CODEX_REPORT_REFRESH_INTERVAL_MS,
   createDefaultCodexGuideDocument,
   findCodexGuideSelection,
+  formatCodexEvidenceMarkdown,
+  getCodexEvidenceStage,
   getInitialCodexGuideItemId,
   getVisibleCodexGuideSteps,
   normalizeCodexGuideDocument,
   resolveCodexGuideSelection,
   type CodexGuideDocument,
+  type CodexVisualDebugEvidence,
 } from './codexReport';
 
 async function readLatestCodexGuide(signal?: AbortSignal): Promise<CodexGuideDocument> {
@@ -32,7 +35,9 @@ async function readLatestCodexGuide(signal?: AbortSignal): Promise<CodexGuideDoc
 interface GuideNavigationTreeProps {
   document: CodexGuideDocument;
   selectedItemId: string | null;
-  onSelect: (itemId: string) => void;
+  selectedEvidenceId: string | null;
+  onSelectGuide: (itemId: string) => void;
+  onSelectEvidence: (evidenceId: string) => void;
 }
 
 const CHINESE_SECTION_NUMERALS = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
@@ -44,7 +49,9 @@ function getSectionIndexLabel(index: number): string {
 function GuideNavigationTree({
   document,
   selectedItemId,
-  onSelect,
+  selectedEvidenceId,
+  onSelectGuide,
+  onSelectEvidence,
 }: GuideNavigationTreeProps) {
   return (
     <nav className="grid gap-6">
@@ -60,14 +67,14 @@ function GuideNavigationTree({
           </p>
           <div className="grid gap-1 border-l border-[#ebe0d3] pl-5">
             {group.items.map((item, itemIndex) => {
-              const isActive = item.id === selectedItemId;
+              const isActive = !selectedEvidenceId && item.id === selectedItemId;
               return (
                 <button
                   key={item.id}
                   type="button"
                   data-codex-report-nav-item={item.id}
                   data-codex-report-nav-level="item"
-                  onClick={() => onSelect(item.id)}
+                  onClick={() => onSelectGuide(item.id)}
                   className={[
                     'group flex items-start gap-3 rounded-[0.75rem] px-2 py-1.5 text-left transition',
                     isActive
@@ -92,22 +99,272 @@ function GuideNavigationTree({
           </div>
         </section>
       ))}
+
+      {document.evidence.length > 0 ? (
+        <section
+          data-codex-report-nav-group="visual-debug-evidence"
+          data-codex-report-nav-level="group"
+          className="grid gap-3"
+        >
+          <p className="text-[1.15rem] font-semibold leading-7 tracking-[-0.01em] text-[#171311]">
+            {getSectionIndexLabel(document.groups.length)}、Visual Debug Evidence
+          </p>
+          <div className="grid gap-1 border-l border-[#ebe0d3] pl-5">
+            {document.evidence.map((record, evidenceIndex) => {
+              const isActive = record.id === selectedEvidenceId;
+              return (
+                <button
+                  key={record.id}
+                  type="button"
+                  data-codex-report-nav-item={record.id}
+                  data-codex-report-nav-level="item"
+                  onClick={() => onSelectEvidence(record.id)}
+                  className={[
+                    'group flex items-start gap-3 rounded-[0.75rem] px-2 py-1.5 text-left transition',
+                    isActive
+                      ? 'bg-[#f7efe6] text-[#171311]'
+                      : 'text-[#73675e] hover:bg-[rgba(255,255,255,0.72)] hover:text-[#26201c]',
+                  ].join(' ')}
+                >
+                  <span
+                    className={[
+                      'mt-[0.38rem] h-3.5 w-[2px] rounded-full transition',
+                      isActive ? 'bg-[#b98f73]' : 'bg-transparent',
+                    ].join(' ')}
+                  />
+                  <div className="grid gap-0.5">
+                    <p className={isActive ? 'font-medium' : 'font-normal'}>
+                      {document.groups.length + 1}.{evidenceIndex + 1} {record.title}
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
     </nav>
+  );
+}
+
+const EVIDENCE_STAGES = [
+  {id: 'described', label: 'Problem described'},
+  {id: 'calibrated', label: 'Human calibrated'},
+  {id: 'implemented', label: 'GPT-5.6 / Codex implemented'},
+  {id: 'verified', label: 'Tests verified'},
+] as const;
+
+interface EvidenceDetailProps {
+  record: CodexVisualDebugEvidence;
+  copyState: 'idle' | 'copied' | 'unavailable';
+  onCopy: () => void;
+}
+
+function EvidenceDetail({record, copyState, onCopy}: EvidenceDetailProps) {
+  const stage = getCodexEvidenceStage(record);
+  const reachedStageIndex = EVIDENCE_STAGES.findIndex((entry) => entry.id === stage);
+  const timeline = [
+    record.createdAt ? ['Problem created', record.createdAt] : null,
+    record.calibration?.confirmedAt
+      ? ['Calibration confirmed', record.calibration.confirmedAt]
+      : null,
+    record.implementation?.completedAt
+      ? ['Implementation completed', record.implementation.completedAt]
+      : null,
+    record.verification?.completedAt
+      ? ['Verification completed', record.verification.completedAt]
+      : null,
+  ].filter((entry): entry is [string, string] => entry !== null);
+
+  return (
+    <div data-codex-evidence-stage={stage} className="grid gap-8">
+      <section className="grid gap-3">
+        <p className="font-mono text-[0.72rem] uppercase tracking-[0.24em] text-[#8b6a56]">
+          Visual Debug Evidence
+        </p>
+        <h2 className="font-serif text-[2rem] leading-[1.05] text-[#2f2120] lg:text-[3.4rem]">
+          {record.title}
+        </h2>
+        <p className="max-w-[820px] text-[0.98rem] leading-7 text-[#5d4a3f] lg:text-[1.1rem] lg:leading-8">
+          {record.problem}
+        </p>
+      </section>
+
+      <ol className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+        {EVIDENCE_STAGES.map((entry, index) => {
+          const isReached = index <= reachedStageIndex;
+          return (
+            <li
+              key={entry.id}
+              data-codex-evidence-step={entry.id}
+              data-codex-evidence-step-state={isReached ? 'reached' : 'pending'}
+              className={[
+                'rounded-[1rem] border px-4 py-3 text-sm leading-5',
+                isReached
+                  ? 'border-[#c8a98f] bg-[#f5e8da] text-[#49372d]'
+                  : 'border-[#e4d8ca] bg-white/45 text-[#8a7a6d]',
+              ].join(' ')}
+            >
+              <span className="mr-2 font-mono text-[0.72rem]">0{index + 1}</span>
+              {entry.label}
+            </li>
+          );
+        })}
+      </ol>
+
+      <section className="grid gap-3 rounded-[1.2rem] border border-[#e1d3c3] bg-white/60 p-5">
+        <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#8b6a56]">
+          Visual intent
+        </p>
+        <p className="text-base leading-7 text-[#4d3d34]">{record.visualIntent}</p>
+        {record.debugRoute ? (
+          <a
+            href={record.debugRoute}
+            className="w-fit rounded-full border border-[#b98f73] px-4 py-2 text-sm font-medium text-[#6d4836] transition hover:bg-[#f3e4d5]"
+          >
+            Open linked debug interface →
+          </a>
+        ) : null}
+      </section>
+
+      {record.calibration ? (
+        <section className="grid gap-4">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#8b6a56]">
+              Human calibration
+            </p>
+            <p className="mt-2 text-base leading-7 text-[#4d3d34]">
+              {record.calibration.summary}
+            </p>
+          </div>
+          {record.calibration.parameters.length > 0 ? (
+            <dl className="grid gap-2 sm:grid-cols-2">
+              {record.calibration.parameters.map((parameter) => (
+                <div
+                  key={parameter.label}
+                  className="rounded-[0.9rem] border border-[#e8dacb] bg-white/72 px-4 py-3"
+                >
+                  <dt className="font-mono text-xs text-[#8b6a56]">{parameter.label}</dt>
+                  <dd className="mt-1 text-sm text-[#3f2f28]">{parameter.value}</dd>
+                </div>
+              ))}
+            </dl>
+          ) : null}
+        </section>
+      ) : null}
+
+      {record.implementation ? (
+        <section className="grid gap-4 rounded-[1.2rem] border border-[#d8c3ab] bg-[#fffaf4] p-5">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#8b6a56]">
+              GPT-5.6 / Codex implementation
+            </p>
+            <p className="mt-2 text-base leading-7 text-[#4d3d34]">
+              {record.implementation.summary}
+            </p>
+          </div>
+          {record.implementation.modelNote ? (
+            <p className="rounded-[0.8rem] bg-[#f4e7d9] px-4 py-3 text-sm leading-6 text-[#684b3b]">
+              {record.implementation.modelNote}
+            </p>
+          ) : null}
+          {record.implementation.changedFiles.length > 0 ? (
+            <ul className="grid gap-2">
+              {record.implementation.changedFiles.map((file) => (
+                <li key={file} className="font-mono text-xs leading-6 text-[#55463d]">
+                  {file}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </section>
+      ) : null}
+
+      {record.verification ? (
+        <section className="grid gap-4 rounded-[1.2rem] border border-[#c7b9a9] bg-white/65 p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#8b6a56]">
+              Verification
+            </p>
+            <span
+              data-codex-evidence-outcome={record.verification.outcome}
+              className="rounded-full border border-[#c8a98f] px-3 py-1 font-mono text-xs uppercase text-[#6d4836]"
+            >
+              {record.verification.outcome}
+            </span>
+          </div>
+          <p className="text-base leading-7 text-[#4d3d34]">{record.verification.summary}</p>
+          {record.verification.commands.length > 0 ? (
+            <ul className="grid gap-2">
+              {record.verification.commands.map((command) => (
+                <li
+                  key={command}
+                  className="overflow-x-auto rounded-[0.8rem] bg-[#2f2925] px-4 py-3 text-xs leading-6 text-[#f7efe2]"
+                >
+                  <code>{command}</code>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </section>
+      ) : null}
+
+      {timeline.length > 0 ? (
+        <section className="grid gap-3">
+          <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#8b6a56]">
+            Timeline
+          </p>
+          <dl className="grid gap-2">
+            {timeline.map(([label, value]) => (
+              <div key={label} className="flex flex-wrap justify-between gap-2 text-sm leading-6">
+                <dt className="text-[#68574c]">{label}</dt>
+                <dd className="font-mono text-xs text-[#817568]">{value}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      ) : null}
+
+      <button
+        type="button"
+        onClick={onCopy}
+        className="w-fit rounded-full bg-[#3b2c26] px-5 py-2.5 text-sm font-medium text-[#fffaf4] transition hover:bg-[#594238]"
+      >
+        {copyState === 'copied'
+          ? 'Evidence Markdown copied'
+          : copyState === 'unavailable'
+            ? 'Copy unavailable'
+            : 'Copy evidence Markdown'}
+      </button>
+    </div>
   );
 }
 
 interface CodexReportPageProps {
   initialNavCollapsed?: boolean;
+  initialDocument?: CodexGuideDocument;
+  initialEvidenceId?: string;
 }
 
 export default function CodexReportPage({
   initialNavCollapsed = false,
+  initialDocument,
+  initialEvidenceId,
 }: CodexReportPageProps) {
-  const [document, setDocument] = useState(createDefaultCodexGuideDocument);
+  const [document, setDocument] = useState<CodexGuideDocument>(() =>
+    initialDocument ?? createDefaultCodexGuideDocument(),
+  );
   const [selectedItemId, setSelectedItemId] = useState<string | null>(() =>
-    getInitialCodexGuideItemId(createDefaultCodexGuideDocument()),
+    getInitialCodexGuideItemId(initialDocument ?? createDefaultCodexGuideDocument()),
+  );
+  const [selectedEvidenceId, setSelectedEvidenceId] = useState<string | null>(() =>
+    initialEvidenceId &&
+    initialDocument?.evidence.some((record) => record.id === initialEvidenceId)
+      ? initialEvidenceId
+      : null,
   );
   const [isNavCollapsed, setIsNavCollapsed] = useState(initialNavCollapsed);
+  const [copyState, setCopyState] = useState<'idle' | 'copied' | 'unavailable'>('idle');
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -128,6 +385,11 @@ export default function CodexReportPage({
         startTransition(() => {
           setDocument(nextDocument);
           setSelectedItemId((current) => resolveCodexGuideSelection(nextDocument, current));
+          setSelectedEvidenceId((current) =>
+            current && nextDocument.evidence.some((record) => record.id === current)
+              ? current
+              : null,
+          );
         });
       } catch {
         if (isDisposed || controller.signal.aborted) {
@@ -150,9 +412,34 @@ export default function CodexReportPage({
   const activeSelection =
     findCodexGuideSelection(document, selectedItemId) ??
     findCodexGuideSelection(document, getInitialCodexGuideItemId(document));
+  const activeEvidence = selectedEvidenceId
+    ? document.evidence.find((record) => record.id === selectedEvidenceId) ?? null
+    : null;
   const visibleSteps = activeSelection ? getVisibleCodexGuideSteps(activeSelection.item) : [];
   const promptHint =
     activeSelection?.item.promptHint || '如果你想看细节，可以直接继续追问。';
+  const selectGuide = (itemId: string) => {
+    setSelectedItemId(itemId);
+    setSelectedEvidenceId(null);
+    setCopyState('idle');
+  };
+  const selectEvidence = (evidenceId: string) => {
+    setSelectedEvidenceId(evidenceId);
+    setCopyState('idle');
+  };
+  const copyEvidenceMarkdown = async () => {
+    if (!activeEvidence || typeof navigator === 'undefined' || !navigator.clipboard) {
+      setCopyState('unavailable');
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(formatCodexEvidenceMarkdown(activeEvidence));
+      setCopyState('copied');
+    } catch {
+      setCopyState('unavailable');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#f7efe2] text-stone-900">
@@ -182,7 +469,9 @@ export default function CodexReportPage({
             <GuideNavigationTree
               document={document}
               selectedItemId={selectedItemId}
-              onSelect={setSelectedItemId}
+              selectedEvidenceId={selectedEvidenceId}
+              onSelectGuide={selectGuide}
+              onSelectEvidence={selectEvidence}
             />
           </div>
         </details>
@@ -230,7 +519,9 @@ export default function CodexReportPage({
                     <GuideNavigationTree
                       document={document}
                       selectedItemId={selectedItemId}
-                      onSelect={setSelectedItemId}
+                      selectedEvidenceId={selectedEvidenceId}
+                      onSelectGuide={selectGuide}
+                      onSelectEvidence={selectEvidence}
                     />
                   </div>
                 ) : null}
@@ -247,6 +538,14 @@ export default function CodexReportPage({
                 data-codex-report-panel="guide"
                 className="rounded-[1.6rem] border border-[#d8c3ab] bg-[rgba(255,249,242,0.92)] p-6 shadow-[0_18px_36px_rgba(70,43,29,0.08)] lg:min-h-[720px] lg:p-8"
               >
+                {activeEvidence ? (
+                  <EvidenceDetail
+                    record={activeEvidence}
+                    copyState={copyState}
+                    onCopy={() => void copyEvidenceMarkdown()}
+                  />
+                ) : (
+                  <>
                 <p className="font-mono text-[0.72rem] uppercase tracking-[0.24em] text-[#8b6a56]">
                   当前建议
                 </p>
@@ -305,6 +604,8 @@ export default function CodexReportPage({
                     当前没有可显示的行动指南，请等待下一次同步。
                   </p>
                 )}
+                  </>
+                )}
               </article>
             </div>
           </div>
@@ -314,6 +615,14 @@ export default function CodexReportPage({
           data-codex-report-panel="guide"
           className="mt-6 rounded-[1.6rem] border border-[#d8c3ab] bg-[rgba(255,249,242,0.92)] p-6 shadow-[0_18px_36px_rgba(70,43,29,0.08)] lg:hidden"
         >
+          {activeEvidence ? (
+            <EvidenceDetail
+              record={activeEvidence}
+              copyState={copyState}
+              onCopy={() => void copyEvidenceMarkdown()}
+            />
+          ) : (
+            <>
           <p className="font-mono text-[0.72rem] uppercase tracking-[0.24em] text-[#8b6a56]">
             当前建议
           </p>
@@ -367,6 +676,8 @@ export default function CodexReportPage({
             <p className="mt-8 rounded-[1rem] border border-dashed border-[#d8c3ab] px-4 py-4 text-sm leading-6 text-[#7a6253]">
               当前没有可显示的行动指南，请等待下一次同步。
             </p>
+          )}
+            </>
           )}
         </article>
       </main>
