@@ -12,10 +12,48 @@ export interface CodexGuideGroup {
   items: CodexGuideItem[];
 }
 
+export type CodexEvidenceStage =
+  | 'described'
+  | 'calibrated'
+  | 'implemented'
+  | 'verified';
+
+export interface CodexEvidenceParameter {
+  label: string;
+  value: string;
+}
+
+export interface CodexVisualDebugEvidence {
+  id: string;
+  title: string;
+  problem: string;
+  visualIntent: string;
+  debugRoute?: string;
+  createdAt?: string;
+  calibration?: {
+    summary: string;
+    parameters: CodexEvidenceParameter[];
+    confirmedAt?: string;
+  };
+  implementation?: {
+    summary: string;
+    changedFiles: string[];
+    modelNote?: string;
+    completedAt?: string;
+  };
+  verification?: {
+    summary: string;
+    commands: string[];
+    outcome: 'passed' | 'failed' | 'pending';
+    completedAt?: string;
+  };
+}
+
 export interface CodexGuideDocument {
   title: string;
   summary: string;
   groups: CodexGuideGroup[];
+  evidence: CodexVisualDebugEvidence[];
   updatedAt?: string | null;
 }
 
@@ -28,6 +66,14 @@ export const CODEX_REPORT_FILE_PATH = 'tmp/codex-report.json';
 export const CODEX_REPORT_ENDPOINT = '/__codex-report/current';
 export const CODEX_REPORT_UPDATE_ENDPOINT = '/__codex-report/update';
 export const CODEX_REPORT_REFRESH_INTERVAL_MS = 5000;
+
+const CODEX_REPORT_ALLOWED_DEBUG_ROUTES = new Set([
+  '/debug/friend-book-finale',
+  '/debug/friend-book-diff-hotspots',
+  '/debug/works-detail',
+  '/debug/career-detail',
+  '/debug/codex-report',
+]);
 
 const SENTENCE_END_PATTERN = /[。！？!?]/;
 
@@ -47,6 +93,120 @@ function normalizeGuideSteps(value: unknown): string[] {
   return value
     .map((entry) => asTrimmedString(entry))
     .filter(Boolean);
+}
+
+function normalizeEvidenceParameter(value: unknown): CodexEvidenceParameter | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  const label = asTrimmedString(value.label);
+  const parameterValue = asTrimmedString(value.value);
+  if (!label || !parameterValue) {
+    return null;
+  }
+
+  return {label, value: parameterValue};
+}
+
+function normalizeEvidenceCalibration(
+  value: unknown,
+): CodexVisualDebugEvidence['calibration'] | undefined {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  const summary = asTrimmedString(value.summary);
+  if (!summary) {
+    return undefined;
+  }
+
+  const parameters = Array.isArray(value.parameters)
+    ? value.parameters
+        .map((parameter) => normalizeEvidenceParameter(parameter))
+        .filter((parameter): parameter is CodexEvidenceParameter => parameter !== null)
+    : [];
+
+  return {
+    summary,
+    parameters,
+    confirmedAt: asTrimmedString(value.confirmedAt) || undefined,
+  };
+}
+
+function normalizeEvidenceImplementation(
+  value: unknown,
+): CodexVisualDebugEvidence['implementation'] | undefined {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  const summary = asTrimmedString(value.summary);
+  if (!summary) {
+    return undefined;
+  }
+
+  return {
+    summary,
+    changedFiles: normalizeGuideSteps(value.changedFiles),
+    modelNote: asTrimmedString(value.modelNote) || undefined,
+    completedAt: asTrimmedString(value.completedAt) || undefined,
+  };
+}
+
+function normalizeEvidenceVerification(
+  value: unknown,
+): CodexVisualDebugEvidence['verification'] | undefined {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  const summary = asTrimmedString(value.summary);
+  const outcome = asTrimmedString(value.outcome);
+  if (
+    !summary ||
+    (outcome !== 'passed' && outcome !== 'failed' && outcome !== 'pending')
+  ) {
+    return undefined;
+  }
+
+  return {
+    summary,
+    commands: normalizeGuideSteps(value.commands),
+    outcome,
+    completedAt: asTrimmedString(value.completedAt) || undefined,
+  };
+}
+
+function normalizeVisualDebugEvidence(value: unknown): CodexVisualDebugEvidence | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  const id = asTrimmedString(value.id);
+  const title = asTrimmedString(value.title);
+  const problem = asTrimmedString(value.problem);
+  const visualIntent = asTrimmedString(value.visualIntent);
+
+  if (!id || !title || !problem || !visualIntent) {
+    return null;
+  }
+
+  const debugRoute = asTrimmedString(value.debugRoute);
+
+  return {
+    id,
+    title,
+    problem,
+    visualIntent,
+    debugRoute: CODEX_REPORT_ALLOWED_DEBUG_ROUTES.has(debugRoute)
+      ? debugRoute
+      : undefined,
+    createdAt: asTrimmedString(value.createdAt) || undefined,
+    calibration: normalizeEvidenceCalibration(value.calibration),
+    implementation: normalizeEvidenceImplementation(value.implementation),
+    verification: normalizeEvidenceVerification(value.verification),
+  };
 }
 
 function normalizeGuideItem(value: unknown): CodexGuideItem | null {
@@ -115,6 +275,7 @@ export function createDefaultCodexGuideDocument(): CodexGuideDocument {
         ],
       },
     ],
+    evidence: [],
     updatedAt: null,
   };
 }
@@ -136,8 +297,28 @@ export function normalizeCodexGuideDocument(value: unknown): CodexGuideDocument 
     title: asTrimmedString(value.title) || '未命名行动指南',
     summary: asTrimmedString(value.summary) || '从左侧选择一个主题，查看当前最该做的事。',
     groups,
+    evidence: Array.isArray(value.evidence)
+      ? value.evidence
+          .map((record) => normalizeVisualDebugEvidence(record))
+          .filter((record): record is CodexVisualDebugEvidence => record !== null)
+      : [],
     updatedAt: asTrimmedString(value.updatedAt) || null,
   };
+}
+
+export function getCodexEvidenceStage(
+  record: CodexVisualDebugEvidence,
+): CodexEvidenceStage {
+  if (record.verification) {
+    return 'verified';
+  }
+  if (record.implementation) {
+    return 'implemented';
+  }
+  if (record.calibration) {
+    return 'calibrated';
+  }
+  return 'described';
 }
 
 export function summarizeReportText(text: string, maxLength = 34): string {

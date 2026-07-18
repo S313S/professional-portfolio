@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import * as codexReportModule from './codexReport';
 import {
   createDefaultCodexGuideDocument,
   getInitialCodexGuideItemId,
@@ -9,6 +10,32 @@ import {
   resolveCodexGuideSelection,
   summarizeReportText,
 } from './codexReport';
+
+const evidenceInput = {
+  id: 'friend-book-hotspots',
+  title: 'Friend Book hotspot calibration',
+  problem: 'The hotspot felt displaced but coordinates were hard to describe.',
+  visualIntent: 'Match every hotspot to the visible object.',
+  debugRoute: '/debug/friend-book-diff-hotspots',
+  createdAt: '2026-07-18T03:30:00.000Z',
+  calibration: {
+    summary: 'Human-confirmed hotspot coordinates.',
+    parameters: [{label: 'hotspot-1.x', value: '42.5%'}],
+    confirmedAt: '2026-07-18T04:00:00.000Z',
+  },
+};
+
+function guideWithEvidence(evidence: unknown[]) {
+  const fallback = createDefaultCodexGuideDocument();
+  return normalizeCodexGuideDocument({
+    title: 'Build Week',
+    summary: 'Evidence',
+    groups: fallback.groups,
+    evidence,
+  }) as ReturnType<typeof normalizeCodexGuideDocument> & {
+    evidence?: Array<Record<string, unknown>>;
+  };
+}
 
 test('summarizeReportText keeps only the first concise sentence for previews', () => {
   assert.equal(
@@ -101,5 +128,81 @@ test('resolveCodexGuideSelection keeps valid selections and falls back to the fi
   assert.equal(
     resolveCodexGuideSelection(guide, 'missing'),
     getInitialCodexGuideItemId(guide),
+  );
+});
+
+test('normalizeCodexGuideDocument preserves valid visual debug evidence', () => {
+  const guide = guideWithEvidence([evidenceInput]);
+
+  assert.equal(guide.evidence?.length, 1);
+  assert.equal(guide.evidence?.[0]?.debugRoute, '/debug/friend-book-diff-hotspots');
+  assert.deepEqual(guide.evidence?.[0]?.calibration, evidenceInput.calibration);
+});
+
+test('normalizeCodexGuideDocument keeps evidence but removes unsafe debug routes', () => {
+  const guide = guideWithEvidence([
+    {
+      ...evidenceInput,
+      debugRoute: 'https://example.com/debug',
+    },
+  ]);
+
+  assert.equal(guide.evidence?.length, 1);
+  assert.equal(guide.evidence?.[0]?.debugRoute, undefined);
+});
+
+test('normalizeCodexGuideDocument stays compatible when old documents omit evidence', () => {
+  const fallback = createDefaultCodexGuideDocument();
+  const guide = normalizeCodexGuideDocument({
+    title: 'Legacy guide',
+    summary: 'Still readable.',
+    groups: fallback.groups,
+  }) as ReturnType<typeof normalizeCodexGuideDocument> & {evidence?: unknown[]};
+
+  assert.deepEqual(guide.evidence, []);
+});
+
+test('getCodexEvidenceStage reports the latest stage backed by recorded data', () => {
+  const getCodexEvidenceStage = (
+    codexReportModule as typeof codexReportModule & {
+      getCodexEvidenceStage?: (value: unknown) => string;
+    }
+  ).getCodexEvidenceStage;
+
+  assert.equal(typeof getCodexEvidenceStage, 'function');
+  assert.equal(getCodexEvidenceStage?.(evidenceInput), 'calibrated');
+  assert.equal(
+    getCodexEvidenceStage?.({
+      ...evidenceInput,
+      implementation: {
+        summary: 'Applied the confirmed values.',
+        changedFiles: ['src/example.tsx'],
+      },
+    }),
+    'implemented',
+  );
+  assert.equal(
+    getCodexEvidenceStage?.({
+      ...evidenceInput,
+      implementation: {
+        summary: 'Applied the confirmed values.',
+        changedFiles: ['src/example.tsx'],
+      },
+      verification: {
+        summary: 'Focused tests passed.',
+        commands: ['node --import tsx --test src/example.test.ts'],
+        outcome: 'passed',
+      },
+    }),
+    'verified',
+  );
+  assert.equal(
+    getCodexEvidenceStage?.({
+      id: evidenceInput.id,
+      title: evidenceInput.title,
+      problem: evidenceInput.problem,
+      visualIntent: evidenceInput.visualIntent,
+    }),
+    'described',
   );
 });
