@@ -253,6 +253,45 @@ function normalizeGuideGroup(value: unknown): CodexGuideGroup | null {
   };
 }
 
+function createBuildWeekVisualDebugEvidence(): CodexVisualDebugEvidence {
+  return {
+    id: 'gpt56-visual-debug-evidence-loop',
+    title: 'Visual debugging evidence loop',
+    problem:
+      'The existing standalone debugging interfaces helped translate visual intent, but the report panel could not show how human calibration became traceable source changes.',
+    visualIntent:
+      'Keep the public portfolio untouched while presenting a concise, inspectable developer-only trail from subjective feedback to implementation and verification.',
+    debugRoute: '/debug/codex-report',
+    createdAt: '2026-07-18T11:57:29+08:00',
+    calibration: {
+      summary:
+        'The user approved a developer-only evidence loop that reuses the existing Friend Book, Career, Works, and Codex Report debugging routes.',
+      parameters: [
+        {label: 'exposure', value: 'development-only route'},
+        {label: 'public portfolio', value: 'no new production entry point'},
+        {
+          label: 'evidence stages',
+          value: 'problem → human calibration → implementation → verification',
+        },
+      ],
+      confirmedAt: '2026-07-18T11:57:29+08:00',
+    },
+    implementation: {
+      summary:
+        'GPT-5.6 extended Codex Report with normalized evidence records, a debug-route allowlist, stage calculation, Markdown export, evidence navigation, and a detailed evidence view.',
+      changedFiles: [
+        'src/codexReport.ts',
+        'src/codexReport.test.ts',
+        'src/CodexReportPage.tsx',
+        'src/CodexReportPage.render.test.tsx',
+      ],
+      modelNote:
+        'The user-confirmed current Codex task used GPT-5.6; the active task selector and Codex session are the primary model-use evidence.',
+      completedAt: '2026-07-18T12:09:01+08:00',
+    },
+  };
+}
+
 export function createDefaultCodexGuideDocument(): CodexGuideDocument {
   return {
     title: '等待最新指南',
@@ -275,7 +314,7 @@ export function createDefaultCodexGuideDocument(): CodexGuideDocument {
         ],
       },
     ],
-    evidence: [],
+    evidence: [createBuildWeekVisualDebugEvidence()],
     updatedAt: null,
   };
 }

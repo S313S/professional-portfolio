@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import * as codexReportModule from './codexReport';
 import {
   createDefaultCodexGuideDocument,
+  getCodexEvidenceStage,
   getInitialCodexGuideItemId,
   getVisibleCodexGuideSteps,
   normalizeCodexGuideDocument,
@@ -263,4 +264,18 @@ test('formatCodexEvidenceMarkdown omits stages that have not happened', () => {
   assert.doesNotMatch(markdown, /Implementation/);
   assert.doesNotMatch(markdown, /Verification/);
   assert.doesNotMatch(markdown, /undefined|null/);
+});
+
+test('the default report includes the truthful GPT-5.6 Build Week extension record', () => {
+  const record = createDefaultCodexGuideDocument().evidence.find(
+    (entry) => entry.id === 'gpt56-visual-debug-evidence-loop',
+  );
+
+  assert.ok(record);
+  assert.equal(record.debugRoute, '/debug/codex-report');
+  assert.equal(getCodexEvidenceStage(record), 'implemented');
+  assert.match(record.implementation?.modelNote ?? '', /user-confirmed current Codex task/i);
+  assert.match(record.implementation?.modelNote ?? '', /GPT-5\.6/);
+  assert.doesNotMatch(record.implementation?.modelNote ?? '', /platform-certified/i);
+  assert.equal(record.verification, undefined);
 });
