@@ -311,10 +311,65 @@ function createBuildWeekVisualDebugEvidence(): CodexVisualDebugEvidence {
   };
 }
 
+function createBuildWeekHotspotDebugRefactorEvidence(): CodexVisualDebugEvidence {
+  return {
+    id: 'gpt56-hotspot-debug-refactor',
+    title: 'GPT-5.6 hotspot debugger refactor',
+    problem:
+      'The existing hotspot page exposed drag, resize, export, and save controls, but its first screen did not explain the full workflow. In a 649px-wide scan, the controls started around y=960 after both previews, so the path from visual judgment to confirmed parameters was easy to miss.',
+    visualIntent:
+      'Keep the existing calibration behavior intact while making Select → Calibrate → Confirm understandable, truthful about the GPT-5.6 contribution, and directly connected to the repository evidence trail.',
+    debugRoute: '/debug/friend-book-diff-hotspots',
+    createdAt: '2026-07-18T12:57:43+08:00',
+    calibration: {
+      summary:
+        'The user approved a small workflow refactor after GPT-5.6 scanned the existing page; the scope was limited to guidance, attribution, responsive orientation, and evidence navigation.',
+      parameters: [
+        {label: 'existing interaction logic', value: 'unchanged'},
+        {label: 'workflow', value: 'Select → Calibrate → Confirm'},
+        {label: 'narrow viewport scan', value: '649 × 837; controls near y=960'},
+        {label: 'public portfolio', value: 'no new debug link'},
+      ],
+      confirmedAt: '2026-07-18T12:57:43+08:00',
+    },
+    implementation: {
+      summary:
+        'GPT-5.6 refactored and extended the existing visual hotspot debugging page with honest Build Week attribution, a three-step calibration guide, narrow-screen orientation, clearer confirmation language, and a link to the Codex Report evidence trail.',
+      changedFiles: [
+        'src/FriendBookDiffHotspotsDebugPage.tsx',
+        'src/FriendBookDiffHotspotsDebugPage.render.test.tsx',
+        'src/codexReport.ts',
+        'src/codexReport.test.ts',
+        'README.md',
+        'docs/build-week/visual-debug-evidence.md',
+        'docs/plans/2026-07-18-gpt56-hotspot-debug-refactor-design.md',
+        'docs/plans/2026-07-18-gpt56-hotspot-debug-refactor.md',
+      ],
+      modelNote:
+        'This is an existing tool refactored and extended in the user-confirmed GPT-5.6 Codex task. The original tool predates Build Week and this task.',
+      completedAt: '2026-07-18T12:57:43+08:00',
+    },
+    verification: {
+      summary:
+        'Full regression, type, build, and browser verification have not yet been completed for this refactor.',
+      commands: [],
+      outcome: 'pending',
+    },
+  };
+}
+
+function createBuiltInVisualDebugEvidence(): CodexVisualDebugEvidence[] {
+  return [
+    createBuildWeekVisualDebugEvidence(),
+    createBuildWeekHotspotDebugRefactorEvidence(),
+  ];
+}
+
 function mergeVisualDebugEvidence(value: unknown): CodexVisualDebugEvidence[] {
   const recordsById = new Map<string, CodexVisualDebugEvidence>();
-  const builtInRecord = createBuildWeekVisualDebugEvidence();
-  recordsById.set(builtInRecord.id, builtInRecord);
+  createBuiltInVisualDebugEvidence().forEach((record) => {
+    recordsById.set(record.id, record);
+  });
 
   if (Array.isArray(value)) {
     value
@@ -348,7 +403,7 @@ export function createDefaultCodexGuideDocument(): CodexGuideDocument {
         ],
       },
     ],
-    evidence: [createBuildWeekVisualDebugEvidence()],
+    evidence: createBuiltInVisualDebugEvidence(),
     loadWarning: null,
     updatedAt: null,
   };
@@ -397,7 +452,7 @@ export function getCodexEvidenceStage(
   if (!record.implementation) {
     return 'calibrated';
   }
-  if (!record.verification) {
+  if (!record.verification || record.verification.outcome === 'pending') {
     return 'implemented';
   }
   return 'verified';

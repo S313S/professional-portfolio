@@ -5,6 +5,7 @@ An immersive personal brand website for **Xiao Ci — AI Builder**. Instead of p
 - Live website: [https://xiaoci-ai.com](https://xiaoci-ai.com)
 - Build Week evidence: [docs/build-week/visual-debug-evidence.md](docs/build-week/visual-debug-evidence.md)
 - Evidence-loop design: [docs/plans/2026-07-18-gpt56-visual-debug-evidence-loop-design.md](docs/plans/2026-07-18-gpt56-visual-debug-evidence-loop-design.md)
+- Hotspot refactor design: [docs/plans/2026-07-18-gpt56-hotspot-debug-refactor-design.md](docs/plans/2026-07-18-gpt56-hotspot-debug-refactor-design.md)
 
 ## Why visual debugging matters
 
@@ -31,11 +32,17 @@ hard-to-express visual problem
 
 The current Codex task was switched to GPT-5.6 and confirmed by the user in the active task selector. That task/session and its timestamped Git commits are the primary model-use evidence. The in-project evidence record is a supporting artifact; it does not claim to be platform-level model authentication.
 
+### GPT-5.6 hotspot debugger refactor
+
+GPT-5.6 also scanned and refactored the existing `/debug/friend-book-diff-hotspots` page during Build Week. The original coordinate editor remains intact; the new iteration adds honest model attribution, a `Select → Calibrate → Confirm` guide, narrow-screen orientation, clearer confirmation language, and a direct link to the Codex Report evidence trail.
+
+This is deliberately described as a **refactor and extension of an existing tool**. The original hotspot debugger predates Build Week.
+
 ### Division of responsibility
 
 - **Human:** identifies the visual problem, adjusts controls, and confirms the intended result.
 - **Codex:** inspects the repository, edits source files, runs tests, and maintains the evidence trail.
-- **GPT-5.6 in Codex:** designed and implemented the Build Week evidence-loop extension, its data model, Markdown export, UI, and tests.
+- **GPT-5.6 in Codex:** designed and implemented the Build Week evidence-loop extension and refactored the existing hotspot debugger's workflow guidance, evidence navigation, UI copy, and tests.
 
 ## Run locally
 
@@ -50,6 +57,7 @@ Open:
 
 - Portfolio: [http://127.0.0.1:3000](http://127.0.0.1:3000)
 - Visual debug evidence: [http://127.0.0.1:3000/debug/codex-report](http://127.0.0.1:3000/debug/codex-report)
+- Refactored hotspot debugger: [http://127.0.0.1:3000/debug/friend-book-diff-hotspots](http://127.0.0.1:3000/debug/friend-book-diff-hotspots)
 
 The main portfolio does not require a remote AI service to render. Optional environment variables are documented in `.env.example`.
 
@@ -96,6 +104,6 @@ npm run build
 ## Evidence boundary
 
 - The portfolio and original debug interfaces existed before Build Week.
-- The GPT-5.6 contribution documented here is the new evidence-loop extension and any later fixes recorded through it.
+- The GPT-5.6 contribution documented here is the new evidence-loop extension, the later hotspot-debugger refactor, and any fixes recorded through them.
 - A record is marked `passed` only after its listed commands and browser path have actually been verified.
 - The public website remains the submitted product; the debugging interface explains how hard-to-express visual intent was turned into precise implementation work.
