@@ -8,11 +8,13 @@ import {
 } from 'react';
 
 import {
+  COVER_AND_SELF_INTRO_AUDIO_SRC,
   HOMETOWN_SERIES_1_AUDIO_SRC,
   HOMETOWN_SERIES_2_AUDIO_SRC,
 } from './App.logic';
-import { friendBookFinalSectionData } from './data';
+import { friendBookFinalSectionData, personalData } from './data';
 import { WORKS_DETAIL_LOADING_SRC } from './components/WorksDetailSection.logic';
+import { portfolioAudioController } from './portfolioAudioController';
 
 export type LoaderAssetKind = 'image' | 'video' | 'poster' | 'document' | 'audio';
 export type LoaderAssetStatus = 'pending' | 'loaded' | 'error';
@@ -33,6 +35,8 @@ export interface HomeLoaderState {
 }
 
 const HOME_LOADER_ENABLED_HOSTNAMES = new Set(['xiaoci-ai.com', '106.54.13.225']);
+const HOME_LOADER_IMAGE_RETRY_COUNT = 2;
+const HOME_LOADER_IMAGE_RETRY_DELAY_MS = 500;
 
 const createLoaderAsset = (
   id: string,
@@ -61,7 +65,48 @@ const dedupeLoaderAssets = (assets: LoaderAsset[]) => {
   });
 };
 
+const CODING_WORK_IMAGE_URLS = [
+  '/images/CodingWorks/AIGC_InsightVault_dashboard.png',
+  '/images/CodingWorks/Al TeachingVideo.png',
+  '/images/CodingWorks/Coze_SocialDataFetch.png',
+  '/images/CodingWorks/Visual Bridge Assistance_chat.png',
+  "/images/CodingWorks/XiaoHongShu'sTranslation.png",
+  '/images/CodingWorks/comfyui-aigc-workflow-cover.svg',
+  '/images/CodingWorks/openclaw-backup-skill.png',
+  '/images/CodingWorks/pd-data-analyst.png',
+  '/images/CodingWorks/portfolioWorks.jpg',
+  '/images/CodingWorks/shopping-vibecoding-cover.svg',
+  '/images/CodingWorks/vibe-coding-workstation-cover.svg',
+] as const;
+
+const createFeaturedWorkLoaderAssets = () =>
+  personalData.featuredWorks.map((work, index) =>
+    createLoaderAsset(
+      `works-detail-visual-work-${String(index + 1).padStart(2, '0')}`,
+      work.image,
+      'image',
+      2,
+    ),
+  );
+
+const createCodingWorkLoaderAssets = () =>
+  CODING_WORK_IMAGE_URLS.map((url, index) =>
+    createLoaderAsset(
+      `works-detail-coding-work-${String(index + 1).padStart(2, '0')}`,
+      url,
+      'image',
+      2,
+    ),
+  );
+
 export const BLOCKING_HOME_LOADER_ASSETS: LoaderAsset[] = dedupeLoaderAssets([
+  createLoaderAsset(
+    'portfolio-cover-self-introduction-audio',
+    COVER_AND_SELF_INTRO_AUDIO_SRC,
+    'audio',
+    2,
+  ),
+
   createLoaderAsset('experience-hero-before-image', '/images/before.png', 'image', 3),
   createLoaderAsset('experience-hero-after-image', '/images/after.png', 'image', 3),
 
@@ -74,10 +119,10 @@ export const BLOCKING_HOME_LOADER_ASSETS: LoaderAsset[] = dedupeLoaderAssets([
   createLoaderAsset('portfolio-audio-series-2', HOMETOWN_SERIES_2_AUDIO_SRC, 'audio', 2),
 
   createLoaderAsset('grow-path-background', '/images/bg_growpath.jpeg', 'image', 3),
-  createLoaderAsset('grow-path-card-01', '/images/growPath_01.png', 'image', 2),
-  createLoaderAsset('grow-path-card-02', '/images/growPath_02.png', 'image', 2),
-  createLoaderAsset('grow-path-card-03', '/images/growPath_03.png', 'image', 2),
-  createLoaderAsset('grow-path-card-04', '/images/growPath_04.png', 'image', 2),
+  createLoaderAsset('grow-path-card-01', '/images/growPath_01.webp', 'image', 2),
+  createLoaderAsset('grow-path-card-02', '/images/growPath_02.webp', 'image', 2),
+  createLoaderAsset('grow-path-card-03', '/images/growPath_03.webp', 'image', 2),
+  createLoaderAsset('grow-path-card-04', '/images/growPath_04.webp', 'image', 2),
 
   createLoaderAsset('career-journey-background', '/images/career_bg.png', 'image', 3),
   createLoaderAsset('career-journey-role', '/images/career_role.png', 'image', 2),
@@ -117,6 +162,8 @@ export const BLOCKING_HOME_LOADER_ASSETS: LoaderAsset[] = dedupeLoaderAssets([
   createLoaderAsset('works-detail-left-button', '/images/workDetail_left_icon.png.png', 'image', 1),
   createLoaderAsset('works-detail-right-button', '/images/workDetail_rigtht_icon.png', 'image', 1),
   createLoaderAsset('works-detail-loading-document', WORKS_DETAIL_LOADING_SRC, 'document', 4),
+  ...createFeaturedWorkLoaderAssets(),
+  ...createCodingWorkLoaderAssets(),
 
   createLoaderAsset(
     'friend-book-section-background',
@@ -188,8 +235,22 @@ export const BLOCKING_HOME_LOADER_ASSETS: LoaderAsset[] = dedupeLoaderAssets([
 
 const HomeLoaderContext = createContext<HomeLoaderState | null>(null);
 
-export function shouldEnableHomeLoader(hostname: string) {
-  return HOME_LOADER_ENABLED_HOSTNAMES.has(hostname.trim().toLowerCase());
+export function shouldEnableHomeLoader(hostname: string, search = '', isDev = false) {
+  if (HOME_LOADER_ENABLED_HOSTNAMES.has(hostname.trim().toLowerCase())) {
+    return true;
+  }
+
+  return isDev && new URLSearchParams(search).get('previewHomeLoader') === '1';
+}
+
+export function shouldHoldHomeLoaderPreview(search = '', isDev = false) {
+  const searchParams = new URLSearchParams(search);
+
+  return (
+    isDev &&
+    searchParams.get('previewHomeLoader') === '1' &&
+    searchParams.get('holdHomeLoader') === '1'
+  );
 }
 
 export function createInitialHomeLoaderAssetStatuses(assets: LoaderAsset[]) {
@@ -240,26 +301,85 @@ function getHomeLoaderLoadedAssetCount(
     .reduce((count, asset) => (statuses[asset.id] === 'loaded' ? count + 1 : count), 0);
 }
 
-function preloadImageAsset(
-  asset: LoaderAsset,
-  updateStatus: (id: string, status: LoaderAssetStatus) => void,
-) {
-  const image = new Image();
-
-  const handleLoad = () => updateStatus(asset.id, 'loaded');
-  const handleError = () => updateStatus(asset.id, 'error');
-
-  image.addEventListener('load', handleLoad);
-  image.addEventListener('error', handleError);
-  image.src = asset.url;
-
-  if (image.complete && image.naturalWidth > 0) {
-    updateStatus(asset.id, 'loaded');
+export function createHomeLoaderImageRetryUrl(url: string, attempt: number) {
+  if (attempt <= 0) {
+    return url;
   }
 
+  const hashIndex = url.indexOf('#');
+  const urlBeforeHash = hashIndex === -1 ? url : url.slice(0, hashIndex);
+  const hash = hashIndex === -1 ? '' : url.slice(hashIndex);
+  const separator = urlBeforeHash.includes('?') ? '&' : '?';
+
+  return `${urlBeforeHash}${separator}homeLoaderRetry=${attempt}${hash}`;
+}
+
+export function preloadImageAsset(
+  asset: LoaderAsset,
+  updateStatus: (id: string, status: LoaderAssetStatus) => void,
+  retryDelayMs = HOME_LOADER_IMAGE_RETRY_DELAY_MS,
+) {
+  let currentCleanup: (() => void) | null = null;
+  let retryTimer: ReturnType<typeof setTimeout> | null = null;
+  let hasResolved = false;
+
+  const startAttempt = (attempt: number) => {
+    if (hasResolved) {
+      return;
+    }
+
+    currentCleanup?.();
+
+    const image = new Image();
+
+    const handleLoad = () => {
+      if (hasResolved) {
+        return;
+      }
+
+      hasResolved = true;
+      updateStatus(asset.id, 'loaded');
+    };
+
+    const handleError = () => {
+      if (hasResolved) {
+        return;
+      }
+
+      if (attempt < HOME_LOADER_IMAGE_RETRY_COUNT) {
+        retryTimer = setTimeout(() => startAttempt(attempt + 1), retryDelayMs);
+        return;
+      }
+
+      hasResolved = true;
+      updateStatus(asset.id, 'error');
+    };
+
+    currentCleanup = () => {
+      image.removeEventListener('load', handleLoad);
+      image.removeEventListener('error', handleError);
+    };
+
+    image.addEventListener('load', handleLoad);
+    image.addEventListener('error', handleError);
+    image.src = createHomeLoaderImageRetryUrl(asset.url, attempt);
+
+    if (image.complete && image.naturalWidth > 0) {
+      handleLoad();
+    }
+  };
+
+  startAttempt(0);
+
   return () => {
-    image.removeEventListener('load', handleLoad);
-    image.removeEventListener('error', handleError);
+    hasResolved = true;
+    currentCleanup?.();
+    currentCleanup = null;
+
+    if (retryTimer !== null) {
+      clearTimeout(retryTimer);
+      retryTimer = null;
+    }
   };
 }
 
@@ -308,6 +428,51 @@ function preloadVideoAsset(
   };
 }
 
+function preloadAudioAsset(
+  asset: LoaderAsset,
+  updateStatus: (id: string, status: LoaderAssetStatus) => void,
+) {
+  const audio = document.createElement('audio');
+  let hasResolved = false;
+
+  const handleLoaded = () => {
+    if (hasResolved || audio.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
+      return;
+    }
+
+    hasResolved = true;
+    updateStatus(asset.id, 'loaded');
+  };
+
+  const handleError = () => {
+    if (hasResolved) {
+      return;
+    }
+
+    hasResolved = true;
+    updateStatus(asset.id, 'error');
+  };
+
+  audio.preload = 'auto';
+  audio.addEventListener('canplay', handleLoaded);
+  audio.addEventListener('canplaythrough', handleLoaded);
+  audio.addEventListener('loadeddata', handleLoaded);
+  audio.addEventListener('error', handleError);
+  audio.src = asset.url;
+  audio.load();
+  handleLoaded();
+
+  return () => {
+    audio.removeEventListener('canplay', handleLoaded);
+    audio.removeEventListener('canplaythrough', handleLoaded);
+    audio.removeEventListener('loadeddata', handleLoaded);
+    audio.removeEventListener('error', handleError);
+    audio.pause();
+    audio.removeAttribute('src');
+    audio.load();
+  };
+}
+
 function preloadDocumentAsset(
   asset: LoaderAsset,
   updateStatus: (id: string, status: LoaderAssetStatus) => void,
@@ -337,49 +502,6 @@ function preloadDocumentAsset(
     iframe.removeEventListener('load', handleLoad);
     iframe.removeEventListener('error', handleError);
     iframe.remove();
-  };
-}
-
-function preloadAudioAsset(
-  asset: LoaderAsset,
-  updateStatus: (id: string, status: LoaderAssetStatus) => void,
-) {
-  const audio = new Audio();
-  let hasResolved = false;
-
-  const handleLoaded = () => {
-    if (hasResolved || audio.readyState < HTMLMediaElement.HAVE_FUTURE_DATA) {
-      return;
-    }
-
-    hasResolved = true;
-    updateStatus(asset.id, 'loaded');
-  };
-
-  const handleError = () => {
-    if (hasResolved) {
-      return;
-    }
-
-    hasResolved = true;
-    updateStatus(asset.id, 'error');
-  };
-
-  audio.preload = 'auto';
-  audio.addEventListener('canplay', handleLoaded);
-  audio.addEventListener('loadeddata', handleLoaded);
-  audio.addEventListener('error', handleError);
-  audio.src = asset.url;
-  audio.load();
-  handleLoaded();
-
-  return () => {
-    audio.removeEventListener('canplay', handleLoaded);
-    audio.removeEventListener('loadeddata', handleLoaded);
-    audio.removeEventListener('error', handleError);
-    audio.pause();
-    audio.removeAttribute('src');
-    audio.load();
   };
 }
 
@@ -413,6 +535,21 @@ function HomeLoaderScreen({
   totalCount: number;
   hasErrors: boolean;
 }) {
+  const [isSoundEnabled, setIsSoundEnabled] = useState(
+    portfolioAudioController.getSoundPreference() === 'enabled',
+  );
+
+  const handleSoundToggle = () => {
+    if (isSoundEnabled) {
+      portfolioAudioController.disable();
+      setIsSoundEnabled(false);
+      return;
+    }
+
+    portfolioAudioController.enableCoverAndSelfIntro();
+    setIsSoundEnabled(true);
+  };
+
   return (
     <div className="fixed inset-0 z-[120] overflow-hidden bg-[#FDFCF8] text-zinc-900">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(24,24,27,0.035),transparent_48%),linear-gradient(180deg,rgba(255,255,255,0.58),rgba(253,252,248,0.88)_26%,rgba(253,252,248,1)_100%)]" />
@@ -455,6 +592,32 @@ function HomeLoaderScreen({
               <span>{String(progress).padStart(2, '0')}%</span>
             </div>
 
+            <div className="flex justify-center">
+              <button
+                type="button"
+                role="switch"
+                aria-checked={isSoundEnabled}
+                onClick={handleSoundToggle}
+                className="inline-flex h-10 items-center gap-3 rounded-full border border-zinc-300 bg-white/70 px-2.5 pl-4 text-[0.68rem] uppercase tracking-[0.24em] text-zinc-600 shadow-[0_14px_34px_rgba(24,24,27,0.08)] transition hover:border-zinc-500 hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900 focus-visible:ring-offset-4 focus-visible:ring-offset-[#FDFCF8]"
+              >
+                <span>Open with sound</span>
+                <span
+                  aria-hidden="true"
+                  className={`relative h-6 w-11 rounded-full border transition ${
+                    isSoundEnabled
+                      ? 'border-zinc-900 bg-zinc-900'
+                      : 'border-zinc-300 bg-zinc-100'
+                  }`}
+                >
+                  <span
+                    className={`absolute top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-white shadow-sm transition ${
+                      isSoundEnabled ? 'left-[1.55rem]' : 'left-1'
+                    }`}
+                  />
+                </span>
+              </button>
+            </div>
+
             <p
               className={`text-xs leading-6 tracking-[0.18em] uppercase ${
                 hasErrors ? 'text-[#8a4b33]' : 'text-zinc-400'
@@ -473,9 +636,11 @@ function HomeLoaderScreen({
 
 export function HomeLoaderGate({
   enabled,
+  holdReady = false,
   children,
 }: {
   enabled: boolean;
+  holdReady?: boolean;
   children: ReactNode;
 }) {
   const [assets, setAssets] = useState<Record<string, LoaderAssetStatus>>(() =>
@@ -516,12 +681,16 @@ export function HomeLoaderGate({
   }, [enabled]);
 
   useEffect(() => {
-    if (!enabled || areBlockingAssetsReady(BLOCKING_HOME_LOADER_ASSETS, assets) === false) {
+    if (
+      holdReady ||
+      !enabled ||
+      areBlockingAssetsReady(BLOCKING_HOME_LOADER_ASSETS, assets) === false
+    ) {
       return;
     }
 
     setIsReady(true);
-  }, [assets, enabled]);
+  }, [assets, enabled, holdReady]);
 
   const blockingAssets = BLOCKING_HOME_LOADER_ASSETS.filter((asset) => asset.blocking);
   const hasErrors = hasBlockingHomeLoaderErrors(BLOCKING_HOME_LOADER_ASSETS, assets);

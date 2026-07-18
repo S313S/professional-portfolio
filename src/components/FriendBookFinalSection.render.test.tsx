@@ -548,9 +548,32 @@ test('renders the unified guestbook editor with nickname, identity intro, and po
 
   assert.match(markup, /Leave a page in the guestbook/);
   assert.match(markup, /Nickname/);
+  assert.match(markup, /Up to 5 Chinese characters; English letters and numbers count as half\. Extra characters will be truncated\./);
   assert.match(markup, /How should this book remember you/);
   assert.match(markup, /What do you think of the portfolio as a whole/);
   assert.doesNotMatch(markup, /Tonight&#x27;s note/);
+});
+
+test('renders public guestbook sync status without blocking the editor', () => {
+  const markup = renderToStaticMarkup(
+    <FriendBookFinalSection
+      initialStage="note-entry"
+      initialActiveGameId="between-two-pages"
+      initialNicknameDraft="小辞"
+      initialIdentityIntroDraft="访客"
+      initialPortfolioReviewDraft="很喜欢作品集。"
+      remoteRepository={{
+        isEnabled: true,
+        fetchEntries: async () => [],
+        createEntry: async () => {
+          throw new Error('not used during static render');
+        },
+      }}
+    />,
+  );
+
+  assert.match(markup, /Leave a page in the guestbook/);
+  assert.match(markup, /This note will be saved to the public guestbook\./);
 });
 
 test('shows a delete action in the guestbook editor when the typed nickname already exists', { concurrency: false }, () => {
@@ -572,9 +595,50 @@ test('shows a delete action in the guestbook editor when the typed nickname alre
       initialStage="note-entry"
       initialActiveGameId="moon-run"
       initialNicknameDraft="小辞"
+      remoteRepository={{
+        isEnabled: false,
+        fetchEntries: async () => [],
+        createEntry: async () => {
+          throw new Error('not used during static render');
+        },
+      }}
     />,
   );
 
   assert.match(markup, /Delete This Record/);
   assert.match(markup, /This will remove 小辞 from the guestbook only\./);
+});
+
+test('shows a delete action for remote guestbook records when remote deletion is available', { concurrency: false }, () => {
+  let progress = createDefaultFriendBookProgress({ includeSeedGuestbook: false });
+  progress = upsertFriendBookGuestbookEntry(progress, {
+    nickname: '小辞',
+    identityIntro: '一个不会代码的工程师',
+    portfolioReview: '真牛逼呀，老铁',
+    latestGameId: 'moon-run',
+    avatarId: 'cat',
+    medalId: '/images/GreenMedal01.png',
+    displayDate: 'APR 17, 2026',
+    updatedAt: '2026-04-17T12:00:00.000Z',
+  });
+
+  const markup = renderToStaticMarkup(
+    <FriendBookFinalSection
+      initialProgress={progress}
+      initialStage="note-entry"
+      initialActiveGameId="moon-run"
+      initialNicknameDraft="小辞"
+      remoteRepository={{
+        isEnabled: true,
+        fetchEntries: async () => [],
+        createEntry: async () => {
+          throw new Error('not used during static render');
+        },
+        deleteEntry: async () => {},
+      }}
+    />,
+  );
+
+  assert.match(markup, /Delete This Record/);
+  assert.match(markup, /This will remove 小辞 from the public guestbook\./);
 });

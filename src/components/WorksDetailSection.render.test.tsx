@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { renderToStaticMarkup } from 'react-dom/server';
 
 import { personalData } from '../data';
@@ -51,17 +51,17 @@ test('renders the in-page detail view with a close button when the left entry ha
   assert.match(markup, /data-scene-active="true"/);
   assert.match(markup, />04</);
   assert.match(markup, />05</);
-  assert.match(markup, />06</);
-  assert.match(markup, />07</);
-  assert.match(markup, />08</);
   assert.match(markup, /data-active="true"/);
+  assert.match(markup, /data-slot="3" data-active="true"[^>]*aria-label="Open First Light in AI project"/);
+  assert.match(markup, /data-active="true"[^>]*aria-label="Open First Light in AI project"/);
+  assert.match(markup, /\/images\/VisualWorks\/VisualWorks_Myfirst_cg\.jpeg/);
   assert.match(markup, new RegExp(personalData.featuredWorks[1]!.title));
   assert.match(markup, new RegExp(personalData.featuredWorks[2]!.title));
   assert.match(markup, new RegExp(personalData.featuredWorks[3]!.title));
   assert.match(
     markup,
     new RegExp(
-      personalData.featuredWorks[2]!.subtitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+      personalData.featuredWorks[1]!.subtitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
     ),
   );
   assert.doesNotMatch(markup, />SANOFI</);
@@ -86,25 +86,150 @@ test('detail markup includes a fullscreen project scene with the active work ima
   assert.match(markup, /works-detail-project__panel/);
   assert.match(markup, /works-detail-project__backdrop/);
   assert.match(markup, /works-detail-project__media/);
+  assert.match(markup, /data-project-image-mode="contained"/);
+  assert.match(markup, /works-detail-project__background-image/);
   assert.match(markup, /works-detail-project__image/);
   assert.match(markup, /works-detail-project__meta/);
   assert.match(
     markup,
-    new RegExp(personalData.featuredWorks[3]!.eyebrow.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
+    new RegExp(personalData.featuredWorks[0]!.eyebrow.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
   );
   assert.match(
     markup,
-    new RegExp(personalData.featuredWorks[3]!.title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
+    new RegExp(personalData.featuredWorks[0]!.title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
   );
   assert.match(
     markup,
     new RegExp(
-      personalData.featuredWorks[3]!.description.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+      personalData.featuredWorks[0]!.description.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
     ),
   );
   assert.doesNotMatch(markup, />Get In Touch</);
   assert.doesNotMatch(markup, />Say Hello</);
   assert.doesNotMatch(markup, />MENU</);
+});
+
+test('uses contained project media for the two vertical works that need full-image previews', () => {
+  const componentSource = readFileSync('src/components/WorksDetailSection.tsx', 'utf8');
+
+  assert.match(componentSource, /WORKS_DETAIL_CONTAINED_PROJECT_IMAGE_SRCS/);
+  assert.match(componentSource, /\/images\/VisualWorks\/VisualWorks_Myfirst_cg\.jpeg/);
+  assert.match(componentSource, /\/images\/VisualWorks\/VisualWorks_TakePhoto_Night\.jpeg/);
+  assert.match(componentSource, /data-project-image-mode=\{shouldContainProjectImage \? 'contained' : 'cover'\}/);
+});
+
+test('uses the real VisualMemory works in narrative order', () => {
+  assert.equal(personalData.featuredWorks.length, 10);
+  assert.deepEqual(
+    personalData.featuredWorks.map((work) => work.image),
+    [
+      '/images/VisualWorks/VisualWorks_Myfirst_cg.jpeg',
+      '/images/VisualWorks/VisualWorks_MJ_Ocean.jpeg',
+      '/images/VisualWorks/VisualWorks_MJ_Earth.jpeg',
+      '/images/VisualWorks/VisualWorks_ComfyUI_theLazygirl.jpeg',
+      '/images/VisualWorks/VisualWorks_OilPatiner.jpeg',
+      '/images/VisualWorks/VisualWorks_circlVideo.jpeg',
+      '/images/VisualWorks/VisualWorks_happyNewYork.jpeg',
+      '/images/VisualWorks/VisualWorks_IP_Mearge.jpeg',
+      '/images/VisualWorks/VisualWorks_TakePhoto.jpeg',
+      '/images/VisualWorks/VisualWorks_TakePhoto_Night.jpeg',
+    ],
+  );
+  assert.equal(personalData.featuredWorks[0]!.title, 'First Light in AI');
+  assert.equal(personalData.featuredWorks[9]!.title, 'Night Sense');
+});
+
+test('uses real coding project material instead of placeholder project cards', () => {
+  const allCodingProjects = Object.values(personalData.codingProjects).flat();
+  const codingMarkup = renderToStaticMarkup(
+    <WorksDetailSection
+      initialPhase="settled"
+      initialView="detail"
+      initialDetailMode="coding"
+      initialTransitionProgress={1}
+    />,
+  );
+
+  assert.equal(personalData.codingProjects.workflow.length, 3);
+  assert.equal(personalData.codingProjects.vibecoding.length, 5);
+  assert.equal(personalData.codingProjects['ai-product'].length, 3);
+  assert.equal(personalData.codingProjects.workflow[0]!.title, 'ComfyUI AIGC Creation Workflow');
+  assert.equal(personalData.codingProjects.vibecoding[0]!.title, 'Professional Portfolio');
+  assert.equal(personalData.codingProjects['ai-product'][0]!.title, 'AIGC Insight Vault');
+  assert.equal(personalData.codingProjects.workflow[0]!.image, '/images/CodingWorks/comfyui-aigc-workflow-cover.svg');
+  assert.equal(personalData.codingProjects.workflow[0]!.link, '#');
+  assert.equal(personalData.codingProjects.workflow[1]!.title, 'Coze Social Data Fetch Workflow');
+  assert.equal(personalData.codingProjects.workflow[1]!.image, '/images/CodingWorks/Coze_SocialDataFetch.png');
+  assert.equal(
+    personalData.codingProjects.workflow[1]!.link,
+    'https://www.coze.cn/work_flow?bot_id=7468859639569186879&space_id=7463017999541207052&workflow_id=7467024551915782180',
+  );
+  assert.equal(personalData.codingProjects.workflow[2]!.image, "/images/CodingWorks/XiaoHongShu'sTranslation.png");
+  assert.equal(
+    personalData.codingProjects.workflow[2]!.description,
+    'A translation and reply workflow for the wave of international users who entered Xiaohongshu during the TikTok ban scare.',
+  );
+  assert.equal(personalData.codingProjects.vibecoding[0]!.image, '/images/CodingWorks/portfolioWorks.jpg');
+  assert.equal(personalData.codingProjects.vibecoding[0]!.link, 'http://xiaoci-ai.com/');
+  assert.equal(personalData.codingProjects.vibecoding[1]!.title, 'Shopping');
+  assert.equal(personalData.codingProjects.vibecoding[1]!.image, '/images/CodingWorks/shopping-vibecoding-cover.svg');
+  assert.equal(personalData.codingProjects.vibecoding[1]!.link, 'https://github.com/S313S/shopping');
+  assert.equal(personalData.codingProjects.vibecoding[2]!.title, 'OpenClaw Backup Skill');
+  assert.equal(personalData.codingProjects.vibecoding[2]!.image, '/images/CodingWorks/openclaw-backup-skill.png');
+  assert.equal(personalData.codingProjects.vibecoding[2]!.link, 'https://github.com/S313S/openclaw-backup-skill');
+  assert.equal(personalData.codingProjects.vibecoding[3]!.image, '/images/CodingWorks/vibe-coding-workstation-cover.svg');
+  assert.equal(
+    personalData.codingProjects.vibecoding[3]!.link,
+    'https://github.com/S313S/vibe-coding-cn',
+  );
+  assert.equal(personalData.codingProjects.vibecoding[4]!.title, 'AI Teaching Video & Interactive Lesson');
+  assert.equal(
+    personalData.codingProjects.vibecoding[4]!.image,
+    '/images/CodingWorks/Al TeachingVideo.png',
+  );
+  assert.equal(
+    personalData.codingProjects.vibecoding[4]!.description,
+    "A vibe-coded learning prototype that turns a learner's question into an auto-play HTML teaching animation and interactive lesson.",
+  );
+  assert.equal(
+    personalData.codingProjects['ai-product'][0]!.image,
+    '/images/CodingWorks/AIGC_InsightVault_dashboard.png',
+  );
+  assert.equal(personalData.codingProjects['ai-product'][0]!.link, 'https://aigc-insight-vault.vercel.app/');
+  assert.equal(
+    personalData.codingProjects['ai-product'][1]!.image,
+    '/images/CodingWorks/Visual Bridge Assistance_chat.png',
+  );
+  assert.equal(personalData.codingProjects['ai-product'][1]!.link, 'https://s313s.github.io/Visual-Bridge-V2/');
+  assert.equal(personalData.codingProjects['ai-product'][2]!.image, '/images/CodingWorks/pd-data-analyst.png');
+  assert.equal(personalData.codingProjects['ai-product'][2]!.link, '#');
+  assert.equal(
+    personalData.codingCategories[0]!.description,
+    'Node-based AI workflows built with ComfyUI, Coze, and Wordware to connect inputs, model steps, data handling, and repeatable outputs.',
+  );
+  assert.equal(
+    personalData.codingCategories[1]!.description,
+    'AI-assisted builds outside the workflow and product buckets: portfolio systems, commerce demos, reusable skills, and learning workstations.',
+  );
+  assert.equal(
+    personalData.codingCategories[2]!.description,
+    'Deployed or product-shaped AI applications with persistent data, structured interaction logic, and clear user workflows.',
+  );
+  assert.match(codingMarkup, /ComfyUI AIGC Creation Workflow/);
+  assert.match(codingMarkup, /node-based AIGC image and video creation workflow/i);
+  assert.match(
+    codingMarkup,
+    /<img src="\/images\/CodingWorks\/comfyui-aigc-workflow-cover\.svg" alt="ComfyUI AIGC Creation Workflow"/,
+  );
+  assert.match(codingMarkup, /loading="eager"/);
+  assert.doesNotMatch(codingMarkup, /Handoff Radar|Prompt QA Sheet|Motion Sprint|Agent Console|Quality Filter Spec|Cron Monitor/);
+  assert.ok(allCodingProjects.every((project) => project.link === '#' || project.link.startsWith('http')));
+  assert.ok(existsSync('public/images/CodingWorks/openclaw-backup-skill.png'));
+  assert.ok(existsSync('public/images/CodingWorks/comfyui-aigc-workflow-cover.svg'));
+  assert.ok(existsSync('public/images/CodingWorks/shopping-vibecoding-cover.svg'));
+  assert.ok(existsSync('public/images/CodingWorks/vibe-coding-workstation-cover.svg'));
+  assert.ok(existsSync('public/images/CodingWorks/Al TeachingVideo.png'));
+  assert.equal(new Set(allCodingProjects.map((project) => project.image)).size, allCodingProjects.length);
 });
 
 test('keeps the left entry button clickable once the reveal is visually complete', () => {
@@ -172,7 +297,7 @@ test('keeps the current text blocks edge-aligned with equalized description heig
   assert.equal(minHeightMatches.length, 2);
 });
 
-test('renders the coding detail mode with a new background, draggable category cards, and a six-card project grid', () => {
+test('renders the coding detail mode with a new background, draggable category cards, and the active project grid', () => {
   const markup = renderToStaticMarkup(
     <WorksDetailSection
       initialPhase="settled"
@@ -181,6 +306,9 @@ test('renders the coding detail mode with a new background, draggable category c
       initialDetailMode="coding"
     />,
   );
+  const componentSource = readFileSync(new URL('./WorksDetailSection.tsx', import.meta.url), 'utf8');
+  const dataSource = readFileSync(new URL('../data.tsx', import.meta.url), 'utf8');
+  const codingProjectInterface = dataSource.match(/export interface CodingProjectCard \{[\s\S]*?\n\}/)?.[0] ?? '';
 
   assert.match(markup, /data-works-detail-detail-mode="coding"/);
   assert.match(markup, /data-detail-scene-panel="coding"/);
@@ -197,12 +325,58 @@ test('renders the coding detail mode with a new background, draggable category c
   assert.match(markup, /data-coding-category-card-draggable="true"/);
   assert.match(markup, /data-coding-category-card-draggable="false"/);
   assert.match(markup, /data-coding-project-grid="workflow"/);
+  assert.match(markup, /data-coding-project-grid-state="list"/);
   assert.match(markup, /data-coding-project-card=/);
-  assert.match(markup, /target="_blank"/);
+  assert.match(markup, /data-coding-project-expanded="false"/);
+  assert.match(markup, /aria-expanded="false"/);
+  assert.doesNotMatch(markup, /target="_blank"/);
+  assert.match(componentSource, /activeCodingProjectId/);
+  assert.match(componentSource, /data-coding-project-expanded/);
+  assert.match(componentSource, /project\.detail\.problem/);
+  assert.match(componentSource, /project\.detail\.approach/);
+  assert.match(componentSource, /project\.detail\.outcome/);
+  assert.doesNotMatch(componentSource, /project\.detail\.role/);
+  assert.doesNotMatch(componentSource, /project\.detail\.deliverables/);
+  assert.match(dataSource, /problem:/);
+  assert.match(dataSource, /approach:/);
+  assert.match(dataSource, /outcome:/);
+  assert.doesNotMatch(codingProjectInterface, /role:/);
+  assert.doesNotMatch(codingProjectInterface, /deliverables:/);
   assert.doesNotMatch(markup, /Design in action/i);
   assert.doesNotMatch(markup, /Six selected builds from the/i);
   const codingCards = markup.match(/data-coding-project-card=/g) ?? [];
-  assert.equal(codingCards.length, 6);
+  assert.equal(codingCards.length, 3);
+});
+
+test('renders only the active coding project when a coding card is expanded', () => {
+  const markup = renderToStaticMarkup(
+    <WorksDetailSection
+      initialPhase="settled"
+      initialView="detail"
+      initialTransitionProgress={1}
+      initialDetailMode="coding"
+      initialActiveCodingProjectId="comfyui-aigc-workflow"
+    />,
+  );
+  const componentSource = readFileSync(new URL('./WorksDetailSection.tsx', import.meta.url), 'utf8');
+
+  assert.match(markup, /data-coding-project-grid-state="expanded"/);
+  assert.match(markup, /data-coding-project-card="comfyui-aigc-workflow"/);
+  assert.match(markup, /data-coding-project-expanded="true"/);
+  assert.match(markup, /aria-expanded="true"/);
+  assert.doesNotMatch(markup, /works-detail-coding__project-title-link/);
+  assert.doesNotMatch(componentSource, /window\.open\(project\.link/);
+  assert.doesNotMatch(markup, /lucide-external-link/);
+  assert.doesNotMatch(markup, />Open project</);
+  assert.match(componentSource, /ExternalLink/);
+  assert.match(componentSource, /works-detail-coding__project-title-row/);
+  assert.match(markup, />Problem</);
+  assert.match(markup, />Approach</);
+  assert.match(markup, />Outcome</);
+  assert.doesNotMatch(markup, /data-coding-project-card="coze-social-data-fetch"/);
+  assert.doesNotMatch(markup, /data-coding-project-muted="true"/);
+  const codingCards = markup.match(/data-coding-project-card=/g) ?? [];
+  assert.equal(codingCards.length, 1);
 });
 
 test('keeps category switching clickable by limiting drag capture to the active coding card only', () => {
@@ -267,14 +441,26 @@ test('matches the approved works gallery footer spacing, socials format, and fil
   assert.match(markup, /class="works-detail-track__corridor-layer"/);
   assert.match(markup, /--works-detail-gallery-plane-width:1406px/);
   assert.match(markup, /--works-detail-gallery-plane-height:755px/);
-  assert.match(markup, />f \| t \| ▶</);
-  assert.match(componentSource, /const WORKS_DETAIL_STAGE_SOCIALS = \['f', 't', '▶'\] as const;/);
+  assert.doesNotMatch(markup, />f \| t \| ▶</);
+  assert.match(markup, /href="https:\/\/uixp8a9di3s\.feishu\.cn\/docx\/TLNpdBRkEoiOvkxnEQMcEy5rnLh"/);
+  assert.match(markup, /target="_blank"/);
+  assert.match(markup, /rel="noreferrer"/);
+  assert.match(markup, /data-tooltip="See more work details in Feishu Docs"/);
+  assert.match(markup, /aria-label="See more work details in Feishu Docs"/);
+  assert.match(markup, /data-tooltip="Personal social media platform"/);
+  assert.match(markup, /aria-label="Personal social media platform"/);
+  assert.match(markup, />x<\/button>/);
+  assert.match(componentSource, /const FEISHU_PORTFOLIO_URL =/);
+  assert.match(componentSource, /const XHS_PROFILE_CARD_SRC = '\/images\/xhsMainPage_Link\.jpeg';/);
+  assert.match(componentSource, /const WORKS_DETAIL_STAGE_SOCIAL_LINKS =/);
+  assert.match(componentSource, /setIsXhsCardOpen\(true\)/);
+  assert.match(componentSource, /Xiaohongshu profile QR code card/);
   assert.match(componentSource, /from 'gsap'/);
   assert.match(componentSource, /const WORKS_DETAIL_GALLERY_LAYOUT = \{/);
   assert.match(componentSource, /'--works-detail-projects-offset-x'/);
   assert.match(componentSource, /'--works-detail-projects-offset-y'/);
   assert.match(componentSource, /'--works-detail-corridor-center-y'/);
-  assert.match(componentSource, /'--works-detail-corridor-rail-offset':\s*'12\.75rem'/);
+  assert.match(componentSource, /'--works-detail-corridor-rail-offset':\s*'10\.75rem'/);
   assert.doesNotMatch(componentSource, /'--works-detail-corridor-rail-offset':\s*'8\.75rem'/);
   assert.match(componentSource, /'--works-detail-slot-x'/);
 });
@@ -308,6 +494,22 @@ test('keeps the works gallery dashed SVG grid and socials styling aligned with t
   assert.match(
     cssSource,
     /\.works-detail-project__image\s*\{[\s\S]*object-fit:\s*cover;/,
+  );
+  assert.match(
+    cssSource,
+    /\.works-detail-project__background-image\s*\{[^}]*filter:\s*blur\(24px\);/,
+  );
+  assert.match(
+    cssSource,
+    /\.works-detail-project__background-image\s*\{[^}]*pointer-events:\s*none;/,
+  );
+  assert.match(
+    cssSource,
+    /\.works-detail-project__media\[data-project-image-mode='contained'\]\s+\.works-detail-project__image\s*\{[^}]*pointer-events:\s*none;/,
+  );
+  assert.match(
+    cssSource,
+    /\.works-detail-project__media\[data-project-image-mode='contained'\]\s+\.works-detail-project__image\s*\{[^}]*object-fit:\s*contain;/,
   );
   assert.match(
     cssSource,
@@ -345,6 +547,53 @@ test('hides inactive coding card body copy so back-stack text does not bleed thr
   assert.match(
     cssSource,
     /\.works-detail-coding__category-card\[data-active="false"\]\s+\.works-detail-coding__category-copy\s*\{[\s\S]*opacity:\s*0;/,
+  );
+});
+
+test('keeps expanded coding project cards compact enough to fit in a single viewport', () => {
+  const cssSource = readFileSync(new URL('../index.css', import.meta.url), 'utf8');
+
+  assert.match(
+    cssSource,
+    /\.works-detail-coding__project-card\[data-coding-project-expanded="true"\]\s*\{[\s\S]*max-height:\s*min\(48rem,\s*calc\(100vh - 4\.5rem\)\);/,
+  );
+  assert.match(
+    cssSource,
+    /\.works-detail-coding__project-card\[data-coding-project-expanded="true"\]\s+\.works-detail-coding__project-media\s*\{[\s\S]*height:\s*clamp\(14rem,\s*40vh,\s*21rem\);/,
+  );
+  assert.match(
+    cssSource,
+    /\.works-detail-coding__project-card\[data-coding-project-expanded="true"\]\s+\.works-detail-coding__project-detail\s*\{[\s\S]*grid-template-columns:\s*minmax\(0,\s*0\.85fr\)\s*minmax\(0,\s*1\.35fr\);/,
+  );
+  assert.match(
+    cssSource,
+    /\.works-detail-coding__project-card\[data-coding-project-expanded="true"\]\s+\.works-detail-coding__project-detail-section:nth-child\(2\)\s*\{[\s\S]*grid-column:\s*2;[\s\S]*grid-row:\s*1\s*\/\s*span 2;/,
+  );
+  assert.match(
+    cssSource,
+    /\.works-detail-coding__project-card\[data-coding-project-expanded="true"\]\s+\.works-detail-coding__project-detail-section:nth-child\(3\)\s*\{[\s\S]*grid-column:\s*1;[\s\S]*grid-row:\s*2;/,
+  );
+  assert.doesNotMatch(
+    cssSource,
+    /\.works-detail-coding__project-card\[data-coding-project-expanded="true"\]\s+\.works-detail-coding__project-media\s*\{[\s\S]*aspect-ratio:\s*16\s*\/\s*7\.6;/,
+  );
+});
+
+test('keeps coding project images in normal flow inside a stable media frame', () => {
+  const cssSource = readFileSync(new URL('../index.css', import.meta.url), 'utf8');
+  const componentSource = readFileSync(new URL('./WorksDetailSection.tsx', import.meta.url), 'utf8');
+
+  assert.match(
+    cssSource,
+    /\.works-detail-coding__project-media\s*\{[\s\S]*position:\s*relative;[\s\S]*flex:\s*0\s+0\s+auto;/,
+  );
+  assert.match(
+    cssSource,
+    /\.works-detail-coding__project-image\s*\{[\s\S]*display:\s*block;[\s\S]*object-fit:\s*cover;/,
+  );
+  assert.doesNotMatch(
+    componentSource,
+    /className="works-detail-coding__project-media"[\s\S]{0,120}style=\{\{ backgroundImage:/,
   );
 });
 
@@ -447,23 +696,23 @@ test('locks the gallery cards, corridor, and background grid to the same 45 degr
   );
   assert.match(
     componentSource,
-    /slots:\s*\[\s*\{[\s\S]*x:\s*'-37\.5rem'[\s\S]*y:\s*'33\.7rem'[\s\S]*scale:\s*1\.04/,
+    /slots:\s*\[\s*\{[\s\S]*x:\s*'-37\.5rem'[\s\S]*y:\s*'33\.7rem'[\s\S]*scale:\s*1\.21/,
   );
   assert.match(
     componentSource,
-    /x:\s*'-26\.5rem'[\s\S]*y:\s*'22\.7rem'[\s\S]*scale:\s*1\.04/,
+    /x:\s*'-26\.5rem'[\s\S]*y:\s*'22\.7rem'[\s\S]*scale:\s*1\.21/,
   );
   assert.match(
     componentSource,
-    /x:\s*'-15\.5rem'[\s\S]*y:\s*'11\.7rem'[\s\S]*scale:\s*1\.04/,
+    /x:\s*'-15\.5rem'[\s\S]*y:\s*'11\.7rem'[\s\S]*scale:\s*1\.21/,
   );
   assert.match(
     componentSource,
-    /x:\s*'-4\.5rem'[\s\S]*y:\s*'0\.7rem'[\s\S]*scale:\s*1\.04/,
+    /x:\s*'-4\.5rem'[\s\S]*y:\s*'0\.7rem'[\s\S]*scale:\s*1\.21/,
   );
   assert.match(
     componentSource,
-    /x:\s*'6\.5rem'[\s\S]*y:\s*'-10\.3rem'[\s\S]*scale:\s*1\.04/,
+    /x:\s*'6\.5rem'[\s\S]*y:\s*'-10\.3rem'[\s\S]*scale:\s*1\.21/,
   );
   assert.match(
     componentSource,
@@ -477,6 +726,11 @@ test('locks the gallery cards, corridor, and background grid to the same 45 degr
     componentSource,
     /const diagonalOffset = \(activeProjectIndex - WORKS_DETAIL_DEFAULT_ACTIVE_INDEX\) \* 18;/,
   );
+  assert.match(
+    componentSource,
+    /const projectIndex = activeProjectIndex \+ slotIndex - WORKS_DETAIL_ACTIVE_SLOT_INDEX;/,
+  );
+  assert.doesNotMatch(componentSource, /const startIndex = Math\.min\(/);
   assert.doesNotMatch(
     componentSource,
     /gsap\.to\(trackRef\.current,\s*\{[\s\S]*x:\s*-diagonalOffset,[\s\S]*y:\s*diagonalOffset,[\s\S]*\}\);/,

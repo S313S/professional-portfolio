@@ -221,18 +221,78 @@ export default function FriendBookDiffHotspotsDebugPage() {
 
   return (
     <div className="min-h-screen bg-[#f7efe2] text-stone-900">
-      <header className="sticky top-0 z-20 border-b border-[#d9c6af] bg-[rgba(252,247,239,0.96)] px-4 py-3 backdrop-blur sm:px-6">
-        <div className="mx-auto flex max-w-[1440px] flex-col gap-1">
-          <p className="font-mono text-[0.72rem] uppercase tracking-[0.24em] text-[#7a5d4d]">
-            Dev Only Standalone Preview
-          </p>
+      <header className="z-20 border-b border-[#d9c6af] bg-[rgba(252,247,239,0.96)] px-4 py-4 backdrop-blur sm:px-6 lg:sticky lg:top-0">
+        <div className="mx-auto flex max-w-[1440px] flex-col gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="font-mono text-[0.72rem] uppercase tracking-[0.24em] text-[#7a5d4d]">
+              GPT-5.6 Refactor · OpenAI Build Week 2026
+            </p>
+            <a
+              href="/debug/codex-report"
+              className="text-xs font-semibold text-[#765744] underline decoration-[#c9a98d] underline-offset-4 hover:text-[#4d382d]"
+            >
+              View GPT-5.6 evidence trail →
+            </a>
+          </div>
           <h1 className="font-serif text-[1.7rem] leading-none text-[#2f2120]">
             Friend Book Diff Hotspots Debug
           </h1>
           <p className="text-sm leading-6 text-[#5b473d]">
+            Existing tool, refactored and extended with GPT-5.6 during OpenAI Build Week 2026.
+            It translates human visual judgment into source-ready hotspot parameters.
+          </p>
+          <p className="text-sm leading-6 text-[#5b473d]">
             Drag the red frame or use the lower-right handle to resize it. The preview and export
             block stay in sync with the current hotspot parameters.
           </p>
+
+          <ol
+            aria-label="Hotspot calibration workflow"
+            className="grid gap-2 sm:grid-cols-3"
+          >
+            {([
+              {
+                id: 'select',
+                number: '01',
+                title: 'Select',
+                detail: 'Choose a scene and visual target.',
+              },
+              {
+                id: 'calibrate',
+                number: '02',
+                title: 'Calibrate',
+                detail: 'Drag or resize the frame on either page.',
+              },
+              {
+                id: 'confirm',
+                number: '03',
+                title: 'Confirm',
+                detail: 'Save machine-readable parameters for Codex.',
+              },
+            ] as const).map((step) => (
+              <li
+                key={step.id}
+                data-friend-book-diff-debug-workflow-step={step.id}
+                className="flex items-start gap-3 rounded-xl border border-[#dfcdb8] bg-[rgba(255,250,243,0.72)] px-3 py-2"
+              >
+                <span className="font-mono text-[0.68rem] tracking-[0.14em] text-[#a06d59]">
+                  {step.number}
+                </span>
+                <span>
+                  <strong className="block text-xs text-[#4a352d]">{step.title}</strong>
+                  <span className="block text-[0.72rem] leading-5 text-[#71594b]">{step.detail}</span>
+                </span>
+              </li>
+            ))}
+          </ol>
+
+          <a
+            href="#debug-controls"
+            data-friend-book-diff-debug-mobile-guidance
+            className="text-xs leading-5 text-[#765744] underline decoration-[#c9a98d] underline-offset-4 lg:hidden"
+          >
+            On narrow screens, controls and confirmation appear after both previews. Jump to controls ↓
+          </a>
         </div>
       </header>
 
@@ -315,8 +375,21 @@ export default function FriendBookDiffHotspotsDebugPage() {
             : null}
         </section>
 
-        <aside className="rounded-[1.5rem] border border-[#d8c3ab] bg-[rgba(255,249,242,0.9)] p-5 shadow-[0_12px_28px_rgba(70,43,29,0.08)]">
+        <aside
+          id="debug-controls"
+          className="scroll-mt-6 rounded-[1.5rem] border border-[#d8c3ab] bg-[rgba(255,249,242,0.9)] p-5 shadow-[0_12px_28px_rgba(70,43,29,0.08)] lg:sticky lg:top-[15rem] lg:self-start"
+        >
           <div className="grid gap-5">
+            <div className="rounded-[1.15rem] border border-[#e2d1bc] bg-[#f5eadc] p-4">
+              <p className="font-mono text-[0.68rem] uppercase tracking-[0.2em] text-[#8a6653]">
+                Human-in-the-loop calibration
+              </p>
+              <p className="mt-2 text-sm leading-6 text-[#5b473d]">
+                Human judgment chooses the intended visual position; this interface converts it into
+                machine-readable parameters that Codex can apply and verify.
+              </p>
+            </div>
+
             <div>
               <p className="font-mono text-[0.72rem] uppercase tracking-[0.24em] text-[#7a5d4d]">
                 Scene
@@ -415,7 +488,7 @@ export default function FriendBookDiffHotspotsDebugPage() {
                 disabled={isConfirming}
                 className="mt-3 inline-flex items-center rounded-full border border-[#8f715c] bg-[#6a4f3c] px-4 py-2 text-sm text-[#fff9f4] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {isConfirming ? 'Confirming...' : 'Confirm'}
+                {isConfirming ? 'Confirming...' : 'Confirm calibrated hotspots'}
               </button>
               <textarea
                 data-friend-book-diff-debug-copy-output

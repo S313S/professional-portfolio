@@ -4,6 +4,7 @@ import { Menu, X } from 'lucide-react';
 
 import { shouldHideNavbar } from './Navbar.logic';
 import { VIDEO_SCROLL_TRANSITION_SECTION_ID } from './VideoScrollTransition.logic';
+import { trackAnalyticsEvent } from '../analytics';
 
 const TOP_SECTION_IDS = ['home', 'about'] as const;
 
@@ -86,6 +87,13 @@ export default function Navbar() {
     { name: "Contact", href: "#contact" },
   ];
 
+  const trackNavClick = (targetId: string, label: string) => {
+    trackAnalyticsEvent('nav_click', {
+      targetId,
+      metadata: { label },
+    });
+  };
+
   return (
     <motion.nav
       variants={{
@@ -97,7 +105,11 @@ export default function Navbar() {
       className="fixed w-full top-0 z-50 bg-white/80 backdrop-blur-md border-b border-zinc-100"
     >
       <div className="max-w-7xl mx-auto px-6 md:px-12 h-20 flex items-center justify-between">
-        <a href="#" className="text-xl font-bold tracking-tighter font-mono">
+        <a
+          href="#"
+          className="text-xl font-bold tracking-tighter font-mono"
+          onClick={() => trackNavClick('brand-home', 'Xiao Ci')}
+        >
           Xiao Ci<span className="text-zinc-400">.</span>
         </a>
 
@@ -108,6 +120,7 @@ export default function Navbar() {
               key={i} 
               href={link.href} 
               className="text-sm font-medium text-zinc-600 hover:text-zinc-900 transition-colors"
+              onClick={() => trackNavClick(link.href, link.name)}
             >
               <span className="font-mono text-zinc-400 mr-1">0{i + 1}.</span> {link.name}
             </a>
@@ -115,6 +128,7 @@ export default function Navbar() {
           <a 
             href="/resume.pdf" 
             className="px-4 py-2 border border-zinc-900 rounded text-sm font-medium hover:bg-zinc-50 transition-colors"
+            onClick={() => trackAnalyticsEvent('resume_click', { targetId: 'desktop-resume' })}
           >
             Resume
           </a>
@@ -137,7 +151,10 @@ export default function Navbar() {
               key={i} 
               href={link.href} 
               className="text-lg font-medium text-zinc-600"
-              onClick={() => setIsOpen(false)}
+              onClick={() => {
+                trackNavClick(link.href, link.name);
+                setIsOpen(false);
+              }}
             >
               <span className="font-mono text-zinc-400 mr-2">0{i + 1}.</span> {link.name}
             </a>
@@ -145,6 +162,7 @@ export default function Navbar() {
           <a 
             href="/resume.pdf" 
             className="px-4 py-3 border border-zinc-900 rounded text-center font-medium"
+            onClick={() => trackAnalyticsEvent('resume_click', { targetId: 'mobile-resume' })}
           >
             Resume
           </a>

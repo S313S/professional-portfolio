@@ -20,3 +20,14 @@ test('renders a standalone friend-book finale debug page without the main-site f
   assert.doesNotMatch(markup, /id="career-detail-section"/);
   assert.doesNotMatch(markup, /id="works-detail-section"/);
 });
+
+test('debug page uses the default remote guestbook repository', () => {
+  const markup = renderToStaticMarkup(
+    <FriendBookFinaleDebugPage
+      initialStage="note-entry"
+      initialActiveGameId="between-two-pages"
+    />,
+  );
+
+  assert.match(markup, /This note will be saved to the public guestbook\./);
+});

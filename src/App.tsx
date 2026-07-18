@@ -14,60 +14,23 @@ import FriendBookFinalSection from './components/FriendBookFinalSection';
 import {
   getInitialFocusTarget,
   getPortfolioAudioPlaybackIntent,
-  HOMETOWN_SERIES_1_AUDIO_SRC,
-  HOMETOWN_SERIES_2_AUDIO_SRC,
+  getPortfolioAudioTrackForExperienceLanding,
   PORTFOLIO_AUDIO_TRACK_CHANGE_EVENT,
   type PortfolioAudioTrackChangeDetail,
 } from './App.logic';
+import { portfolioAudioController } from './portfolioAudioController';
 import { isScrollMomentumLocked } from './scrollMomentumLock';
 
 export default function App() {
   useEffect(() => {
-    if (typeof window === 'undefined' || typeof Audio === 'undefined') {
+    if (typeof window === 'undefined') {
       return undefined;
     }
 
-    const hometownSeries1Audio = new Audio(HOMETOWN_SERIES_1_AUDIO_SRC);
-    const hometownSeries2Audio = new Audio(HOMETOWN_SERIES_2_AUDIO_SRC);
-    const audioBySrc = new Map([
-      [HOMETOWN_SERIES_1_AUDIO_SRC, hometownSeries1Audio],
-      [HOMETOWN_SERIES_2_AUDIO_SRC, hometownSeries2Audio],
-    ]);
-    let activeAudio = hometownSeries1Audio;
     let previousScrollY = window.scrollY;
+    let hasRequestedExperienceAudio = false;
 
-    audioBySrc.forEach((audio) => {
-      audio.loop = true;
-      audio.preload = 'auto';
-      audio.currentTime = 0;
-    });
-
-    const playAudio = (audio: HTMLAudioElement) => {
-      void audio.play().catch(() => {
-        // Browsers may require the first user gesture before unmuted audio can play.
-      });
-    };
-
-    const stopAudio = (audio: HTMLAudioElement) => {
-      audio.pause();
-      audio.currentTime = 0;
-    };
-
-    const restartAudio = (audio: HTMLAudioElement) => {
-      audio.currentTime = 0;
-      playAudio(audio);
-    };
-
-    const switchAudio = (nextAudio: HTMLAudioElement) => {
-      if (activeAudio !== nextAudio) {
-        stopAudio(activeAudio);
-        activeAudio = nextAudio;
-      }
-
-      restartAudio(activeAudio);
-    };
-
-    const handleHomeReturn = () => {
+    const handlePortfolioAudioScroll = () => {
       const nextScrollY = window.scrollY;
       const playbackIntent = getPortfolioAudioPlaybackIntent({
         previousScrollY,
@@ -77,38 +40,57 @@ export default function App() {
       previousScrollY = nextScrollY;
 
       if (playbackIntent === 'restart') {
-        switchAudio(hometownSeries1Audio);
+        hasRequestedExperienceAudio = false;
+        portfolioAudioController.restartCoverAndSelfIntro();
+        return;
       }
+
+      if (hasRequestedExperienceAudio) {
+        return;
+      }
+
+      const experienceSection = document.getElementById('experience');
+      if (!experienceSection) {
+        return;
+      }
+
+      const experienceSectionTop = experienceSection.getBoundingClientRect().top + window.scrollY;
+      const nextTrackSrc = getPortfolioAudioTrackForExperienceLanding({
+        scrollY: nextScrollY,
+        experienceSectionTop,
+      });
+
+      if (!nextTrackSrc || portfolioAudioController.getSoundPreference() === 'disabled') {
+        return;
+      }
+
+      portfolioAudioController.requestTrackChange(nextTrackSrc);
+      hasRequestedExperienceAudio = true;
     };
 
     const handleFirstUserGesture = () => {
-      playAudio(activeAudio);
+      portfolioAudioController.retryActiveTrack();
     };
 
     const handleAudioTrackChange = (event: Event) => {
       const { src } = (event as CustomEvent<PortfolioAudioTrackChangeDetail>).detail ?? {};
-      const nextAudio = audioBySrc.get(src);
-
-      if (nextAudio) {
-        switchAudio(nextAudio);
-      }
+      portfolioAudioController.requestTrackChange(src);
     };
 
-    restartAudio(activeAudio);
+    portfolioAudioController.startCoverAndSelfIntroForAppMount();
 
-    window.addEventListener('scroll', handleHomeReturn, { passive: true });
+    window.addEventListener('scroll', handlePortfolioAudioScroll, { passive: true });
     window.addEventListener(PORTFOLIO_AUDIO_TRACK_CHANGE_EVENT, handleAudioTrackChange);
     window.addEventListener('pointerdown', handleFirstUserGesture, { once: true });
     window.addEventListener('keydown', handleFirstUserGesture, { once: true });
     window.addEventListener('touchstart', handleFirstUserGesture, { once: true });
 
     return () => {
-      window.removeEventListener('scroll', handleHomeReturn);
+      window.removeEventListener('scroll', handlePortfolioAudioScroll);
       window.removeEventListener(PORTFOLIO_AUDIO_TRACK_CHANGE_EVENT, handleAudioTrackChange);
       window.removeEventListener('pointerdown', handleFirstUserGesture);
       window.removeEventListener('keydown', handleFirstUserGesture);
       window.removeEventListener('touchstart', handleFirstUserGesture);
-      audioBySrc.forEach(stopAudio);
     };
   }, []);
 

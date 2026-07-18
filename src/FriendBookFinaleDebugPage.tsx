@@ -1,6 +1,8 @@
 import FriendBookFinalSection from './components/FriendBookFinalSection';
 import {
   createDefaultFriendBookProgress,
+  type FriendBookGameId,
+  type FriendBookStage,
   upsertFriendBookGuestbookEntry,
 } from './components/FriendBookFinalSection.logic';
 
@@ -67,7 +69,15 @@ function createDebugGuestbookProgress() {
 
 const friendBookDebugProgress = createDebugGuestbookProgress();
 
-export default function FriendBookFinaleDebugPage() {
+interface FriendBookFinaleDebugPageProps {
+  initialStage?: FriendBookStage;
+  initialActiveGameId?: FriendBookGameId | null;
+}
+
+export default function FriendBookFinaleDebugPage({
+  initialStage,
+  initialActiveGameId,
+}: FriendBookFinaleDebugPageProps = {}) {
   return (
     <div className="min-h-screen bg-[#f8f2e8] text-stone-900">
       <header className="sticky top-0 z-20 border-b border-[#d9c6af] bg-[rgba(252,247,239,0.96)] px-4 py-3 backdrop-blur sm:px-6">
@@ -87,7 +97,11 @@ export default function FriendBookFinaleDebugPage() {
       </header>
 
       <main>
-        <FriendBookFinalSection initialProgress={friendBookDebugProgress} />
+        <FriendBookFinalSection
+          initialProgress={friendBookDebugProgress}
+          initialStage={initialStage}
+          initialActiveGameId={initialActiveGameId}
+        />
       </main>
     </div>
   );

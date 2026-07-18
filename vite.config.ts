@@ -9,7 +9,38 @@ import {
   CODEX_REPORT_FILE_PATH,
   createDefaultCodexGuideDocument,
   normalizeCodexGuideDocument,
+  parseCodexGuideDocumentText,
 } from './src/codexReport';
+
+const FRIEND_BOOK_PRODUCTION_API_ORIGIN = 'https://xiaoci-ai.com';
+
+export function getFriendBookApiProxyConfig(
+  env: Record<string, string | undefined>,
+) {
+  return {
+    target:
+      env.FRIEND_BOOK_API_PROXY_TARGET?.trim() ||
+      FRIEND_BOOK_PRODUCTION_API_ORIGIN,
+    changeOrigin: true,
+    secure: true,
+  };
+}
+
+export async function readCodexReportPayload(filePath: string) {
+  try {
+    const fileContents = await readFile(filePath, 'utf8');
+    return parseCodexGuideDocumentText(fileContents);
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      'code' in error &&
+      error.code === 'ENOENT'
+    ) {
+      return createDefaultCodexGuideDocument();
+    }
+    throw error;
+  }
+}
 
 export default defineConfig(({mode}) => {
   const env = loadEnv(mode, '.', '');
@@ -28,20 +59,7 @@ export default defineConfig(({mode}) => {
           server.middlewares.use(async (req, res, next) => {
             if (req.url === '/__codex-report/current' && req.method === 'GET') {
               try {
-                let payload = createDefaultCodexGuideDocument();
-
-                try {
-                  const fileContents = await readFile(codexReportOutputPath, 'utf8');
-                  payload = normalizeCodexGuideDocument(JSON.parse(fileContents));
-                } catch (error) {
-                  if (
-                    !(error instanceof Error) ||
-                    !('code' in error) ||
-                    error.code !== 'ENOENT'
-                  ) {
-                    throw error;
-                  }
-                }
+                const payload = await readCodexReportPayload(codexReportOutputPath);
 
                 res.statusCode = 200;
                 res.setHeader('Content-Type', 'application/json');
@@ -173,6 +191,10 @@ export default defineConfig(({mode}) => {
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
       // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',
+      proxy: {
+        '/api/friend-book-entries': getFriendBookApiProxyConfig(env),
+        '/api/analytics': getFriendBookApiProxyConfig(env),
+      },
     },
   };
 });

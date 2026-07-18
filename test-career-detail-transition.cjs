@@ -77,9 +77,9 @@ const baseUrl = process.env.BASE_URL || 'http://127.0.0.1:3000';
 
   const initialContent = await readPrimaryContent();
 
-  assert.match(initialContent.heading, /April 12th, 2021/);
+  assert.match(initialContent.heading, /January 8th, 2025/);
   assert.match(initialContent.eyebrow, /Dispatch Log I: Sharing Journey/);
-  assert.match(initialContent.headline, /Publishing Before It Felt Polished/);
+  assert.match(initialContent.headline, /Visual Tests Became Workflows/);
 
   const initialCtaState = await page.evaluate(() => {
     const cta = document.querySelector('[data-career-detail-cta="page-switch"]');
@@ -134,9 +134,9 @@ const baseUrl = process.env.BASE_URL || 'http://127.0.0.1:3000';
     };
   });
 
-  assert.match(wheelUpdated.heading, /April 12th, 2021/);
+  assert.match(wheelUpdated.heading, /January 8th, 2025/);
   assert.match(wheelUpdated.eyebrow, /Dispatch Log I: Sharing Journey/);
-  assert.match(wheelUpdated.body, /I started sharing small working notes before they felt complete/i);
+  assert.match(wheelUpdated.body, /I treated AI images and short videos as small field tests/i);
   assert.equal(afterLockedWheel.ctaVisible, 'true');
   assert.equal(afterLockedWheel.hintVisible, 'true');
   assert.ok(
@@ -185,20 +185,20 @@ const baseUrl = process.env.BASE_URL || 'http://127.0.0.1:3000';
 
   const dragUpdated = await readPrimaryContent();
 
-  assert.match(dragUpdated.heading, /September 3rd, 2021/);
+  assert.match(dragUpdated.heading, /May 18th, 2025/);
   assert.match(dragUpdated.eyebrow, /Dispatch Log II: Sharing Journey/);
-  assert.match(dragUpdated.body, /Repeated questions became a pattern library/i);
+  assert.match(dragUpdated.body, /Travel photos, ticket stubs, and quick notes/i);
 
   await page.mouse.wheel(0, -120);
   await page.waitForTimeout(250);
 
   const upwardWheelUpdated = await readPrimaryContent();
 
-  assert.match(upwardWheelUpdated.heading, /April 12th, 2021/);
+  assert.match(upwardWheelUpdated.heading, /January 8th, 2025/);
   assert.match(upwardWheelUpdated.eyebrow, /Dispatch Log I: Sharing Journey/);
   assert.match(
     upwardWheelUpdated.body,
-    /I started sharing small working notes before they felt complete/i,
+    /I treated AI images and short videos as small field tests/i,
   );
 
   await page
@@ -230,8 +230,8 @@ const baseUrl = process.env.BASE_URL || 'http://127.0.0.1:3000';
   });
 
   assert.match(clickedWorkExperience.eyebrow, /Dispatch Log I: Work Experience/);
-  assert.match(clickedWorkExperience.headline, /Learning To Make Fast Work Legible/);
-  assert.match(clickedWorkExperience.body, /speed alone was not enough/i);
+  assert.match(clickedWorkExperience.headline, /Data Had To Serve Action/);
+  assert.match(clickedWorkExperience.body, /At Ping An, data work became useful/i);
   assert.equal(clickedWorkExperience.workExperiencePressed, 'true');
   assert.equal(clickedWorkExperience.workExperienceConnectorActive, 'true');
 
@@ -266,8 +266,8 @@ const baseUrl = process.env.BASE_URL || 'http://127.0.0.1:3000';
   });
 
   assert.match(clickedIndustryKnowledge.eyebrow, /Dispatch Log I: Industry Knowledge/);
-  assert.match(clickedIndustryKnowledge.headline, /Watching Where AI Moved From Demo To Habit/);
-  assert.match(clickedIndustryKnowledge.body, /workflow infrastructure instead of spectacle/i);
+  assert.match(clickedIndustryKnowledge.headline, /Automation Needs A Business Spine/);
+  assert.match(clickedIndustryKnowledge.body, /Most AI adoption problems are not tool problems first/i);
   assert.equal(clickedIndustryKnowledge.industryKnowledgePressed, 'true');
   assert.equal(clickedIndustryKnowledge.industryKnowledgeConnectorActive, 'true');
 

@@ -1,5 +1,6 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
+import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import gsap from 'gsap';
+import { ExternalLink } from 'lucide-react';
 
 import { personalData, type CodingCategoryId } from '../data';
 import {
@@ -24,6 +25,7 @@ import {
   WORKS_DETAIL_GALLERY_DESIGN_HEIGHT,
   WORKS_DETAIL_GALLERY_DESIGN_WIDTH,
   WORKS_DETAIL_LOADING_SRC,
+  WORKS_DETAIL_POST_LOADING_NAVIGATION_LOCK_MS,
   WORKS_DETAIL_REVEAL_IMAGE_SRC,
   WORKS_DETAIL_RETURN_TO_LOBBY_EVENT,
   WORKS_DETAIL_TRANSITION_START_EVENT,
@@ -33,6 +35,7 @@ import {
   type WorksDetailView,
 } from './WorksDetailSection.logic';
 import { armScrollMomentumLock } from '../scrollMomentumLock';
+import { trackAnalyticsEvent } from '../analytics';
 
 const TOUCH_STEP_TOLERANCE_PX = 4;
 const WORKS_DETAIL_REVEAL_STEP = 0.18;
@@ -45,11 +48,31 @@ const WORKS_DETAIL_RIGHT_BUTTON_SRC = '/images/workDetail_rigtht_icon.png';
 const WORKS_DETAIL_STAGE_BACKGROUND_SRC = '';
 const WORKS_DETAIL_CODING_BACKGROUND_SRC = '/images/careerDetail_bg.png';
 const WORKS_DETAIL_CODING_STAGE_BACKGROUND_SRC = '/images/career_bg.png';
-const WORKS_DETAIL_STAGE_SOCIALS = ['f', 't', '▶'] as const;
+const FEISHU_PORTFOLIO_URL =
+  'https://uixp8a9di3s.feishu.cn/docx/TLNpdBRkEoiOvkxnEQMcEy5rnLh';
+const XHS_PROFILE_CARD_SRC = '/images/xhsMainPage_Link.jpeg';
+const WORKS_DETAIL_STAGE_SOCIAL_LINKS = [
+  {
+    id: 'feishu',
+    label: 'f',
+    tooltip: 'See more work details in Feishu Docs',
+    href: FEISHU_PORTFOLIO_URL,
+  },
+  {
+    id: 'xiaohongshu',
+    label: 'x',
+    tooltip: 'Personal social media platform',
+  },
+] as const;
+const WORKS_DETAIL_STAGE_STATIC_SOCIAL_LABEL = '▶';
 const WORKS_DETAIL_CARD_LABEL_OFFSET = 4;
 const WORKS_DETAIL_VISIBLE_SLOT_COUNT = 5;
 const WORKS_DETAIL_ACTIVE_SLOT_INDEX = 3;
-const WORKS_DETAIL_DEFAULT_ACTIVE_INDEX = Math.max(personalData.featuredWorks.length - 2, 0);
+const WORKS_DETAIL_DEFAULT_ACTIVE_INDEX = 0;
+const WORKS_DETAIL_CONTAINED_PROJECT_IMAGE_SRCS = new Set([
+  '/images/VisualWorks/VisualWorks_Myfirst_cg.jpeg',
+  '/images/VisualWorks/VisualWorks_TakePhoto_Night.jpeg',
+]);
 const WORKS_DETAIL_DEFAULT_CODING_CATEGORY_ID: CodingCategoryId =
   personalData.codingCategories[0]?.id ?? 'workflow';
 const WORKS_DETAIL_CODING_DRAG_THRESHOLD_PX = 56;
@@ -188,6 +211,7 @@ interface WorksDetailSectionProps {
   initialTransitionProgress?: number;
   initialView?: WorksDetailView;
   initialDetailMode?: WorksDetailDetailMode;
+  initialActiveCodingProjectId?: string | null;
 }
 
 function clampProjectIndex(nextProjectIndex: number) {
@@ -289,7 +313,15 @@ function getCodingProjectsGridStyle(): WorksDetailCustomProperties {
   return WORKS_DETAIL_CODING_LAYOUT.projects as WorksDetailCustomProperties;
 }
 
-function getGallerySlotStyle(slotIndex: number, backgroundImage?: string): WorksDetailCustomProperties {
+function hasCodingProjectLink(link: string) {
+  const trimmedLink = link.trim();
+  return trimmedLink !== '' && trimmedLink !== '#';
+}
+
+function getGallerySlotStyle(
+  slotIndex: number,
+  backgroundImage?: string,
+): WorksDetailCustomProperties {
   const slotLayout: WorksDetailGallerySlotLayout =
     WORKS_DETAIL_GALLERY_LAYOUT.slots[slotIndex] ?? WORKS_DETAIL_GALLERY_LAYOUT.slots[0];
   const slotStyle: WorksDetailCustomProperties = {
@@ -317,6 +349,7 @@ export default function WorksDetailSection({
   initialTransitionProgress = 0,
   initialView = 'entry',
   initialDetailMode = 'design',
+  initialActiveCodingProjectId = null,
 }: WorksDetailSectionProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -328,6 +361,7 @@ export default function WorksDetailSection({
   const detailModeRef = useRef<WorksDetailDetailMode>(initialDetailMode);
   const loadingTimeoutRef = useRef<number | null>(null);
   const loadingIframeReadyRef = useRef(false);
+  const loadingCompletedAtRef = useRef<number | null>(null);
   const wheelBufferRef = useRef(0);
   const sceneUnlockTimeoutRef = useRef<number | null>(null);
   const detailSceneRef = useRef<WorksDetailScene>('gallery');
@@ -346,12 +380,16 @@ export default function WorksDetailSection({
   const [activeCodingCategoryId, setActiveCodingCategoryId] = useState<CodingCategoryId>(
     WORKS_DETAIL_DEFAULT_CODING_CATEGORY_ID,
   );
+  const [activeCodingProjectId, setActiveCodingProjectId] = useState<string | null>(
+    initialActiveCodingProjectId,
+  );
   const [entryLandingState, setEntryLandingState] = useState<WorksDetailEntryLandingState>(
     initialPhase === 'settled' && initialView === 'entry' ? 'visible' : 'hidden',
   );
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isTransitioningScene, setIsTransitioningScene] = useState(false);
+  const [isXhsCardOpen, setIsXhsCardOpen] = useState(false);
   const [galleryPlaneState, setGalleryPlaneState] = useState(() =>
     getWorksDetailGalleryPlaneState({
       viewportWidth: WORKS_DETAIL_GALLERY_DESIGN_WIDTH,
@@ -405,6 +443,7 @@ export default function WorksDetailSection({
 
   const resetCodingState = () => {
     setActiveCodingCategoryId(WORKS_DETAIL_DEFAULT_CODING_CATEGORY_ID);
+    setActiveCodingProjectId(null);
     codingDragPointerIdRef.current = null;
     codingDragStartXRef.current = null;
   };
@@ -451,6 +490,8 @@ export default function WorksDetailSection({
     const section = sectionRef.current;
 
     clearLoadingTimeout();
+    loadingCompletedAtRef.current = performance.now();
+    armScrollMomentumLock(WORKS_DETAIL_POST_LOADING_NAVIGATION_LOCK_MS);
     wheelBufferRef.current = 0;
     resetDetailState();
     resetCodingState();
@@ -479,6 +520,8 @@ export default function WorksDetailSection({
   const isEntryStagePinnedToSection = phase === 'settled' && view === 'entry';
 
   const activeProject = personalData.featuredWorks[activeProjectIndex] ?? personalData.featuredWorks[0];
+  const activeProjectImageSrc = activeProject?.image ?? WORKS_DETAIL_REVEAL_IMAGE_SRC;
+  const shouldContainProjectImage = WORKS_DETAIL_CONTAINED_PROJECT_IMAGE_SRCS.has(activeProjectImageSrc);
   const previousProject =
     activeProjectIndex > 0 ? personalData.featuredWorks[activeProjectIndex - 1] : null;
   const nextProject =
@@ -491,6 +534,10 @@ export default function WorksDetailSection({
     personalData.codingCategories[0];
   const activeCodingProjects =
     personalData.codingProjects[activeCodingCategoryId]?.slice(0, 6) ?? [];
+  const activeCodingProject =
+    activeCodingProjects.find((project) => project.id === activeCodingProjectId) ?? null;
+  const visibleCodingProjects = activeCodingProject ? [activeCodingProject] : activeCodingProjects;
+  const codingProjectsGridState = activeCodingProject ? 'expanded' : 'list';
   const backgroundImageSrc =
     view === 'detail' && detailMode === 'coding'
       ? WORKS_DETAIL_CODING_BACKGROUND_SRC
@@ -501,6 +548,7 @@ export default function WorksDetailSection({
   const exitToLobby = () => {
     clearLoadingTimeout();
     clearSceneUnlockTimeout();
+    loadingCompletedAtRef.current = null;
     wheelBufferRef.current = 0;
     setEntryLandingState('hidden');
     setPhase('idle');
@@ -517,6 +565,7 @@ export default function WorksDetailSection({
 
     clearLoadingTimeout();
     loadingIframeReadyRef.current = false;
+    loadingCompletedAtRef.current = null;
     wheelBufferRef.current = 0;
     setEntryLandingState('hidden');
     resetDetailState();
@@ -562,6 +611,14 @@ export default function WorksDetailSection({
     }
 
     return nextSection.getBoundingClientRect().top;
+  };
+
+  const isPostLoadingNavigationUnlocked = () => {
+    const completedAt = loadingCompletedAtRef.current;
+    return (
+      completedAt === null ||
+      performance.now() - completedAt >= WORKS_DETAIL_POST_LOADING_NAVIGATION_LOCK_MS
+    );
   };
 
   useEffect(() => {
@@ -615,6 +672,24 @@ export default function WorksDetailSection({
       clearLoadingTimeout();
     };
   }, [phase, iframeKey]);
+
+  useEffect(() => {
+    if (!isXhsCardOpen) {
+      return undefined;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsXhsCardOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isXhsCardOpen]);
 
   useEffect(() => {
     if (phase === 'idle') {
@@ -830,6 +905,7 @@ export default function WorksDetailSection({
           view: currentView,
           deltaY: event.deltaY,
           nextSectionTop: getNextSectionTop(),
+          isNavigationUnlocked: isPostLoadingNavigationUnlocked(),
         })
       ) {
         event.preventDefault();
@@ -951,6 +1027,7 @@ export default function WorksDetailSection({
           view: viewRef.current,
           deltaY: startY - currentY,
           nextSectionTop: getNextSectionTop(),
+          isNavigationUnlocked: isPostLoadingNavigationUnlocked(),
         })
       ) {
         event.preventDefault();
@@ -1040,6 +1117,9 @@ export default function WorksDetailSection({
     const openState = openWorksDetailDesignView(viewRef.current);
     setDetailMode(openState.nextDetailMode);
     setView(openState.nextView);
+    trackAnalyticsEvent('works_detail_entry_click', {
+      targetId: 'design',
+    });
   };
 
   const handleEnterCodingDetailView = () => {
@@ -1054,6 +1134,9 @@ export default function WorksDetailSection({
     const openState = openWorksDetailCodingView(viewRef.current);
     setDetailMode(openState.nextDetailMode);
     setView(openState.nextView);
+    trackAnalyticsEvent('works_detail_entry_click', {
+      targetId: 'coding',
+    });
   };
 
   const handleCloseDetailView = () => {
@@ -1089,6 +1172,10 @@ export default function WorksDetailSection({
       projectCount: personalData.featuredWorks.length,
     });
 
+    trackAnalyticsEvent('works_detail_gallery_select', {
+      targetId: personalData.featuredWorks[selectionState.nextProjectIndex]?.id ?? String(selectionState.nextProjectIndex),
+      metadata: { index: selectionState.nextProjectIndex },
+    });
     transitionDetailState(selectionState.nextScene, selectionState.nextProjectIndex);
   };
 
@@ -1098,11 +1185,19 @@ export default function WorksDetailSection({
     }
 
     setEntryLandingState('visible');
+    trackAnalyticsEvent('works_detail_project_open', {
+      targetId: personalData.featuredWorks[nextProjectIndex]?.id ?? String(nextProjectIndex),
+      metadata: { index: nextProjectIndex },
+    });
     transitionDetailState('project', clampProjectIndex(nextProjectIndex));
   };
 
   const handleCodingCategorySelection = (categoryId: CodingCategoryId) => {
+    trackAnalyticsEvent('works_detail_coding_category_click', {
+      targetId: categoryId,
+    });
     setActiveCodingCategoryId(categoryId);
+    setActiveCodingProjectId(null);
   };
 
   const handleCodingCategoryShift = (direction: 'next' | 'previous') => {
@@ -1112,7 +1207,35 @@ export default function WorksDetailSection({
         ? Math.min(currentIndex + 1, personalData.codingCategories.length - 1)
         : Math.max(currentIndex - 1, 0);
 
-    setActiveCodingCategoryId(personalData.codingCategories[nextIndex]?.id ?? WORKS_DETAIL_DEFAULT_CODING_CATEGORY_ID);
+    const nextCategoryId = personalData.codingCategories[nextIndex]?.id ?? WORKS_DETAIL_DEFAULT_CODING_CATEGORY_ID;
+
+    setActiveCodingCategoryId(nextCategoryId);
+    trackAnalyticsEvent('works_detail_coding_category_shift', {
+      targetId: nextCategoryId,
+      metadata: { direction },
+    });
+    setActiveCodingProjectId(null);
+  };
+
+  const handleCodingProjectToggle = (projectId: string) => {
+    trackAnalyticsEvent('works_detail_coding_project_toggle', {
+      targetId: projectId,
+    });
+    setActiveCodingProjectId((currentProjectId) => (
+      currentProjectId === projectId ? null : projectId
+    ));
+  };
+
+  const handleCodingProjectKeyDown = (
+    event: ReactKeyboardEvent<HTMLElement>,
+    projectId: string,
+  ) => {
+    if (event.key !== 'Enter' && event.key !== ' ') {
+      return;
+    }
+
+    event.preventDefault();
+    handleCodingProjectToggle(projectId);
   };
 
   const handleCodingDragStart = (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -1307,38 +1430,113 @@ export default function WorksDetailSection({
                     <div
                       className="works-detail-coding__projects-grid"
                       data-coding-project-grid={activeCodingCategory?.id ?? WORKS_DETAIL_DEFAULT_CODING_CATEGORY_ID}
+                      data-coding-project-grid-state={codingProjectsGridState}
                       data-coding-animate="projects"
                       style={getCodingProjectsGridStyle()}
                     >
-                      {activeCodingProjects.map((project) => (
-                        <a
-                          key={project.id}
-                          href={project.link}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="works-detail-coding__project-card"
-                          data-coding-project-card={project.id}
-                        >
-                          <div className="works-detail-coding__project-media">
-                            <img
-                              src={project.image}
-                              alt={project.title}
-                              className="works-detail-coding__project-image"
-                            />
-                          </div>
-                          <div className="works-detail-coding__project-meta">
-                            <h4 className="works-detail-coding__project-title">{project.title}</h4>
-                            <p className="works-detail-coding__project-body">{project.description}</p>
-                            <div className="works-detail-coding__project-tags">
-                              {project.tags.map((tag) => (
-                                <span key={tag} className="works-detail-coding__project-tag">
-                                  {tag}
-                                </span>
-                              ))}
+                      {visibleCodingProjects.map((project) => {
+                        const isProjectExpanded = activeCodingProjectId === project.id;
+                        const hasProjectLink = hasCodingProjectLink(project.link);
+
+                        return (
+                          <article
+                            key={project.id}
+                            role="button"
+                            tabIndex={0}
+                            aria-expanded={isProjectExpanded}
+                            aria-label={`${isProjectExpanded ? 'Close' : 'Open'} ${project.title} details`}
+                            className="works-detail-coding__project-card"
+                            data-coding-project-card={project.id}
+                            data-coding-project-expanded={isProjectExpanded ? 'true' : 'false'}
+                            onClick={() => {
+                              handleCodingProjectToggle(project.id);
+                            }}
+                            onKeyDown={(event) => {
+                              handleCodingProjectKeyDown(event, project.id);
+                            }}
+                          >
+                            <div className="works-detail-coding__project-media">
+                              <img
+                                src={project.image}
+                                alt={project.title}
+                                loading="eager"
+                                decoding="async"
+                                className="works-detail-coding__project-image"
+                              />
                             </div>
-                          </div>
-                        </a>
-                      ))}
+                            <div className="works-detail-coding__project-meta">
+                              <div className="works-detail-coding__project-heading">
+                                <div>
+                                  <span className="works-detail-coding__project-category">
+                                    {activeCodingCategory?.title ?? 'Workflow'}
+                                  </span>
+                                  <div className="works-detail-coding__project-title-row">
+                                    <h4 className="works-detail-coding__project-title">{project.title}</h4>
+                                    {isProjectExpanded && hasProjectLink ? (
+                                      <a
+                                        href={project.link}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        aria-label={`Open ${project.title} project`}
+                                        className="works-detail-coding__project-title-link"
+                                        onClick={(event) => {
+                                          event.stopPropagation();
+                                          trackAnalyticsEvent('works_detail_project_link_click', {
+                                            targetId: project.id,
+                                          });
+                                        }}
+                                      >
+                                        <ExternalLink aria-hidden="true" size={15} strokeWidth={1.9} />
+                                      </a>
+                                    ) : null}
+                                  </div>
+                                </div>
+                                {isProjectExpanded ? (
+                                  <button
+                                    type="button"
+                                    aria-label={`Close ${project.title} details`}
+                                    className="works-detail-coding__project-close"
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      setActiveCodingProjectId(null);
+                                    }}
+                                  >
+                                    <span aria-hidden="true">Close</span>
+                                  </button>
+                                ) : null}
+                              </div>
+                              <p className="works-detail-coding__project-body">{project.description}</p>
+                              <div className="works-detail-coding__project-tags">
+                                {project.tags.map((tag) => (
+                                  <span key={tag} className="works-detail-coding__project-tag">
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
+                              {isProjectExpanded ? (
+                                <div className="works-detail-coding__project-detail">
+                                  <section className="works-detail-coding__project-detail-section">
+                                    <span>Problem</span>
+                                    <p>{project.detail.problem}</p>
+                                  </section>
+                                  <section className="works-detail-coding__project-detail-section">
+                                    <span>Approach</span>
+                                    <ul>
+                                      {project.detail.approach.map((step) => (
+                                        <li key={step}>{step}</li>
+                                      ))}
+                                    </ul>
+                                  </section>
+                                  <section className="works-detail-coding__project-detail-section">
+                                    <span>Outcome</span>
+                                    <p>{project.detail.outcome}</p>
+                                  </section>
+                                </div>
+                              ) : null}
+                            </div>
+                          </article>
+                        );
+                      })}
                     </div>
                   </section>
                 </div>
@@ -1461,7 +1659,7 @@ export default function WorksDetailSection({
                     </div>
 
                     <div className="relative z-10 mt-auto flex flex-col gap-6">
-                      <div className="works-detail-stage__footer" aria-hidden="true">
+                      <div className="works-detail-stage__footer">
                         <div className="works-detail-stage__footer-left">
                           <span className="works-detail-stage__footer-line" />
                           <span className="works-detail-stage__brand">VisualMemory</span>
@@ -1483,13 +1681,96 @@ export default function WorksDetailSection({
                           </div>
                         </div>
                         <div className="works-detail-stage__footer-right">
-                          <span className="works-detail-stage__socials">
-                            {WORKS_DETAIL_STAGE_SOCIALS.join(' | ')}
+                          <span className="works-detail-stage__socials" aria-label="Portfolio links">
+                            {WORKS_DETAIL_STAGE_SOCIAL_LINKS.map((social, index) => (
+                              <Fragment key={social.id}>
+                                {index > 0 ? (
+                                  <span className="works-detail-stage__social-separator" aria-hidden="true">
+                                    |
+                                  </span>
+                                ) : null}
+                                {'href' in social ? (
+                                  <a
+                                    className="works-detail-stage__social-link"
+                                    href={social.href}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    aria-label={social.tooltip}
+                                    data-tooltip={social.tooltip}
+                                    onClick={() => {
+                                      trackAnalyticsEvent('works_detail_social_click', {
+                                        targetId: social.id,
+                                      });
+                                    }}
+                                  >
+                                    {social.label}
+                                  </a>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    className="works-detail-stage__social-link"
+                                    aria-label={social.tooltip}
+                                    data-tooltip={social.tooltip}
+                                    onClick={() => {
+                                      trackAnalyticsEvent('works_detail_social_click', {
+                                        targetId: social.id,
+                                      });
+                                      setIsXhsCardOpen(true);
+                                    }}
+                                  >
+                                    {social.label}
+                                  </button>
+                                )}
+                              </Fragment>
+                            ))}
+                            <span className="works-detail-stage__social-separator" aria-hidden="true">
+                              |
+                            </span>
+                            <span className="works-detail-stage__social-static" aria-hidden="true">
+                              {WORKS_DETAIL_STAGE_STATIC_SOCIAL_LABEL}
+                            </span>
                           </span>
                           <span className="works-detail-stage__credits">CREDITS</span>
                         </div>
                       </div>
                     </div>
+                    {isXhsCardOpen ? (
+                      <div
+                        className="works-detail-xhs-modal"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="works-detail-xhs-modal-title"
+                        onClick={() => {
+                          setIsXhsCardOpen(false);
+                        }}
+                      >
+                        <div
+                          className="works-detail-xhs-modal__card"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                          }}
+                        >
+                          <div className="works-detail-xhs-modal__header">
+                            <h3 id="works-detail-xhs-modal-title">Personal social media platform</h3>
+                            <button
+                              type="button"
+                              className="works-detail-xhs-modal__close"
+                              aria-label="Close Xiaohongshu profile card"
+                              onClick={() => {
+                                setIsXhsCardOpen(false);
+                              }}
+                            >
+                              Close
+                            </button>
+                          </div>
+                          <img
+                            className="works-detail-xhs-modal__image"
+                            src={XHS_PROFILE_CARD_SRC}
+                            alt="Xiaohongshu profile QR code card"
+                          />
+                        </div>
+                      </div>
+                    ) : null}
                   </section>
 
                   <section
@@ -1510,9 +1791,21 @@ export default function WorksDetailSection({
                     </div>
 
                     <div className="works-detail-project__backdrop" />
-                    <div className="works-detail-project__media" data-project-animate="media">
+                    <div
+                      className="works-detail-project__media"
+                      data-project-animate="media"
+                      data-project-image-mode={shouldContainProjectImage ? 'contained' : 'cover'}
+                    >
+                      {shouldContainProjectImage ? (
+                        <img
+                          src={activeProjectImageSrc}
+                          alt=""
+                          aria-hidden="true"
+                          className="works-detail-project__background-image"
+                        />
+                      ) : null}
                       <img
-                        src={activeProject?.image ?? WORKS_DETAIL_REVEAL_IMAGE_SRC}
+                        src={activeProjectImageSrc}
                         alt={activeProject?.title ?? 'Selected project'}
                         className="works-detail-project__image"
                       />

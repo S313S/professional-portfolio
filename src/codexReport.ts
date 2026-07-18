@@ -12,10 +12,49 @@ export interface CodexGuideGroup {
   items: CodexGuideItem[];
 }
 
+export type CodexEvidenceStage =
+  | 'described'
+  | 'calibrated'
+  | 'implemented'
+  | 'verified';
+
+export interface CodexEvidenceParameter {
+  label: string;
+  value: string;
+}
+
+export interface CodexVisualDebugEvidence {
+  id: string;
+  title: string;
+  problem: string;
+  visualIntent: string;
+  debugRoute?: string;
+  createdAt?: string;
+  calibration?: {
+    summary: string;
+    parameters: CodexEvidenceParameter[];
+    confirmedAt?: string;
+  };
+  implementation?: {
+    summary: string;
+    changedFiles: string[];
+    modelNote?: string;
+    completedAt?: string;
+  };
+  verification?: {
+    summary: string;
+    commands: string[];
+    outcome: 'passed' | 'failed' | 'pending';
+    completedAt?: string;
+  };
+}
+
 export interface CodexGuideDocument {
   title: string;
   summary: string;
   groups: CodexGuideGroup[];
+  evidence: CodexVisualDebugEvidence[];
+  loadWarning?: string | null;
   updatedAt?: string | null;
 }
 
@@ -28,6 +67,16 @@ export const CODEX_REPORT_FILE_PATH = 'tmp/codex-report.json';
 export const CODEX_REPORT_ENDPOINT = '/__codex-report/current';
 export const CODEX_REPORT_UPDATE_ENDPOINT = '/__codex-report/update';
 export const CODEX_REPORT_REFRESH_INTERVAL_MS = 5000;
+export const CODEX_REPORT_INVALID_JSON_WARNING =
+  'The local Codex report JSON is invalid. Showing the safe default report instead.';
+
+const CODEX_REPORT_ALLOWED_DEBUG_ROUTES = new Set([
+  '/debug/friend-book-finale',
+  '/debug/friend-book-diff-hotspots',
+  '/debug/works-detail',
+  '/debug/career-detail',
+  '/debug/codex-report',
+]);
 
 const SENTENCE_END_PATTERN = /[。！？!?]/;
 
@@ -47,6 +96,120 @@ function normalizeGuideSteps(value: unknown): string[] {
   return value
     .map((entry) => asTrimmedString(entry))
     .filter(Boolean);
+}
+
+function normalizeEvidenceParameter(value: unknown): CodexEvidenceParameter | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  const label = asTrimmedString(value.label);
+  const parameterValue = asTrimmedString(value.value);
+  if (!label || !parameterValue) {
+    return null;
+  }
+
+  return {label, value: parameterValue};
+}
+
+function normalizeEvidenceCalibration(
+  value: unknown,
+): CodexVisualDebugEvidence['calibration'] | undefined {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  const summary = asTrimmedString(value.summary);
+  if (!summary) {
+    return undefined;
+  }
+
+  const parameters = Array.isArray(value.parameters)
+    ? value.parameters
+        .map((parameter) => normalizeEvidenceParameter(parameter))
+        .filter((parameter): parameter is CodexEvidenceParameter => parameter !== null)
+    : [];
+
+  return {
+    summary,
+    parameters,
+    confirmedAt: asTrimmedString(value.confirmedAt) || undefined,
+  };
+}
+
+function normalizeEvidenceImplementation(
+  value: unknown,
+): CodexVisualDebugEvidence['implementation'] | undefined {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  const summary = asTrimmedString(value.summary);
+  if (!summary) {
+    return undefined;
+  }
+
+  return {
+    summary,
+    changedFiles: normalizeGuideSteps(value.changedFiles),
+    modelNote: asTrimmedString(value.modelNote) || undefined,
+    completedAt: asTrimmedString(value.completedAt) || undefined,
+  };
+}
+
+function normalizeEvidenceVerification(
+  value: unknown,
+): CodexVisualDebugEvidence['verification'] | undefined {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  const summary = asTrimmedString(value.summary);
+  const outcome = asTrimmedString(value.outcome);
+  if (
+    !summary ||
+    (outcome !== 'passed' && outcome !== 'failed' && outcome !== 'pending')
+  ) {
+    return undefined;
+  }
+
+  return {
+    summary,
+    commands: normalizeGuideSteps(value.commands),
+    outcome,
+    completedAt: asTrimmedString(value.completedAt) || undefined,
+  };
+}
+
+function normalizeVisualDebugEvidence(value: unknown): CodexVisualDebugEvidence | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  const id = asTrimmedString(value.id);
+  const title = asTrimmedString(value.title);
+  const problem = asTrimmedString(value.problem);
+  const visualIntent = asTrimmedString(value.visualIntent);
+
+  if (!id || !title || !problem || !visualIntent) {
+    return null;
+  }
+
+  const debugRoute = asTrimmedString(value.debugRoute);
+
+  return {
+    id,
+    title,
+    problem,
+    visualIntent,
+    debugRoute: CODEX_REPORT_ALLOWED_DEBUG_ROUTES.has(debugRoute)
+      ? debugRoute
+      : undefined,
+    createdAt: asTrimmedString(value.createdAt) || undefined,
+    calibration: normalizeEvidenceCalibration(value.calibration),
+    implementation: normalizeEvidenceImplementation(value.implementation),
+    verification: normalizeEvidenceVerification(value.verification),
+  };
 }
 
 function normalizeGuideItem(value: unknown): CodexGuideItem | null {
@@ -93,6 +256,137 @@ function normalizeGuideGroup(value: unknown): CodexGuideGroup | null {
   };
 }
 
+function createBuildWeekVisualDebugEvidence(): CodexVisualDebugEvidence {
+  return {
+    id: 'gpt56-visual-debug-evidence-loop',
+    title: 'Visual debugging evidence loop',
+    problem:
+      'The existing standalone debugging interfaces helped translate visual intent, but the report panel could not show how human calibration became traceable source changes.',
+    visualIntent:
+      'Keep the public portfolio untouched while presenting a concise, inspectable developer-only trail from subjective feedback to implementation and verification.',
+    debugRoute: '/debug/codex-report',
+    createdAt: '2026-07-18T11:57:29+08:00',
+    calibration: {
+      summary:
+        'The user approved a developer-only evidence loop that reuses the existing Friend Book, Career, Works, and Codex Report debugging routes.',
+      parameters: [
+        {label: 'exposure', value: 'development-only route'},
+        {label: 'public portfolio', value: 'no new production entry point'},
+        {
+          label: 'evidence stages',
+          value: 'problem → human calibration → implementation → verification',
+        },
+      ],
+      confirmedAt: '2026-07-18T11:57:29+08:00',
+    },
+    implementation: {
+      summary:
+        'GPT-5.6 extended Codex Report with normalized evidence records, a debug-route allowlist, stage calculation, Markdown export, evidence navigation, and a detailed evidence view.',
+      changedFiles: [
+        'src/codexReport.ts',
+        'src/codexReport.test.ts',
+        'src/CodexReportPage.tsx',
+        'src/CodexReportPage.render.test.tsx',
+        'vite.config.ts',
+        'vite.config.test.ts',
+        'README.md',
+        'docs/build-week/visual-debug-evidence.md',
+      ],
+      modelNote:
+        'The user-confirmed current Codex task used GPT-5.6; the active task selector and Codex session are the primary model-use evidence.',
+      completedAt: '2026-07-18T12:09:01+08:00',
+    },
+    verification: {
+      summary:
+        '39 focused regression tests passed. TypeScript checking and the Vite production build passed. Headless Chromium loaded the evidence route and public homepage without overlays or console errors, copied the evidence Markdown with clipboard permission, and found no public debug links.',
+      commands: [
+        'node --import tsx --test vite.config.test.ts src/codexReport.test.ts src/CodexReportPage.render.test.tsx src/App.logic.test.ts src/FriendBookDiffHotspotsDebugPage.logic.test.ts src/FriendBookDiffHotspotsDebugPage.render.test.tsx',
+        'npm run lint',
+        'npm run build',
+        'Playwright browser verification for /debug/codex-report and /',
+      ],
+      outcome: 'passed',
+      completedAt: '2026-07-18T12:31:04+08:00',
+    },
+  };
+}
+
+function createBuildWeekHotspotDebugRefactorEvidence(): CodexVisualDebugEvidence {
+  return {
+    id: 'gpt56-hotspot-debug-refactor',
+    title: 'GPT-5.6 hotspot debugger refactor',
+    problem:
+      'The existing hotspot page exposed drag, resize, export, and save controls, but its first screen did not explain the full workflow. In a 649px-wide scan, the controls started around y=960 after both previews, so the path from visual judgment to confirmed parameters was easy to miss.',
+    visualIntent:
+      'Keep the existing calibration behavior intact while making Select → Calibrate → Confirm understandable, truthful about the GPT-5.6 contribution, and directly connected to the repository evidence trail.',
+    debugRoute: '/debug/friend-book-diff-hotspots',
+    createdAt: '2026-07-18T12:57:43+08:00',
+    calibration: {
+      summary:
+        'The user approved a small workflow refactor after GPT-5.6 scanned the existing page; the scope was limited to guidance, attribution, responsive orientation, and evidence navigation.',
+      parameters: [
+        {label: 'existing interaction logic', value: 'unchanged'},
+        {label: 'workflow', value: 'Select → Calibrate → Confirm'},
+        {label: 'narrow viewport scan', value: '649 × 837; controls near y=960'},
+        {label: 'public portfolio', value: 'no new debug link'},
+      ],
+      confirmedAt: '2026-07-18T12:57:43+08:00',
+    },
+    implementation: {
+      summary:
+        'GPT-5.6 refactored and extended the existing visual hotspot debugging page with honest Build Week attribution, a three-step calibration guide, narrow-screen orientation, clearer confirmation language, and a link to the Codex Report evidence trail.',
+      changedFiles: [
+        'src/FriendBookDiffHotspotsDebugPage.tsx',
+        'src/FriendBookDiffHotspotsDebugPage.render.test.tsx',
+        'src/codexReport.ts',
+        'src/codexReport.test.ts',
+        'README.md',
+        'docs/build-week/visual-debug-evidence.md',
+        'docs/plans/2026-07-18-gpt56-hotspot-debug-refactor-design.md',
+        'docs/plans/2026-07-18-gpt56-hotspot-debug-refactor.md',
+      ],
+      modelNote:
+        'This is an existing tool refactored and extended in the user-confirmed GPT-5.6 Codex task. The original tool predates Build Week and this task.',
+      completedAt: '2026-07-18T12:57:43+08:00',
+    },
+    verification: {
+      summary:
+        '41 focused tests passed, TypeScript checking passed, and the Vite production build passed. In the 649 × 837 in-app browser, the refactored workflow and narrow-screen guidance rendered, scene selection updated targets and active coordinates, confirmation saved the parameters, and Codex Report listed the new evidence record without a visible error alert.',
+      commands: [
+        'node --import tsx --test vite.config.test.ts src/codexReport.test.ts src/CodexReportPage.render.test.tsx src/App.logic.test.ts src/FriendBookDiffHotspotsDebugPage.logic.test.ts src/FriendBookDiffHotspotsDebugPage.render.test.tsx',
+        'npm run lint',
+        'npm run build',
+        'In-app browser verification for /debug/friend-book-diff-hotspots and /debug/codex-report at 649 × 837',
+      ],
+      outcome: 'passed',
+      completedAt: '2026-07-18T13:04:34+08:00',
+    },
+  };
+}
+
+function createBuiltInVisualDebugEvidence(): CodexVisualDebugEvidence[] {
+  return [
+    createBuildWeekVisualDebugEvidence(),
+    createBuildWeekHotspotDebugRefactorEvidence(),
+  ];
+}
+
+function mergeVisualDebugEvidence(value: unknown): CodexVisualDebugEvidence[] {
+  const recordsById = new Map<string, CodexVisualDebugEvidence>();
+  createBuiltInVisualDebugEvidence().forEach((record) => {
+    recordsById.set(record.id, record);
+  });
+
+  if (Array.isArray(value)) {
+    value
+      .map((record) => normalizeVisualDebugEvidence(record))
+      .filter((record): record is CodexVisualDebugEvidence => record !== null)
+      .forEach((record) => recordsById.set(record.id, record));
+  }
+
+  return [...recordsById.values()];
+}
+
 export function createDefaultCodexGuideDocument(): CodexGuideDocument {
   return {
     title: '等待最新指南',
@@ -115,6 +409,8 @@ export function createDefaultCodexGuideDocument(): CodexGuideDocument {
         ],
       },
     ],
+    evidence: createBuiltInVisualDebugEvidence(),
+    loadWarning: null,
     updatedAt: null,
   };
 }
@@ -136,8 +432,123 @@ export function normalizeCodexGuideDocument(value: unknown): CodexGuideDocument 
     title: asTrimmedString(value.title) || '未命名行动指南',
     summary: asTrimmedString(value.summary) || '从左侧选择一个主题，查看当前最该做的事。',
     groups,
+    evidence: mergeVisualDebugEvidence(value.evidence),
+    loadWarning: asTrimmedString(value.loadWarning) || null,
     updatedAt: asTrimmedString(value.updatedAt) || null,
   };
+}
+
+export function parseCodexGuideDocumentText(text: string): CodexGuideDocument {
+  try {
+    return normalizeCodexGuideDocument(JSON.parse(text));
+  } catch {
+    return {
+      ...createDefaultCodexGuideDocument(),
+      loadWarning: CODEX_REPORT_INVALID_JSON_WARNING,
+    };
+  }
+}
+
+export function getCodexEvidenceStage(
+  record: CodexVisualDebugEvidence,
+): CodexEvidenceStage {
+  if (!record.calibration) {
+    return 'described';
+  }
+  if (!record.implementation) {
+    return 'calibrated';
+  }
+  if (!record.verification || record.verification.outcome === 'pending') {
+    return 'implemented';
+  }
+  return 'verified';
+}
+
+export function formatCodexEvidenceMarkdown(
+  record: CodexVisualDebugEvidence,
+): string {
+  const lines = [
+    `## ${record.title}`,
+    '',
+    `**Stage:** ${getCodexEvidenceStage(record)}`,
+    '',
+    '### Problem',
+    '',
+    record.problem,
+    '',
+    '### Visual intent',
+    '',
+    record.visualIntent,
+  ];
+
+  if (record.debugRoute) {
+    lines.push('', `**Debug route:** \`${record.debugRoute}\``);
+  }
+
+  if (record.calibration) {
+    lines.push('', '### Human calibration', '', record.calibration.summary);
+    if (record.calibration.parameters.length > 0) {
+      lines.push(
+        '',
+        ...record.calibration.parameters.map(
+          (parameter) => `- \`${parameter.label}\`: ${parameter.value}`,
+        ),
+      );
+    }
+  }
+
+  if (record.implementation) {
+    lines.push('', '### Implementation', '', record.implementation.summary);
+    if (record.implementation.modelNote) {
+      lines.push('', `**Model note:** ${record.implementation.modelNote}`);
+    }
+    if (record.implementation.changedFiles.length > 0) {
+      lines.push(
+        '',
+        '**Changed files:**',
+        '',
+        ...record.implementation.changedFiles.map((file) => `- \`${file}\``),
+      );
+    }
+  }
+
+  if (record.verification) {
+    lines.push(
+      '',
+      '### Verification',
+      '',
+      `**Outcome:** ${record.verification.outcome}`,
+      '',
+      record.verification.summary,
+    );
+    if (record.verification.commands.length > 0) {
+      lines.push(
+        '',
+        '**Commands:**',
+        '',
+        ...record.verification.commands.map((command) => `- \`${command}\``),
+      );
+    }
+  }
+
+  const timeline = [
+    record.createdAt ? `- Created: ${record.createdAt}` : '',
+    record.calibration?.confirmedAt
+      ? `- Calibration confirmed: ${record.calibration.confirmedAt}`
+      : '',
+    record.implementation?.completedAt
+      ? `- Implementation completed: ${record.implementation.completedAt}`
+      : '',
+    record.verification?.completedAt
+      ? `- Verification completed: ${record.verification.completedAt}`
+      : '',
+  ].filter(Boolean);
+
+  if (timeline.length > 0) {
+    lines.push('', '### Timeline', '', ...timeline);
+  }
+
+  return `${lines.join('\n').trim()}\n`;
 }
 
 export function summarizeReportText(text: string, maxLength = 34): string {

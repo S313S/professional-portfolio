@@ -76,7 +76,7 @@ test('completing the loading animation lands directly on the fully revealed atta
 
 test('loading fallback waits longer before iframe readiness and only uses the tighter timer after the animation starts', () => {
   assert.equal(getWorksDetailLoadingFallbackMs(false), 20000);
-  assert.equal(getWorksDetailLoadingFallbackMs(true), 11500);
+  assert.equal(getWorksDetailLoadingFallbackMs(true), 18000);
 });
 
 test('gallery visual plane only changes scale when browser zoom changes the css viewport', () => {
@@ -175,6 +175,18 @@ test('settled entry view advances to the next section on the next downward gestu
       view: 'entry',
       deltaY: 120,
       nextSectionTop: 240,
+      isNavigationUnlocked: false,
+    }),
+    false,
+  );
+
+  assert.equal(
+    shouldAdvanceWorksDetailToNextSection({
+      phase: 'settled',
+      view: 'entry',
+      deltaY: 120,
+      nextSectionTop: 240,
+      isNavigationUnlocked: true,
     }),
     true,
   );

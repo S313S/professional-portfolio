@@ -17,6 +17,9 @@ import {
   type FriendBookProgress,
   type FriendBookStage,
   FRIEND_BOOK_GUESTBOOK_PAGE_SIZE,
+  FRIEND_BOOK_NICKNAME_MAX_ASCII_CHARACTERS,
+  FRIEND_BOOK_NICKNAME_MAX_DISPLAY_UNITS,
+  FRIEND_BOOK_PENDING_GUESTBOOK_DRAFT_KEY,
   answerFriendBookQuizQuestion,
   advanceFriendBookQuizQuestion,
   completeBetweenTwoPagesRound,
@@ -29,14 +32,26 @@ import {
   getFriendBookGameStartStage,
   getFriendBookMedalIdForGame,
   getNextBetweenTwoPagesSceneRotation,
+  hydrateFriendBookPendingGuestbookDraft,
   hydrateFriendBookProgress,
+  hydrateFriendBookRemoteGuestbookCache,
+  isFriendBookNicknameWithinLimit,
+  limitFriendBookNicknameDraft,
   persistFriendBookProgress,
+  persistFriendBookPendingGuestbookDraft,
+  persistFriendBookRemoteGuestbookCache,
   resolveBetweenTwoPagesSpotSelection,
   selectFriendBookAvatar,
   upsertFriendBookGuestbookEntry,
 } from './FriendBookFinalSection.logic';
+import { mergeFriendBookRemoteEntries } from './FriendBookFinalSection.remote';
+import {
+  createDefaultFriendBookApiRepository,
+  type FriendBookRemoteRepository,
+} from './FriendBookFinalSection.api';
 import FriendBookGameOverlay from './FriendBookGameOverlay';
 import FriendBookMoonRunStage from './FriendBookMoonRunStage';
+import { trackAnalyticsEvent } from '../analytics';
 
 type FriendBookButtonOffset = {
   x: number;
@@ -308,6 +323,7 @@ const FRIEND_BOOK_GUESTBOOK_RIGHT_ROW_ORDER: FriendBookGameId[] = [
   'moon-run',
   'one-stroke-mark',
 ];
+const FRIEND_BOOK_NICKNAME_HELP_TEXT = `Up to ${FRIEND_BOOK_NICKNAME_MAX_DISPLAY_UNITS} Chinese characters; English letters and numbers count as half. Extra characters will be truncated.`;
 
 /**
  * Friend Book Finale 按钮位置参数
@@ -646,6 +662,7 @@ interface FriendBookFinalSectionProps {
   initialNicknameDraft?: string;
   initialIdentityIntroDraft?: string;
   initialPortfolioReviewDraft?: string;
+  remoteRepository?: FriendBookRemoteRepository | null;
 }
 
 function createInitialFriendBookGameSession(
@@ -683,7 +700,11 @@ export default function FriendBookFinalSection({
   initialNicknameDraft = '',
   initialIdentityIntroDraft = '',
   initialPortfolioReviewDraft = '',
+  remoteRepository,
 }: FriendBookFinalSectionProps = {}) {
+  const [resolvedRemoteRepository] = useState(
+    () => remoteRepository ?? createDefaultFriendBookApiRepository(),
+  );
   const [progress, setProgress] = useState(() => initialProgress ?? createDefaultFriendBookProgress());
   const [stage, setStage] = useState<FriendBookStage>(initialStage);
   const [activeGameId, setActiveGameId] = useState<FriendBookGameId | null>(initialActiveGameId);
@@ -699,6 +720,8 @@ export default function FriendBookFinalSection({
   );
   const [roundSummary, setRoundSummary] = useState('');
   const [isHydrated, setIsHydrated] = useState(false);
+  const [remoteStatus, setRemoteStatus] = useState<'idle' | 'loading' | 'ready' | 'error' | 'saving' | 'deleting'>('idle');
+  const [remoteErrorMessage, setRemoteErrorMessage] = useState('');
   const [showBetweenTwoPagesHints, setShowBetweenTwoPagesHints] = useState(false);
   const [seenBetweenTwoPagesSceneIds, setSeenBetweenTwoPagesSceneIds] = useState<string[]>([]);
   const [currentGuestbookPage, setCurrentGuestbookPage] = useState(initialGuestbookPage);
@@ -710,8 +733,15 @@ export default function FriendBookFinalSection({
     ? friendBookFinalSectionData.gameCards.find((game) => game.id === activeGameId) ?? null
     : null;
   const latestGuestbookEntry = progress.guestbookEntries[progress.guestbookEntries.length - 1] ?? null;
+  const trimmedNicknameDraft = nicknameDraft.trim();
+  const isNicknameDraftWithinLimit = isFriendBookNicknameWithinLimit(trimmedNicknameDraft);
+  const canUseNicknameDraft = Boolean(trimmedNicknameDraft && isNicknameDraftWithinLimit);
   const matchingGuestbookEntry =
-    progress.guestbookEntries.find((entry) => entry.nickname === nicknameDraft.trim()) ?? null;
+    progress.guestbookEntries.find((entry) => entry.nickname === trimmedNicknameDraft) ?? null;
+  const canDeleteGuestbookEntry = Boolean(
+    matchingGuestbookEntry &&
+    (!resolvedRemoteRepository?.isEnabled || resolvedRemoteRepository.deleteEntry),
+  );
   const guestbookPage = getFriendBookGuestbookPage(progress.guestbookEntries, currentGuestbookPage);
   const availableAvatarIds = getAvailableFriendBookAvatarIds(progress);
   const betweenTwoPagesScene =
@@ -729,9 +759,57 @@ export default function FriendBookFinalSection({
       return;
     }
 
-    setProgress(hydrateFriendBookProgress(window.localStorage));
+    const localProgress = hydrateFriendBookProgress(window.localStorage);
+    const cachedRemoteEntries = hydrateFriendBookRemoteGuestbookCache(window.localStorage);
+    setProgress(
+      cachedRemoteEntries.length > 0
+        ? mergeFriendBookRemoteEntries(localProgress, cachedRemoteEntries)
+        : localProgress,
+    );
+
+    const pendingDraft = hydrateFriendBookPendingGuestbookDraft(window.localStorage);
+    if (pendingDraft) {
+      setNicknameDraft(pendingDraft.nickname);
+      setIdentityIntroDraft(pendingDraft.identityIntro);
+      setPortfolioReviewDraft(pendingDraft.portfolioReview);
+    }
+
     setIsHydrated(true);
   }, []);
+
+  useEffect(() => {
+    if (!isHydrated || !resolvedRemoteRepository?.isEnabled || typeof window === 'undefined') {
+      return;
+    }
+
+    let isActive = true;
+    setRemoteStatus('loading');
+    setRemoteErrorMessage('');
+
+    resolvedRemoteRepository.fetchEntries()
+      .then((entries) => {
+        if (!isActive) {
+          return;
+        }
+
+        setProgress((currentProgress) => mergeFriendBookRemoteEntries(currentProgress, entries));
+        persistFriendBookRemoteGuestbookCache(entries, window.localStorage);
+
+        setRemoteStatus('ready');
+      })
+      .catch((error: unknown) => {
+        if (!isActive) {
+          return;
+        }
+
+        setRemoteStatus('error');
+        setRemoteErrorMessage(error instanceof Error ? error.message : 'Guestbook sync failed.');
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [isHydrated, resolvedRemoteRepository]);
 
   useEffect(() => {
     if (!isHydrated || typeof window === 'undefined') {
@@ -817,6 +895,10 @@ export default function FriendBookFinalSection({
     setPortfolioReviewDraft(entry?.portfolioReview ?? '');
   }
 
+  function handleNicknameDraftChange(value: string) {
+    setNicknameDraft(limitFriendBookNicknameDraft(value));
+  }
+
   function resetGameState(gameId: FriendBookGameId) {
     let nextGameSession: FriendBookGameSessionState;
 
@@ -853,8 +935,24 @@ export default function FriendBookFinalSection({
   }
 
   function beginGame(gameId: FriendBookGameId) {
+    trackAnalyticsEvent('friend_book_game_start', {
+      targetId: gameId,
+    });
     resetGameState(gameId);
     setStage(getFriendBookGameStartStage(progress, gameId));
+  }
+
+  function handleGuestbookPageClick(direction: 'previous' | 'next') {
+    trackAnalyticsEvent('friend_book_guestbook_page_click', {
+      targetId: direction,
+      metadata: { current_page: guestbookPage.pageIndex + 1 },
+    });
+
+    setCurrentGuestbookPage((page) =>
+      direction === 'previous'
+        ? Math.max(page - 1, 0)
+        : Math.min(page + 1, guestbookPage.totalPages - 1),
+    );
   }
 
   function continueAfterAvatarPick() {
@@ -979,11 +1077,11 @@ export default function FriendBookFinalSection({
     }
   }
 
-  function handleNoteSubmit() {
+  async function handleNoteSubmit() {
     if (
       !activeGameId ||
       !pendingMedalId ||
-      !nicknameDraft.trim() ||
+      !canUseNicknameDraft ||
       !identityIntroDraft.trim() ||
       !portfolioReviewDraft.trim()
     ) {
@@ -992,31 +1090,87 @@ export default function FriendBookFinalSection({
 
     const displayDate = formatFriendBookArchiveDate(new Date());
     let nextGuestbookPageIndex = 0;
+    const noteDraft = {
+      nickname: trimmedNicknameDraft,
+      identityIntro: identityIntroDraft,
+      portfolioReview: portfolioReviewDraft,
+      latestGameId: activeGameId,
+      avatarId: progress.selectedAvatarId,
+      medalId: pendingMedalId,
+      displayDate,
+    };
 
-    setProgress((currentProgress) => {
-      const nextProgress = completeFriendBookGameSession(currentProgress, {
-        gameId: activeGameId,
-        displayDate,
-        medalId: pendingMedalId,
+    if (resolvedRemoteRepository?.isEnabled && typeof window !== 'undefined') {
+      try {
+        setRemoteStatus('saving');
+        setRemoteErrorMessage('');
+        const remoteEntry = await resolvedRemoteRepository.createEntry(noteDraft);
+
+        setProgress((currentProgress) => {
+          const completedProgress = completeFriendBookGameSession(currentProgress, {
+            gameId: activeGameId,
+            displayDate,
+            medalId: pendingMedalId,
+          });
+          const remoteEntries = [
+            ...completedProgress.guestbookEntries.filter(
+              (entry) => !entry.id.startsWith('seed-') && entry.id !== remoteEntry.id,
+            ),
+            remoteEntry,
+          ];
+          const nextProgress = mergeFriendBookRemoteEntries(completedProgress, remoteEntries);
+
+          nextGuestbookPageIndex = getFriendBookGuestbookPage(
+            nextProgress.guestbookEntries,
+            Number.MAX_SAFE_INTEGER,
+          ).pageIndex;
+          persistFriendBookRemoteGuestbookCache(remoteEntries, window.localStorage);
+
+          return nextProgress;
+        });
+        window.localStorage.removeItem(FRIEND_BOOK_PENDING_GUESTBOOK_DRAFT_KEY);
+        setRemoteStatus('ready');
+      } catch (error) {
+        persistFriendBookPendingGuestbookDraft(noteDraft, window.localStorage);
+        setRemoteStatus('error');
+        setRemoteErrorMessage(error instanceof Error ? error.message : 'Guestbook publish failed.');
+        return;
+      }
+    } else {
+      setProgress((currentProgress) => {
+        const nextProgress = completeFriendBookGameSession(currentProgress, {
+          gameId: activeGameId,
+          displayDate,
+          medalId: pendingMedalId,
+        });
+        const nextProgressWithGuestbook = upsertFriendBookGuestbookEntry(nextProgress, {
+          nickname: trimmedNicknameDraft,
+          identityIntro: identityIntroDraft,
+          portfolioReview: portfolioReviewDraft,
+          latestGameId: activeGameId,
+          avatarId: nextProgress.selectedAvatarId,
+          medalId: pendingMedalId,
+          displayDate,
+        });
+
+        nextGuestbookPageIndex = getFriendBookGuestbookPage(
+          nextProgressWithGuestbook.guestbookEntries,
+          Number.MAX_SAFE_INTEGER,
+        ).pageIndex;
+
+        return nextProgressWithGuestbook;
       });
-      const nextProgressWithGuestbook = upsertFriendBookGuestbookEntry(nextProgress, {
-        nickname: nicknameDraft,
-        identityIntro: identityIntroDraft,
-        portfolioReview: portfolioReviewDraft,
-        latestGameId: activeGameId,
-        avatarId: nextProgress.selectedAvatarId,
-        medalId: pendingMedalId,
-        displayDate,
-      });
+    }
 
-      nextGuestbookPageIndex = getFriendBookGuestbookPage(
-        nextProgressWithGuestbook.guestbookEntries,
-        Number.MAX_SAFE_INTEGER,
-      ).pageIndex;
-
-      return nextProgressWithGuestbook;
-    });
     setCurrentGuestbookPage(nextGuestbookPageIndex);
+    trackAnalyticsEvent('friend_book_guestbook_submit', {
+      targetId: activeGameId,
+      metadata: {
+        avatar_id: progress.selectedAvatarId,
+        medal_id: pendingMedalId,
+        remote_enabled: Boolean(resolvedRemoteRepository?.isEnabled),
+      },
+    });
     setStage('landing');
     setPendingMedalId(null);
     setActiveGameId(null);
@@ -1025,8 +1179,8 @@ export default function FriendBookFinalSection({
     scrollToTarget('friend-book-preview');
   }
 
-  function handleDeleteRecord() {
-    const targetNickname = nicknameDraft.trim();
+  async function handleDeleteRecord() {
+    const targetNickname = trimmedNicknameDraft;
 
     if (!targetNickname || !matchingGuestbookEntry) {
       return;
@@ -1041,6 +1195,18 @@ export default function FriendBookFinalSection({
       return;
     }
 
+    if (resolvedRemoteRepository?.isEnabled && resolvedRemoteRepository.deleteEntry) {
+      try {
+        setRemoteStatus('deleting');
+        setRemoteErrorMessage('');
+        await resolvedRemoteRepository.deleteEntry(matchingGuestbookEntry.id);
+      } catch (error) {
+        setRemoteStatus('error');
+        setRemoteErrorMessage(error instanceof Error ? error.message : 'Guestbook delete failed.');
+        return;
+      }
+    }
+
     let nextGuestbookPageIndex = 0;
     setProgress((currentProgress) => {
       const nextProgress = deleteFriendBookGuestbookEntry(currentProgress, targetNickname);
@@ -1048,6 +1214,12 @@ export default function FriendBookFinalSection({
         nextProgress.guestbookEntries,
         Math.min(currentGuestbookPage, Number.MAX_SAFE_INTEGER),
       ).pageIndex;
+      if (resolvedRemoteRepository?.isEnabled && typeof window !== 'undefined') {
+        persistFriendBookRemoteGuestbookCache(
+          nextProgress.guestbookEntries.filter((entry) => !entry.id.startsWith('seed-')),
+          window.localStorage,
+        );
+      }
       return nextProgress;
     });
     setCurrentGuestbookPage(nextGuestbookPageIndex);
@@ -1059,6 +1231,9 @@ export default function FriendBookFinalSection({
     setActiveGameId(null);
     setGameSession(null);
     setRoundSummary('');
+    if (resolvedRemoteRepository?.isEnabled) {
+      setRemoteStatus('ready');
+    }
     scrollToTarget('friend-book-preview');
   }
 
@@ -1138,7 +1313,12 @@ export default function FriendBookFinalSection({
                 <FriendBookImageButton
                   label="Start Playing"
                   asset={friendBookFinalSectionData.assets.buttons.startPlayingPrimary}
-                  onClick={() => scrollToTarget('friend-book-game-grid')}
+                  onClick={() => {
+                    trackAnalyticsEvent('friend_book_hero_cta_click', {
+                      targetId: 'start-playing-primary',
+                    });
+                    scrollToTarget('friend-book-game-grid');
+                  }}
                   className="w-full max-w-[320px]"
                 />
               </div>
@@ -1165,7 +1345,12 @@ export default function FriendBookFinalSection({
                       }
                       label={ctaLink.label}
                       asset={ctaLink.asset}
-                      onClick={() => scrollToTarget(ctaLink.href.slice(1))}
+                      onClick={() => {
+                        trackAnalyticsEvent('friend_book_hero_cta_click', {
+                          targetId: ctaLink.id,
+                        });
+                        scrollToTarget(ctaLink.href.slice(1));
+                      }}
                       className="w-[var(--friend-book-button-width-mobile)] sm:w-[var(--friend-book-button-width-desktop)]"
                       style={getResponsiveButtonWidthStyle(
                         ctaLink.id === 'friend-book-start-link'
@@ -1619,10 +1804,19 @@ export default function FriendBookFinalSection({
                   <input
                     id="friend-book-nickname"
                     value={nicknameDraft}
-                    onChange={(event) => setNicknameDraft(event.target.value)}
+                    onChange={(event) => handleNicknameDraftChange(event.target.value)}
+                    maxLength={FRIEND_BOOK_NICKNAME_MAX_ASCII_CHARACTERS}
+                    aria-describedby="friend-book-nickname-help"
                     placeholder="How should this page address you?"
                     className="mt-4 h-12 w-full rounded-[1rem] border border-[#d9c8b3] bg-[rgba(255,251,246,0.92)] px-4 text-base text-[#3f312b] outline-none transition focus:border-[#8a654f]"
                   />
+                  <p
+                    id="friend-book-nickname-help"
+                    data-friend-book-nickname-limit="true"
+                    className="mt-2 text-sm leading-6 text-[#7a5d4d]"
+                  >
+                    {FRIEND_BOOK_NICKNAME_HELP_TEXT}
+                  </p>
                   <label
                     htmlFor="friend-book-identity-intro"
                     className="mt-5 block font-mono text-[0.68rem] uppercase tracking-[0.28em] text-[#7a5d4d]"
@@ -1654,7 +1848,9 @@ export default function FriendBookFinalSection({
                       type="button"
                       onClick={handleNoteSubmit}
                       disabled={
-                        !nicknameDraft.trim() ||
+                        remoteStatus === 'saving' ||
+                        remoteStatus === 'deleting' ||
+                        !canUseNicknameDraft ||
                         !identityIntroDraft.trim() ||
                         !portfolioReviewDraft.trim()
                       }
@@ -1663,7 +1859,20 @@ export default function FriendBookFinalSection({
                       <PenLine className="h-4 w-4" strokeWidth={1.8} />
                       <span>Write into the guestbook</span>
                     </button>
-                    {matchingGuestbookEntry ? (
+                    {resolvedRemoteRepository?.isEnabled ? (
+                      <p className="text-sm leading-6 text-[#7a5d4d]" role="status">
+                        {remoteStatus === 'loading'
+                          ? 'Syncing public guestbook...'
+                          : remoteStatus === 'saving'
+                            ? 'Publishing to the public guestbook...'
+                            : remoteStatus === 'deleting'
+                              ? 'Deleting from the public guestbook...'
+                              : remoteStatus === 'error'
+                                ? `Guestbook sync failed. ${remoteErrorMessage}`
+                                : 'This note will be saved to the public guestbook.'}
+                      </p>
+                    ) : null}
+                    {canDeleteGuestbookEntry && matchingGuestbookEntry ? (
                       <>
                         <button
                           type="button"
@@ -1673,7 +1882,9 @@ export default function FriendBookFinalSection({
                           <span>Delete This Record</span>
                         </button>
                         <p className="text-sm leading-6 text-[#7a5d4d]">
-                          {`This will remove ${matchingGuestbookEntry.nickname} from the guestbook only.`}
+                          {resolvedRemoteRepository?.isEnabled
+                            ? `This will remove ${matchingGuestbookEntry.nickname} from the public guestbook.`
+                            : `This will remove ${matchingGuestbookEntry.nickname} from the guestbook only.`}
                         </p>
                       </>
                     ) : null}
@@ -1876,7 +2087,7 @@ export default function FriendBookFinalSection({
             >
               <button
                 type="button"
-                onClick={() => setCurrentGuestbookPage((page) => Math.max(page - 1, 0))}
+                onClick={() => handleGuestbookPageClick('previous')}
                 disabled={guestbookPage.pageIndex === 0}
                 className="rounded-full border border-[#c9b198] bg-[rgba(255,251,246,0.84)] px-3 py-1.5 text-[0.72rem] uppercase tracking-[0.14em] text-[#61483b] disabled:opacity-45"
               >
@@ -1890,11 +2101,7 @@ export default function FriendBookFinalSection({
               </span>
               <button
                 type="button"
-                onClick={() =>
-                  setCurrentGuestbookPage((page) =>
-                    Math.min(page + 1, guestbookPage.totalPages - 1),
-                  )
-                }
+                onClick={() => handleGuestbookPageClick('next')}
                 disabled={guestbookPage.pageIndex >= guestbookPage.totalPages - 1}
                 className="rounded-full border border-[#c9b198] bg-[rgba(255,251,246,0.84)] px-3 py-1.5 text-[0.72rem] uppercase tracking-[0.14em] text-[#61483b] disabled:opacity-45"
               >
@@ -1998,7 +2205,7 @@ export default function FriendBookFinalSection({
               >
                 <button
                   type="button"
-                  onClick={() => setCurrentGuestbookPage((page) => Math.max(page - 1, 0))}
+                  onClick={() => handleGuestbookPageClick('previous')}
                   disabled={guestbookPage.pageIndex === 0}
                   className="rounded-full border border-[#c9b198] bg-[rgba(255,251,246,0.84)] px-4 py-2 text-[0.72rem] uppercase tracking-[0.14em] text-[#61483b] disabled:opacity-45"
                 >
@@ -2012,11 +2219,7 @@ export default function FriendBookFinalSection({
                 </span>
                 <button
                   type="button"
-                  onClick={() =>
-                    setCurrentGuestbookPage((page) =>
-                      Math.min(page + 1, guestbookPage.totalPages - 1),
-                    )
-                  }
+                  onClick={() => handleGuestbookPageClick('next')}
                   disabled={guestbookPage.pageIndex >= guestbookPage.totalPages - 1}
                   className="rounded-full border border-[#c9b198] bg-[rgba(255,251,246,0.84)] px-4 py-2 text-[0.72rem] uppercase tracking-[0.14em] text-[#61483b] disabled:opacity-45"
                 >

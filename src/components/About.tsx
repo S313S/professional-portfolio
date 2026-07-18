@@ -1,6 +1,13 @@
 import { motion } from "motion/react";
+import type { MouseEvent } from "react";
 import { personalData } from "../data";
 import InfiniteMarquee from "./InfiniteMarquee";
+import {
+  ABOUT_VIEW_WORK_SCROLL_DURATION_MS,
+  ABOUT_VIEW_WORK_TARGET_SECTION_ID,
+  getAboutViewWorkScrollPosition,
+  getAboutViewWorkScrollTargetY,
+} from "./About.logic";
 
 export default function About() {
   const containerVariants = {
@@ -24,6 +31,60 @@ export default function About() {
         ease: [0.22, 1, 0.36, 1],
       },
     },
+  };
+
+  const handleViewWorkClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.altKey ||
+      event.shiftKey
+    ) {
+      return;
+    }
+
+    const targetSection = document.getElementById(ABOUT_VIEW_WORK_TARGET_SECTION_ID);
+    if (!targetSection) {
+      return;
+    }
+
+    event.preventDefault();
+
+    const startY = window.scrollY;
+    const targetY = getAboutViewWorkScrollTargetY({
+      currentScrollY: startY,
+      targetRectTop: targetSection.getBoundingClientRect().top,
+    });
+    const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+
+    if (prefersReducedMotion) {
+      window.scrollTo(0, targetY);
+      return;
+    }
+
+    const startTime = performance.now();
+
+    const animateScroll = (timestamp: number) => {
+      const elapsedMs = timestamp - startTime;
+      const nextScrollY = getAboutViewWorkScrollPosition({
+        startY,
+        targetY,
+        elapsedMs,
+      });
+
+      window.scrollTo(0, nextScrollY);
+
+      if (elapsedMs < ABOUT_VIEW_WORK_SCROLL_DURATION_MS) {
+        requestAnimationFrame(animateScroll);
+        return;
+      }
+
+      window.scrollTo(0, targetY);
+    };
+
+    requestAnimationFrame(animateScroll);
   };
 
   return (
@@ -63,7 +124,8 @@ export default function About() {
           
           <motion.div variants={itemVariants} className="flex gap-4">
             <a 
-              href="#projects" 
+              href={`#${ABOUT_VIEW_WORK_TARGET_SECTION_ID}`}
+              onClick={handleViewWorkClick}
               className="bg-zinc-900 text-white px-8 py-4 rounded-lg font-medium hover:bg-zinc-800 transition-colors"
             >
               View My Work

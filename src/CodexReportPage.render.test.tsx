@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { renderToStaticMarkup } from 'react-dom/server';
 
 import CodexReportPage from './CodexReportPage';
+import {createDefaultCodexGuideDocument} from './codexReport';
 
 test('renders a standalone codex report page with document-style navigation and action-guide content', () => {
   const markup = renderToStaticMarkup(<CodexReportPage />);
@@ -37,4 +38,74 @@ test('renders a collapsed directory shell with a slim toc tab when requested', (
   assert.match(markup, /data-codex-report-nav-shell="collapsed"/);
   assert.match(markup, /data-codex-report-nav-toggle=/);
   assert.match(markup, /目录/);
+});
+
+test('renders a selectable visual debug evidence record with its verified facts', () => {
+  const initialDocument = {
+    ...createDefaultCodexGuideDocument(),
+    title: 'Build Week Visual Debugging',
+    summary: 'A human-in-the-loop evidence trail.',
+    evidence: [
+      {
+        id: 'friend-book-hotspots',
+        title: 'Friend Book hotspot calibration',
+        problem: 'The hotspot felt displaced but coordinates were hard to describe.',
+        visualIntent: 'Match every hotspot to the visible object.',
+        debugRoute: '/debug/friend-book-diff-hotspots',
+        createdAt: '2026-07-18T03:30:00.000Z',
+        calibration: {
+          summary: 'Human-confirmed hotspot coordinates.',
+          parameters: [{label: 'hotspot-1.x', value: '42.5%'}],
+          confirmedAt: '2026-07-18T04:00:00.000Z',
+        },
+        implementation: {
+          summary: 'Applied the confirmed values to the source.',
+          changedFiles: ['src/FriendBookDiffHotspotsDebugPage.tsx'],
+          modelNote: 'User-confirmed current Codex task used GPT-5.6.',
+          completedAt: '2026-07-18T05:00:00.000Z',
+        },
+        verification: {
+          summary: 'Focused tests passed.',
+          commands: [
+            'node --import tsx --test src/FriendBookDiffHotspotsDebugPage.render.test.tsx',
+          ],
+          outcome: 'passed' as const,
+          completedAt: '2026-07-18T05:10:00.000Z',
+        },
+      },
+    ],
+  };
+  const markup = renderToStaticMarkup(
+    <CodexReportPage
+      initialDocument={initialDocument}
+      initialEvidenceId="friend-book-hotspots"
+    />,
+  );
+
+  assert.match(markup, /data-codex-report-nav-group="visual-debug-evidence"/);
+  assert.match(markup, /data-codex-report-nav-item="friend-book-hotspots"/);
+  assert.match(markup, /data-codex-evidence-stage="verified"/);
+  assert.match(markup, /Visual Debug Evidence/);
+  assert.match(markup, /Friend Book hotspot calibration/);
+  assert.match(markup, /href="\/debug\/friend-book-diff-hotspots"/);
+  assert.match(markup, /hotspot-1\.x/);
+  assert.match(markup, /42\.5%/);
+  assert.match(markup, /User-confirmed current Codex task used GPT-5\.6\./);
+  assert.match(markup, /src\/FriendBookDiffHotspotsDebugPage\.tsx/);
+  assert.match(markup, /node --import tsx --test/);
+  assert.match(markup, /Copy evidence Markdown/);
+});
+
+test('renders a visible warning when the local report falls back from invalid JSON', () => {
+  const initialDocument = {
+    ...createDefaultCodexGuideDocument(),
+    loadWarning:
+      'The local Codex report JSON is invalid. Showing the safe default report instead.',
+  };
+  const markup = renderToStaticMarkup(
+    <CodexReportPage initialDocument={initialDocument} />,
+  );
+
+  assert.match(markup, /data-codex-report-warning="true"/);
+  assert.match(markup, /local Codex report JSON is invalid/);
 });

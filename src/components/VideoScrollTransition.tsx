@@ -32,6 +32,7 @@ import {
   type VideoScrollState,
 } from './VideoScrollTransition.logic';
 import { useHomeLoaderAssetStatus } from '../homeLoader';
+import { trackAnalyticsEvent } from '../analytics';
 
 const PUSH_VIDEO_END_FRAME_OFFSET = 1 / 60;
 const MOBILE_MEDIA_QUERY = '(max-width: 767px), (pointer: coarse)';
@@ -343,6 +344,10 @@ export default function VideoScrollTransition() {
     queuedTimeRef.current = 0;
     resetPushVideo();
     commitVideoState(nextState);
+    trackAnalyticsEvent('video_transition_cta_click', {
+      targetId: 'video-transition-cta',
+      metadata: { is_mobile: isMobileRef.current },
+    });
 
     if (isMobileRef.current) {
       setMobileAutoplay(true);

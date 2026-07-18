@@ -32,6 +32,11 @@ export interface CodingProjectCard {
   categoryId: CodingCategoryId;
   title: string;
   description: string;
+  detail: {
+    problem: string;
+    approach: string[];
+    outcome: string;
+  };
   tags: string[];
   image: string;
   link: string;
@@ -163,58 +168,113 @@ export interface FriendBookFinalUserSlot {
 
 const featuredWorks: FeaturedWork[] = [
   {
-    id: 'signal-in-motion',
-    title: 'Signal in Motion',
-    eyebrow: 'Selected Work',
-    subtitle: 'The operator dashboard where strategy turned into repeatable delivery.',
+    id: 'first-light-in-ai',
+    title: 'First Light in AI',
+    eyebrow: 'Origin Work',
+    subtitle: 'The first image that made the whole craft feel real.',
     description:
-      'Built to make campaign momentum legible at a glance, this stage combined decision framing, execution tracking, and narrative reporting into one calmer operating surface.',
-    tags: ['Operator UI', 'System Framing', 'Delivery Rhythm'],
-    image: '/images/WorksCollectionRoom_Bg.jpg',
+      'This was the first AI image I felt truly proud of. I spent long hours refining the pose, prompt, and mood, and the response from friends made it the starting point of my visual journey.',
+    tags: ['AI Image', 'Prompt Craft', 'Creative Origin'],
+    image: '/images/VisualWorks/VisualWorks_Myfirst_cg.jpeg',
     link: '#',
   },
   {
-    id: 'midnight-launch-notes',
-    title: 'Midnight Launch Notes',
-    eyebrow: 'Launch System',
-    subtitle: 'A release layer shaped for fast alignment under pressure.',
+    id: 'midjourney-ocean-mark',
+    title: 'Midjourney Ocean Mark',
+    eyebrow: 'Recognized Study',
+    subtitle: 'Turning a daily visual signal into an oceanic icon.',
     description:
-      'This concept focused on compressing launch context into a visual system that could help teams synchronize handoff details, timing, and priorities without extra meetings.',
-    tags: ['Launch Ops', 'Cross-Functional UX', 'Narrative Surface'],
-    image: '/images/video-transition-poster.png',
+      'At the time, Midjourney felt like the strongest tool for AI painting. I used it to translate things I noticed in daily life into an artistic ocean image, and it was later recognized officially.',
+    tags: ['Midjourney', 'Icon Concept', 'Official Recognition'],
+    image: '/images/VisualWorks/VisualWorks_MJ_Ocean.jpeg',
     link: '#',
   },
   {
-    id: 'quiet-growth-atlas',
-    title: 'Quiet Growth Atlas',
-    eyebrow: 'Growth Story',
-    subtitle: 'A softer interface for seeing long-term movement more clearly.',
+    id: 'earth-symbol-study',
+    title: 'Earth Symbol Study',
+    eyebrow: 'Concept Work',
+    subtitle: 'A non-realistic idea about scale, meaning, and distance.',
     description:
-      'Designed as a slower, more reflective product story, this work translated gradual traction, user insight, and evolving positioning into a scene that felt measured rather than loud.',
-    tags: ['Growth Mapping', 'Signal Design', 'Editorial UI'],
-    image: '/images/bg_growpath.jpeg',
+      'After the realistic experiments, I wanted to try something more symbolic. This Earth concept received a lot of encouragement and expanded how I understood beauty beyond literal images.',
+    tags: ['Concept Art', 'Symbolic Image', 'Aesthetic Range'],
+    image: '/images/VisualWorks/VisualWorks_MJ_Earth.jpeg',
     link: '#',
   },
   {
-    id: 'operator-protocol',
-    title: 'Operator Protocol',
-    eyebrow: 'Workflow Layer',
-    subtitle: 'The backstage view for keeping systems useful after the first demo.',
+    id: 'lazy-girl-monet-study',
+    title: 'Lazy Girl Monet Study',
+    eyebrow: 'Style Exploration',
+    subtitle: 'A softer painterly direction opened by non-realistic work.',
     description:
-      'Here the emphasis moved from polished presentation to durable internal use: cleaner states, clearer ownership cues, and enough structure for collaborators to inherit the work smoothly.',
-    tags: ['Workflow Design', 'Internal Tools', 'AI Delivery'],
-    image: '/images/career_bg.png',
+      'The earlier non-realistic work made me curious about how different subjects change the final feeling. This piece explored a Monet-like atmosphere and showed me how surprising a new style could be.',
+    tags: ['ComfyUI', 'Painterly Style', 'Mood Study'],
+    image: '/images/VisualWorks/VisualWorks_ComfyUI_theLazygirl.jpeg',
     link: '#',
   },
   {
-    id: 'proof-of-rhythm',
-    title: 'Proof of Rhythm',
-    eyebrow: 'Experience Study',
-    subtitle: 'A case study in pacing product storytelling without losing precision.',
+    id: 'oil-painter-world',
+    title: 'Oil Painter World',
+    eyebrow: 'Milestone Style',
+    subtitle: 'A colorful proof that subject and style can meet precisely.',
     description:
-      'This direction explored how editorial pacing, visual restraint, and stronger transitions could make a portfolio feel less like a gallery and more like a guided experience.',
-    tags: ['Portfolio System', 'Interaction Design', 'Creative Direction'],
-    image: '/images/careerDetail_bg.png',
+      'This oil-painting experiment became a milestone. It helped me see that my taste and visual judgment were becoming more concrete, and that I could match objects with the right artistic language.',
+    tags: ['Oil Painting', 'Visual Judgment', 'Style Matching'],
+    image: '/images/VisualWorks/VisualWorks_OilPatiner.jpeg',
+    link: '#',
+  },
+  {
+    id: 'lofi-loop-companion',
+    title: 'Lofi Loop Companion',
+    eyebrow: 'Image to Video',
+    subtitle: 'A companion-style loop shaped from still image craft.',
+    description:
+      'Inspired by animation and the popular lofi girl format, I turned the image into a looping companion video. The result strengthened both my image direction and my video-making workflow.',
+    tags: ['Loop Video', 'Lofi Mood', 'Motion Craft'],
+    image: '/images/VisualWorks/VisualWorks_circlVideo.jpeg',
+    link: '#',
+  },
+  {
+    id: 'new-year-visual-greeting',
+    title: 'New Year Visual Greeting',
+    eyebrow: 'Life Application',
+    subtitle: 'A personal artwork carried into a real holiday moment.',
+    description:
+      'After building a foundation in visual creation, I began bringing these works into everyday life. This New Year image, paired with wishes, brought back many warm responses.',
+    tags: ['Holiday Visual', 'Personal Gift', 'Everyday Art'],
+    image: '/images/VisualWorks/VisualWorks_happyNewYork.jpeg',
+    link: '#',
+  },
+  {
+    id: 'travel-guide-merge',
+    title: 'Travel Guide Merge',
+    eyebrow: 'Information Design',
+    subtitle: 'A practical guide where AI helped information become useful.',
+    description:
+      'I made this travel guide for friends visiting from other places. The process showed me that AI is not only strong at images, but also powerful for extracting, arranging, and expressing information.',
+    tags: ['Travel Guide', 'Information Design', 'AI Assistance'],
+    image: '/images/VisualWorks/VisualWorks_IP_Mearge.jpeg',
+    link: '#',
+  },
+  {
+    id: 'daylight-photo-practice',
+    title: 'Daylight Photo Practice',
+    eyebrow: 'Photography Growth',
+    subtitle: 'A small proof of better angles, light, and framing.',
+    description:
+      'Working with visual pieces also changed how I photographed the world. This image reflects real improvement in angle, brightness, and shooting method through repeated observation.',
+    tags: ['Photography', 'Composition', 'Light Study'],
+    image: '/images/VisualWorks/VisualWorks_TakePhoto.jpeg',
+    link: '#',
+  },
+  {
+    id: 'night-sense',
+    title: 'Night Sense',
+    eyebrow: 'Daily Beauty',
+    subtitle: 'A quieter image about patience and noticing beauty in life.',
+    description:
+      'This night photograph reminded me that life is not short of beauty. What matters is patience, timing, and the ability to notice the right moment when it appears.',
+    tags: ['Night Photo', 'Observation', 'Sense of Beauty'],
+    image: '/images/VisualWorks/VisualWorks_TakePhoto_Night.jpeg',
     link: '#',
   },
 ];
@@ -225,7 +285,7 @@ const codingCategories: CodingCategory[] = [
     sequence: '01',
     title: 'Workflow',
     description:
-      'Systems for keeping AI-assisted delivery reliable, reviewable, and calm under iteration.',
+      'Node-based AI workflows built with ComfyUI, Coze, and Wordware to connect inputs, model steps, data handling, and repeatable outputs.',
     iconLabel: 'WF',
     accent: '#62d98d',
   },
@@ -234,7 +294,7 @@ const codingCategories: CodingCategory[] = [
     sequence: '02',
     title: 'Vibecoding',
     description:
-      'Fast prototype loops where product direction, interface polish, and implementation move together.',
+      'AI-assisted builds outside the workflow and product buckets: portfolio systems, commerce demos, reusable skills, and learning workstations.',
     iconLabel: 'VC',
     accent: '#8ad9ff',
   },
@@ -243,7 +303,7 @@ const codingCategories: CodingCategory[] = [
     sequence: '03',
     title: 'AI product',
     description:
-      'Applied product ideas that turn model capabilities into clearer user value and operational leverage.',
+      'Deployed or product-shaped AI applications with persistent data, structured interaction logic, and clear user workflows.',
     iconLabel: 'AI',
     accent: '#f4c46b',
   },
@@ -252,187 +312,238 @@ const codingCategories: CodingCategory[] = [
 const codingProjects: Record<CodingCategoryId, CodingProjectCard[]> = {
   workflow: [
     {
-      id: 'handoff-radar',
+      id: 'comfyui-aigc-workflow',
       categoryId: 'workflow',
-      title: 'Handoff Radar',
+      title: 'ComfyUI AIGC Creation Workflow',
       description:
-        'A release handoff board that made ownership gaps, blockers, and review state visible before they slowed the team down.',
-      tags: ['Workflow', 'Review Ops'],
-      image: '/images/career_bg.png',
+        'A node-based AIGC image and video creation workflow for making visual ideas repeatable instead of one-off prompts.',
+      detail: {
+        problem:
+          'AIGC creation can look impressive once, but without a reusable node workflow it is hard to repeat style, inputs, motion, and recovery steps.',
+        approach: [
+          'Used ComfyUI and Stable Diffusion style workflows to turn text, image references, model choices, and output checks into visible steps.',
+          'Documented image generation, image-to-video, tail-frame stitching, character motion, and marketing-video experiments from the Feishu portfolio.',
+          'Kept the workflow framed around creator needs: repeatability, lower learning cost, and clearer tool selection for different visual jobs.',
+        ],
+        outcome:
+          'The material shows AIGC creation as an inspectable workflow, not just a gallery of final images.',
+      },
+      tags: ['ComfyUI', 'AIGC', 'Nodes'],
+      image: '/images/CodingWorks/comfyui-aigc-workflow-cover.svg',
       link: '#',
     },
     {
-      id: 'prompt-qa-sheet',
+      id: 'coze-social-data-fetch',
       categoryId: 'workflow',
-      title: 'Prompt QA Sheet',
+      title: 'Coze Social Data Fetch Workflow',
       description:
-        'A structured prompt review surface for checking assumptions, model drift, and expected output shape before shipping.',
-      tags: ['Prompting', 'QA'],
-      image: '/images/careerDetail_bg.png',
-      link: '#',
+        'A Coze workflow for fetching hot short-video data by keyword and writing structured results into Feishu Base.',
+      detail: {
+        problem:
+          'Social trend research needs repeated keyword collection, but manual copying loses rank, author, title, and continuation context.',
+        approach: [
+          'Connected a Coze data-download workflow with a Feishu Base destination so collected items can append into a structured table.',
+          'Used cursor-style continuation because single workflow runs return limited batches under platform execution limits.',
+          'Let the model normalize string-like plugin output into fields such as title, author, and content before storage.',
+        ],
+        outcome:
+          'The workflow turns platform search into a repeatable data-collection loop for later AIGC trend analysis.',
+      },
+      tags: ['Coze', 'Feishu Base', 'Data'],
+      image: '/images/CodingWorks/Coze_SocialDataFetch.png',
+      link: 'https://www.coze.cn/work_flow?bot_id=7468859639569186879&space_id=7463017999541207052&workflow_id=7467024551915782180',
     },
     {
-      id: 'signal-archive',
+      id: 'xhs-comment-translation-workflow',
       categoryId: 'workflow',
-      title: 'Signal Archive',
+      title: 'XHS Comment Translation Workflow',
       description:
-        'An internal archive flow for capturing working decisions, visual references, and implementation notes without losing context.',
-      tags: ['Documentation', 'Knowledge'],
-      image: '/images/bg_growpath.jpeg',
-      link: '#',
-    },
-    {
-      id: 'review-rail',
-      categoryId: 'workflow',
-      title: 'Review Rail',
-      description:
-        'A reviewer-first layout that compressed diffs, rationale, and next actions into one faster inspection loop.',
-      tags: ['Review', 'Decision Making'],
-      image: '/images/video-transition-poster.png',
-      link: '#',
-    },
-    {
-      id: 'execution-docket',
-      categoryId: 'workflow',
-      title: 'Execution Docket',
-      description:
-        'A task flow that paired small implementation batches with explicit validation, making AI assistance safer to scale.',
-      tags: ['Delivery', 'Automation'],
-      image: '/images/growPath_03.png',
-      link: '#',
-    },
-    {
-      id: 'ops-playbook',
-      categoryId: 'workflow',
-      title: 'Ops Playbook',
-      description:
-        'A reusable playbook for turning ambiguous product requests into testable, sequenced implementation work.',
-      tags: ['Planning', 'Ops System'],
-      image: '/images/growPath_04.png',
-      link: '#',
+        'A translation and reply workflow for the wave of international users who entered Xiaohongshu during the TikTok ban scare.',
+      detail: {
+        problem:
+          'When TikTok faced a ban scare, many international users moved into Xiaohongshu, creating a real need for bilingual translation and reply support inside comment threads.',
+        approach: [
+          'Used a Coze crawler workflow as the data source when the app platform could not directly access Xiaohongshu comments.',
+          'Added a cursor marker to locate already-fetched comments across repeated workflow calls.',
+          'Designed prompts that preserve parent and child comment relationships while producing bilingual translation and reply-ready output.',
+        ],
+        outcome:
+          'The workflow turned a sudden cross-cultural platform migration into a structured assistant for understanding and responding to comments.',
+      },
+      tags: ['Wordware', 'Coze', 'Translation'],
+      image: "/images/CodingWorks/XiaoHongShu'sTranslation.png",
+      link: 'https://app.wordware.ai/explore/apps/aa67898c-7bc2-4bd8-916a-e76afbed664b?tab=playground',
     },
   ],
   vibecoding: [
     {
-      id: 'motion-sprint',
+      id: 'professional-portfolio',
       categoryId: 'vibecoding',
-      title: 'Motion Sprint',
+      title: 'Professional Portfolio',
       description:
-        'A rapid interaction prototype where animation timing and copy changed in the same loop as code.',
-      tags: ['Prototype', 'Motion'],
-      image: '/images/after.png',
-      link: '#',
+        'A long-form immersive portfolio built with AI-assisted iteration, custom interactions, and local verification routes.',
+      detail: {
+        problem:
+          'A normal resume page could not show AI product judgment, visual taste, interaction craft, and real coding workflow in one place.',
+        approach: [
+          'Built full-screen narrative sections with scroll state machines, motion transitions, audio switching, local media loading, and responsive debug entry points.',
+          'Folded works detail, FriendBook finale, and section-specific repair routes into one cohesive portfolio system instead of separate display cards.',
+          'Backed fragile interactions with logic tests and Playwright scripts for refresh, wheel, zoom, navigation, and detail-view behavior.',
+        ],
+        outcome:
+          'The site itself became the proof of work: story, visuals, interaction, and engineering all reinforce the personal brand.',
+      },
+      tags: ['React', 'Motion', 'Portfolio'],
+      image: '/images/CodingWorks/portfolioWorks.jpg',
+      link: 'http://xiaoci-ai.com/',
     },
     {
-      id: 'portfolio-remix',
+      id: 'shopping',
       categoryId: 'vibecoding',
-      title: 'Portfolio Remix',
+      title: 'Shopping',
       description:
-        'A concept page built from mood, references, and implementation experiments in a single focused session.',
-      tags: ['Creative Coding', 'UI'],
-      image: '/images/before.png',
-      link: '#',
+        'An e-commerce competitor-remix prototype for practicing product page structure, interaction, and AI-assisted iteration.',
+      detail: {
+        problem:
+          'Commerce interfaces need many small product decisions before they feel usable: product hierarchy, visual emphasis, input flow, and conversion cues.',
+        approach: [
+          'Used the shopping repo as a fast vibecoding exercise around e-commerce layout and competitor reference reconstruction.',
+          'Kept the card here at project level rather than inventing separate sub-features without stronger material evidence.',
+          'Left the public URL unset until the project has a deployed or screenshot-backed browsing surface.',
+        ],
+        outcome:
+          'The project remains a useful coding sample for interface reconstruction, but still needs a dedicated screenshot before final publication polish.',
+      },
+      tags: ['Commerce', 'Prototype', 'UI'],
+      image: '/images/CodingWorks/shopping-vibecoding-cover.svg',
+      link: 'https://github.com/S313S/shopping',
     },
     {
-      id: 'hero-lab',
+      id: 'openclaw-backup-skill',
       categoryId: 'vibecoding',
-      title: 'Hero Lab',
+      title: 'OpenClaw Backup Skill',
       description:
-        'A hero-section playground for testing typography, scene layering, and interaction feel before settling visual direction.',
-      tags: ['Landing Page', 'Experiment'],
-      image: '/images/growPath_01.png',
-      link: '#',
+        'A reusable local agent skill that turns a natural-language backup request into a reviewed GitHub sync.',
+      detail: {
+        problem:
+          'OpenClaw assets needed a repeatable GitHub backup path, but manual syncs risked missed folders, noisy commits, and accidental secret exposure.',
+        approach: [
+          'Packaged the operation as an installable skill with a shell script, docs, and a focused validation harness.',
+          'Synced selected workspace, skill, and extension assets while excluding runtime state, logs, queues, databases, and credentials.',
+          'Converted a plain-language request into Git diff review, Chinese update summary, commit-message generation, commit, and push.',
+        ],
+        outcome:
+          'The backup flow became a reusable vibecoding operation instead of a fragile personal checklist.',
+      },
+      tags: ['Skill', 'Backup', 'Git'],
+      image: '/images/CodingWorks/openclaw-backup-skill.png',
+      link: 'https://github.com/S313S/openclaw-backup-skill',
     },
     {
-      id: 'scene-builder',
+      id: 'vibe-coding-workstation',
       categoryId: 'vibecoding',
-      title: 'Scene Builder',
+      title: 'Vibe Coding Workstation',
       description:
-        'A layout sketching flow where product ideas were validated through live-coded scene composition instead of static comps.',
-      tags: ['Layout', 'Iteration'],
-      image: '/images/growPath_02.png',
-      link: '#',
+        'A Chinese Vibe Coding workstation that combines translated development practice, experience notes, and prompt-library thinking.',
+      detail: {
+        problem:
+          'AI-assisted coding knowledge is often scattered across English references, personal notes, and prompt fragments.',
+        approach: [
+          'Organized Vibe Coding concepts into a Chinese learning and practice surface.',
+          'Added prompt-library framing so useful development patterns can be reused instead of rediscovered every session.',
+          'Kept the material close to hands-on building rather than only conceptual translation.',
+        ],
+        outcome:
+          'The project works as a personal operating manual for faster, more structured AI-assisted development.',
+      },
+      tags: ['Prompt Library', 'Learning', 'Ops'],
+      image: '/images/CodingWorks/vibe-coding-workstation-cover.svg',
+      link: 'https://github.com/S313S/vibe-coding-cn',
     },
     {
-      id: 'interface-jam',
+      id: 'ai-teaching-video-interactive-lesson',
       categoryId: 'vibecoding',
-      title: 'Interface Jam',
+      title: 'AI Teaching Video & Interactive Lesson',
       description:
-        'A collaborative build session that used fast component swaps to test tone, density, and hierarchy live.',
-      tags: ['Component', 'Collaboration'],
-      image: '/images/works-detail-07-square.png',
-      link: '#',
-    },
-    {
-      id: 'contrast-pass',
-      categoryId: 'vibecoding',
-      title: 'Contrast Pass',
-      description:
-        'A series of quick contrast and surface studies that made a rough interface feel intentional without slowing down delivery.',
-      tags: ['Polish', 'Visual System'],
-      image: '/images/workDetail_bg.jpeg',
+        "A vibe-coded learning prototype that turns a learner's question into an auto-play HTML teaching animation and interactive lesson.",
+      detail: {
+        problem:
+          'When a learner meets an unfamiliar concept, dense reference text can be harder to absorb than a short visual explanation.',
+        approach: [
+          'Started from a topic and keywords, then asked a large model to generate auto-play HTML animation code instead of writing the frames by hand.',
+          'Iterated the prompt template with feedback so the model output could move closer to a clean teaching-video rhythm.',
+          'Extended the same idea into locally opened interactive HTML lessons, including a black-hole exploration example from the Feishu attachment.',
+        ],
+        outcome:
+          'The experiment shows how a question can become a lightweight animated or interactive learning material without a full production platform.',
+      },
+      tags: ['HTML Animation', 'Learning', 'Prompting'],
+      image: '/images/CodingWorks/Al TeachingVideo.png',
       link: '#',
     },
   ],
   'ai-product': [
     {
-      id: 'agent-console',
+      id: 'aigc-insight-vault',
       categoryId: 'ai-product',
-      title: 'Agent Console',
+      title: 'AIGC Insight Vault',
       description:
-        'A product concept for making agent status, confidence, and next-step recommendations understandable to operators.',
-      tags: ['AI Product', 'Console'],
-      image: '/images/careerDetail_litteleBg_01.png',
-      link: '#',
+        'A research product for collecting, monitoring, and interpreting viral AIGC content signals.',
+      detail: {
+        problem:
+          'AIGC product ideas need evidence from real social behavior, but viral posts are noisy, perishable, and hard to compare manually.',
+        approach: [
+          'Built dashboard, detail, search-results, monitoring, settings, and chat views around a single insight workflow.',
+          'Integrated social fetch/search APIs, Supabase persistence, authentication, fallback covers, and semantic tagging.',
+          'Used docs and tests to keep platform-specific fetching, quality filtering, and fallback rendering reviewable.',
+        ],
+        outcome:
+          'The product turns scattered AIGC posts into a reusable research layer for trend discovery and product judgment.',
+      },
+      tags: ['Insight', 'Dashboard', 'AIGC'],
+      image: '/images/CodingWorks/AIGC_InsightVault_dashboard.png',
+      link: 'https://aigc-insight-vault.vercel.app/',
     },
     {
-      id: 'brief-copilot',
+      id: 'visual-bridge-assistance',
       categoryId: 'ai-product',
-      title: 'Brief Copilot',
+      title: 'Visual Bridge Assistance',
       description:
-        'A guided brief generator that translated vague requests into structured execution inputs with less back-and-forth.',
-      tags: ['Copilot', 'Workflow'],
-      image: '/images/careerDetail_litteleBg_02.png',
-      link: '#',
+        'An AI visual-brief product for turning vague client intent into concrete prompts, references, and image-gallery decisions.',
+      detail: {
+        problem:
+          'Clients often know the feeling they want but cannot express it in language that designers can directly execute.',
+        approach: [
+          'Built a chat-first React app with image gallery, thought panel, settings, and a local knowledge base.',
+          'Connected the Visual Bridge repositories into one product story: early assistance prototype, then V2 sharing through GitHub Pages.',
+          'Kept the interaction centered on designer-client alignment rather than treating image generation as a standalone toy.',
+        ],
+        outcome:
+          'The tool reframes generation as communication support: it helps both sides inspect and align on visual direction.',
+      },
+      tags: ['Visual Brief', 'Gemini', 'Design'],
+      image: '/images/CodingWorks/Visual Bridge Assistance_chat.png',
+      link: 'https://s313s.github.io/Visual-Bridge-V2/',
     },
     {
-      id: 'insight-merge',
+      id: 'pd-data-analyst',
       categoryId: 'ai-product',
-      title: 'Insight Merge',
+      title: 'Product Data Analyst',
       description:
-        'A synthesis surface that grouped user signals, model output, and strategic framing into a single product readout.',
-      tags: ['Insights', 'Synthesis'],
-      image: '/images/careerDetail_litteleBg_03.png',
-      link: '#',
-    },
-    {
-      id: 'spec-orbit',
-      categoryId: 'ai-product',
-      title: 'Spec Orbit',
-      description:
-        'A planning tool that linked prompts, UI states, and test expectations so product decisions stayed traceable.',
-      tags: ['Specs', 'Traceability'],
-      image: '/images/careerDetail_map.png',
-      link: '#',
-    },
-    {
-      id: 'launch-sentinel',
-      categoryId: 'ai-product',
-      title: 'Launch Sentinel',
-      description:
-        'A launch assistant concept focused on preflight validation, rollback readiness, and team alignment for AI features.',
-      tags: ['Launch', 'Reliability'],
-      image: '/images/top-title.png',
-      link: '#',
-    },
-    {
-      id: 'memory-thread',
-      categoryId: 'ai-product',
-      title: 'Memory Thread',
-      description:
-        'A product idea for preserving thread context across edits so agent collaboration felt less fragile over time.',
-      tags: ['Memory', 'Product Strategy'],
-      image: '/images/easel-removebg.png',
+        'A local Streamlit AI product that turns product links and materials into selling points, scripts, and creator-ready copy.',
+      detail: {
+        problem:
+          'Commerce content work starts with scattered product links, media, and manual interpretation before a creator can write anything useful.',
+        approach: [
+          'Built a two-layer scraping flow: static requests first, then Playwright rendering when title, image, or video data is missing.',
+          'Generated selling-point breakdowns, 30-second video scripts, and Xiaohongshu-style rewrites in one inspectable result page.',
+          'Added AI output with a local-template fallback so the MVP still produces a usable draft without a configured model key.',
+        ],
+        outcome:
+          'The product turns raw product material into a structured content assistant, while staying local until a public deployment is ready.',
+      },
+      tags: ['Streamlit', 'Commerce', 'Local MVP'],
+      image: '/images/CodingWorks/pd-data-analyst.png',
       link: '#',
     },
   ],

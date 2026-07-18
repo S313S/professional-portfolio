@@ -1,14 +1,40 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readdirSync, statSync } from 'node:fs';
+import { join, relative, sep } from 'node:path';
 
+import { COVER_AND_SELF_INTRO_AUDIO_SRC } from './App.logic';
+import { personalData } from './data';
 import {
   BLOCKING_HOME_LOADER_ASSETS,
   createInitialHomeLoaderAssetStatuses,
   getHomeLoaderProgress,
   hasBlockingHomeLoaderErrors,
+  preloadImageAsset,
+  shouldHoldHomeLoaderPreview,
   shouldEnableHomeLoader,
   type LoaderAsset,
+  type LoaderAssetStatus,
 } from './homeLoader';
+
+const PUBLIC_ROOT = join(process.cwd(), 'public');
+const PUBLIC_IMAGE_EXTENSIONS = /\.(?:avif|gif|jpe?g|png|svg|webp)$/i;
+
+function listPublicImageUrls(directory: string) {
+  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const entryPath = join(directory, entry.name);
+
+    if (entry.isDirectory()) {
+      return listPublicImageUrls(entryPath);
+    }
+
+    if (!entry.isFile() || !PUBLIC_IMAGE_EXTENSIONS.test(entry.name)) {
+      return [];
+    }
+
+    return [`/${relative(PUBLIC_ROOT, entryPath).split(sep).join('/')}`];
+  });
+}
 
 test('enables the home loader only for the Tencent Cloud production hostnames', () => {
   assert.equal(shouldEnableHomeLoader('xiaoci-ai.com'), true);
@@ -18,9 +44,23 @@ test('enables the home loader only for the Tencent Cloud production hostnames', 
   assert.equal(shouldEnableHomeLoader('preview.xiaoci-ai.com'), false);
 });
 
+test('allows the home loader to be previewed locally in development', () => {
+  assert.equal(shouldEnableHomeLoader('localhost', '?previewHomeLoader=1', true), true);
+  assert.equal(shouldEnableHomeLoader('127.0.0.1', '?previewHomeLoader=1', true), true);
+  assert.equal(shouldEnableHomeLoader('localhost', '?previewHomeLoader=1', false), false);
+  assert.equal(shouldEnableHomeLoader('localhost', '?foo=previewHomeLoader', true), false);
+});
+
+test('allows the local home loader preview to be held open in development', () => {
+  assert.equal(shouldHoldHomeLoaderPreview('?previewHomeLoader=1&holdHomeLoader=1', true), true);
+  assert.equal(shouldHoldHomeLoaderPreview('?previewHomeLoader=1&holdHomeLoader=1', false), false);
+  assert.equal(shouldHoldHomeLoaderPreview('?holdHomeLoader=1', true), false);
+});
+
 test('blocks on direct section images, posters, and videos but not hidden interactive assets', () => {
   const assetUrls = BLOCKING_HOME_LOADER_ASSETS.map((asset) => asset.url);
 
+  assert.ok(assetUrls.includes(COVER_AND_SELF_INTRO_AUDIO_SRC));
   assert.ok(assetUrls.includes('/videos/窗帘飘动.mp4'));
   assert.ok(assetUrls.includes('/images/video-transition-poster.png'));
   assert.ok(assetUrls.includes('/audio/Hometown_Series1.MP3'));
@@ -35,6 +75,67 @@ test('blocks on direct section images, posters, and videos but not hidden intera
   assert.ok(!assetUrls.includes('/videos/Lofi-girl.mov'));
 
   assert.equal(new Set(assetUrls).size, assetUrls.length);
+});
+
+test('blocks on every featured VisualWorks image before opening the homepage', () => {
+  const assetByUrl = new Map(BLOCKING_HOME_LOADER_ASSETS.map((asset) => [asset.url, asset]));
+  const featuredVisualWorkUrls = personalData.featuredWorks.map((work) => work.image);
+
+  assert.ok(featuredVisualWorkUrls.length > 0);
+  assert.ok(
+    featuredVisualWorkUrls.every((url) => url.startsWith('/images/VisualWorks/')),
+  );
+
+  for (const url of featuredVisualWorkUrls) {
+    assert.equal(assetByUrl.get(url)?.kind, 'image');
+    assert.equal(assetByUrl.get(url)?.blocking, true);
+  }
+});
+
+test('blocks on every CodingWorks image before opening the homepage', () => {
+  const assetByUrl = new Map(BLOCKING_HOME_LOADER_ASSETS.map((asset) => [asset.url, asset]));
+  const codingWorkUrls = listPublicImageUrls(join(PUBLIC_ROOT, 'images/CodingWorks'));
+
+  assert.ok(codingWorkUrls.length > 0);
+  assert.ok(codingWorkUrls.every((url) => url.startsWith('/images/CodingWorks/')));
+
+  for (const url of codingWorkUrls) {
+    assert.equal(statSync(join(PUBLIC_ROOT, url.slice(1))).isFile(), true);
+    assert.equal(assetByUrl.get(url)?.kind, 'image');
+    assert.equal(assetByUrl.get(url)?.blocking, true);
+  }
+});
+
+test('uses lightweight webp assets for blocking grow-path cards', () => {
+  const growPathCardAssets = BLOCKING_HOME_LOADER_ASSETS.filter((asset) =>
+    asset.id.startsWith('grow-path-card-'),
+  );
+
+  assert.equal(growPathCardAssets.length, 4);
+
+  for (const asset of growPathCardAssets) {
+    assert.equal(asset.kind, 'image');
+    assert.equal(asset.blocking, true);
+    assert.match(asset.url, /\.webp$/);
+
+    const assetPath = join(PUBLIC_ROOT, asset.url.slice(1));
+    assert.equal(statSync(assetPath).isFile(), true);
+    assert.ok(statSync(assetPath).size < 600_000, `${asset.url} should stay under 600KB`);
+  }
+});
+
+test('preloads the cover and self-introduction audio before opening the homepage', () => {
+  const coverAudioAsset = BLOCKING_HOME_LOADER_ASSETS.find(
+    (asset) => asset.url === COVER_AND_SELF_INTRO_AUDIO_SRC,
+  );
+
+  assert.deepEqual(coverAudioAsset, {
+    id: 'portfolio-cover-self-introduction-audio',
+    url: COVER_AND_SELF_INTRO_AUDIO_SRC,
+    kind: 'audio',
+    weight: 2,
+    blocking: true,
+  });
 });
 
 test('computes weighted progress from the current blocking asset states', () => {
@@ -67,3 +168,111 @@ test('reports blocking asset failures without converting pending assets into a r
   assert.equal(statuses['failed-poster'], 'error');
   assert.equal(statuses['slow-video'], 'pending');
 });
+
+test('retries a failed home loader image twice before reporting it loaded', async () => {
+  const OriginalImage = globalThis.Image;
+  const createdImages: MockHomeLoaderImage[] = [];
+
+  globalThis.Image = createMockHomeLoaderImageClass(createdImages);
+
+  try {
+    const statuses: LoaderAssetStatus[] = [];
+
+    preloadImageAsset(
+      { id: 'retrying-image', url: '/images/example.png', kind: 'image', weight: 1, blocking: true },
+      (_assetId, status) => statuses.push(status),
+      0,
+    );
+
+    assert.equal(createdImages.length, 1);
+    assert.equal(createdImages[0]?.src, '/images/example.png');
+    createdImages[0]?.emit('error');
+
+    await waitForNextTimer();
+    assert.equal(createdImages.length, 2);
+    assert.equal(createdImages[1]?.src, '/images/example.png?homeLoaderRetry=1');
+    assert.deepEqual(statuses, []);
+    createdImages[1]?.emit('error');
+
+    await waitForNextTimer();
+    assert.equal(createdImages.length, 3);
+    assert.equal(createdImages[2]?.src, '/images/example.png?homeLoaderRetry=2');
+    assert.deepEqual(statuses, []);
+    createdImages[2]?.emit('load');
+
+    assert.deepEqual(statuses, ['loaded']);
+  } finally {
+    globalThis.Image = OriginalImage;
+  }
+});
+
+test('reports a home loader image error after the original request and two retries fail', async () => {
+  const OriginalImage = globalThis.Image;
+  const createdImages: MockHomeLoaderImage[] = [];
+
+  globalThis.Image = createMockHomeLoaderImageClass(createdImages);
+
+  try {
+    const statuses: LoaderAssetStatus[] = [];
+
+    preloadImageAsset(
+      { id: 'failed-image', url: '/images/example.png?existing=1', kind: 'image', weight: 1, blocking: true },
+      (_assetId, status) => statuses.push(status),
+      0,
+    );
+
+    createdImages[0]?.emit('error');
+    await waitForNextTimer();
+    createdImages[1]?.emit('error');
+    await waitForNextTimer();
+    createdImages[2]?.emit('error');
+
+    assert.equal(createdImages.length, 3);
+    assert.equal(createdImages[1]?.src, '/images/example.png?existing=1&homeLoaderRetry=1');
+    assert.equal(createdImages[2]?.src, '/images/example.png?existing=1&homeLoaderRetry=2');
+    assert.deepEqual(statuses, ['error']);
+  } finally {
+    globalThis.Image = OriginalImage;
+  }
+});
+
+class MockHomeLoaderImage {
+  complete = false;
+  naturalWidth = 0;
+  src = '';
+
+  private listeners = new Map<string, Set<() => void>>();
+
+  addEventListener(type: string, listener: () => void) {
+    const listeners = this.listeners.get(type) ?? new Set<() => void>();
+    listeners.add(listener);
+    this.listeners.set(type, listeners);
+  }
+
+  removeEventListener(type: string, listener: () => void) {
+    this.listeners.get(type)?.delete(listener);
+  }
+
+  emit(type: string) {
+    for (const listener of this.listeners.get(type) ?? []) {
+      listener();
+    }
+  }
+}
+
+function createMockHomeLoaderImageClass(createdImages: MockHomeLoaderImage[]) {
+  const MockImageClass = class extends MockHomeLoaderImage {
+    constructor() {
+      super();
+      createdImages.push(this);
+    }
+  };
+
+  return MockImageClass as unknown as typeof Image;
+}
+
+function waitForNextTimer() {
+  return new Promise((resolve) => {
+    setTimeout(resolve, 0);
+  });
+}

@@ -8,6 +8,9 @@ import {
   deleteFriendBookGuestbookEntry,
   FRIEND_BOOK_GUESTBOOK_PAGE_SIZE,
   FRIEND_BOOK_HIDDEN_AVATAR_ID,
+  FRIEND_BOOK_NICKNAME_MAX_DISPLAY_UNITS,
+  FRIEND_BOOK_PENDING_GUESTBOOK_DRAFT_KEY,
+  FRIEND_BOOK_REMOTE_CACHE_KEY,
   FRIEND_BOOK_STORAGE_KEY,
   answerFriendBookQuizQuestion,
   advanceFriendBookQuizQuestion,
@@ -20,8 +23,14 @@ import {
   getAvailableFriendBookAvatarIds,
   getFriendBookGameStartStage,
   getNextBetweenTwoPagesSceneRotation,
+  getFriendBookNicknameDisplayUnits,
+  hydrateFriendBookPendingGuestbookDraft,
   hydrateFriendBookProgress,
+  hydrateFriendBookRemoteGuestbookCache,
+  limitFriendBookNicknameDraft,
   persistFriendBookProgress,
+  persistFriendBookPendingGuestbookDraft,
+  persistFriendBookRemoteGuestbookCache,
   resolveBetweenTwoPagesSpotSelection,
   getMoonRunRoundSummary,
   stepMoonRunSession,
@@ -43,6 +52,14 @@ function createMemoryStorage(seed: Record<string, string> = {}) {
     },
   };
 }
+
+test('limits guestbook nickname drafts to five Chinese display units', () => {
+  assert.equal(FRIEND_BOOK_NICKNAME_MAX_DISPLAY_UNITS, 5);
+  assert.equal(getFriendBookNicknameDisplayUnits('浮躁的都市浮萍'), 7);
+  assert.equal(limitFriendBookNicknameDraft('浮躁的都市浮萍'), '浮躁的都市');
+  assert.equal(limitFriendBookNicknameDraft('ArchiveWalker'), 'ArchiveWal');
+  assert.equal(limitFriendBookNicknameDraft('小CiBuilder'), '小CiBuilde');
+});
 
 test('hydrate merges persisted friend-book progress with default slots and avatars', () => {
   const storage = createMemoryStorage({
@@ -880,4 +897,46 @@ test('persist stores the keyed friend-book payload under the versioned storage k
 
   assert.match(storage.dump()[FRIEND_BOOK_STORAGE_KEY], /between-two-pages/);
   assert.match(storage.dump()[FRIEND_BOOK_STORAGE_KEY], /A single note before sleep\./);
+});
+
+test('remote guestbook cache stores entries separately from local game progress', () => {
+  const storage = createMemoryStorage();
+  const entries = [
+    {
+      id: 'remote-1',
+      nickname: 'Dawn',
+      identityIntro: 'Remote visitor',
+      portfolioReview: 'Remote review',
+      latestGameId: 'moon-run' as const,
+      avatarId: 'dog' as const,
+      latestMedalId: '/images/GreenMedal01.png',
+      latestDate: 'MAY 12, 2026',
+      updatedAt: '2026-05-12T15:20:00.000Z',
+    },
+  ];
+
+  persistFriendBookRemoteGuestbookCache(entries, storage);
+
+  assert.match(storage.dump()[FRIEND_BOOK_REMOTE_CACHE_KEY], /remote-1/);
+  assert.deepEqual(hydrateFriendBookRemoteGuestbookCache(storage), entries);
+});
+
+test('pending guestbook draft survives a failed remote publish attempt', () => {
+  const storage = createMemoryStorage();
+
+  persistFriendBookPendingGuestbookDraft(
+    {
+      nickname: '小辞',
+      identityIntro: '访客',
+      portfolioReview: '喜欢作品集。',
+      latestGameId: 'between-two-pages',
+      avatarId: 'cat',
+      medalId: '/images/PurpleMedal01.png',
+      displayDate: 'MAY 12, 2026',
+    },
+    storage,
+  );
+
+  assert.match(storage.dump()[FRIEND_BOOK_PENDING_GUESTBOOK_DRAFT_KEY], /小辞/);
+  assert.equal(hydrateFriendBookPendingGuestbookDraft(storage)?.portfolioReview, '喜欢作品集。');
 });
