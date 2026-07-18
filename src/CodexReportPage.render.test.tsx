@@ -75,11 +75,12 @@ test('renders a selectable visual debug evidence record with its verified facts'
       },
     ],
   };
-  const evidenceProps = {
-    initialDocument,
-    initialEvidenceId: 'friend-book-hotspots',
-  } as never;
-  const markup = renderToStaticMarkup(<CodexReportPage {...evidenceProps} />);
+  const markup = renderToStaticMarkup(
+    <CodexReportPage
+      initialDocument={initialDocument}
+      initialEvidenceId="friend-book-hotspots"
+    />,
+  );
 
   assert.match(markup, /data-codex-report-nav-group="visual-debug-evidence"/);
   assert.match(markup, /data-codex-report-nav-item="friend-book-hotspots"/);

@@ -284,10 +284,24 @@ function createBuildWeekVisualDebugEvidence(): CodexVisualDebugEvidence {
         'src/codexReport.test.ts',
         'src/CodexReportPage.tsx',
         'src/CodexReportPage.render.test.tsx',
+        'README.md',
+        'docs/build-week/visual-debug-evidence.md',
       ],
       modelNote:
         'The user-confirmed current Codex task used GPT-5.6; the active task selector and Codex session are the primary model-use evidence.',
       completedAt: '2026-07-18T12:09:01+08:00',
+    },
+    verification: {
+      summary:
+        '32 focused regression tests passed. TypeScript checking and the Vite production build passed. Headless Chromium loaded the evidence route and public homepage without overlays or console errors, copied the evidence Markdown with clipboard permission, and found no public debug links.',
+      commands: [
+        'node --import tsx --test src/codexReport.test.ts src/CodexReportPage.render.test.tsx src/App.logic.test.ts src/FriendBookDiffHotspotsDebugPage.logic.test.ts src/FriendBookDiffHotspotsDebugPage.render.test.tsx',
+        'npm run lint',
+        'npm run build',
+        'Playwright browser verification for /debug/codex-report and /',
+      ],
+      outcome: 'passed',
+      completedAt: '2026-07-18T12:18:07+08:00',
     },
   };
 }
@@ -340,7 +354,7 @@ export function normalizeCodexGuideDocument(value: unknown): CodexGuideDocument 
       ? value.evidence
           .map((record) => normalizeVisualDebugEvidence(record))
           .filter((record): record is CodexVisualDebugEvidence => record !== null)
-      : [],
+      : [createBuildWeekVisualDebugEvidence()],
     updatedAt: asTrimmedString(value.updatedAt) || null,
   };
 }

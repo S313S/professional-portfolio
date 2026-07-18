@@ -4,7 +4,7 @@ This document is a repository snapshot exported from the developer-only Codex Re
 
 ## Visual debugging evidence loop
 
-**Stage:** implemented
+**Stage:** verified
 
 ### Problem
 
@@ -36,14 +36,29 @@ GPT-5.6 extended Codex Report with normalized evidence records, a debug-route al
 - `src/codexReport.test.ts`
 - `src/CodexReportPage.tsx`
 - `src/CodexReportPage.render.test.tsx`
+- `README.md`
+- `docs/build-week/visual-debug-evidence.md`
+
+### Verification
+
+**Outcome:** passed
+
+32 focused regression tests passed. TypeScript checking and the Vite production build passed. Headless Chromium loaded the evidence route and public homepage without overlays or console errors, copied the evidence Markdown with clipboard permission, and found no public debug links.
+
+**Commands:**
+
+- `node --import tsx --test src/codexReport.test.ts src/CodexReportPage.render.test.tsx src/App.logic.test.ts src/FriendBookDiffHotspotsDebugPage.logic.test.ts src/FriendBookDiffHotspotsDebugPage.render.test.tsx`
+- `npm run lint`
+- `npm run build`
+- `Playwright browser verification for /debug/codex-report and /`
 
 ### Timeline
 
 - Created: 2026-07-18T11:57:29+08:00
 - Calibration confirmed: 2026-07-18T11:57:29+08:00
 - Implementation completed: 2026-07-18T12:09:01+08:00
+- Verification completed: 2026-07-18T12:18:07+08:00
 
 ## Verification status
 
-Pending. This snapshot will be updated to `passed` only after the focused regression tests, TypeScript check, production build, and local browser path have actually succeeded.
-
+Passed. The commands and browser path listed above were executed before this snapshot was updated.

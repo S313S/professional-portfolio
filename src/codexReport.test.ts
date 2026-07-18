@@ -152,7 +152,7 @@ test('normalizeCodexGuideDocument keeps evidence but removes unsafe debug routes
   assert.equal(guide.evidence?.[0]?.debugRoute, undefined);
 });
 
-test('normalizeCodexGuideDocument stays compatible when old documents omit evidence', () => {
+test('normalizeCodexGuideDocument keeps built-in evidence when old documents omit it', () => {
   const fallback = createDefaultCodexGuideDocument();
   const guide = normalizeCodexGuideDocument({
     title: 'Legacy guide',
@@ -160,7 +160,10 @@ test('normalizeCodexGuideDocument stays compatible when old documents omit evide
     groups: fallback.groups,
   }) as ReturnType<typeof normalizeCodexGuideDocument> & {evidence?: unknown[]};
 
-  assert.deepEqual(guide.evidence, []);
+  assert.deepEqual(
+    guide.evidence.map((record) => record.id),
+    ['gpt56-visual-debug-evidence-loop'],
+  );
 });
 
 test('getCodexEvidenceStage reports the latest stage backed by recorded data', () => {
@@ -273,9 +276,11 @@ test('the default report includes the truthful GPT-5.6 Build Week extension reco
 
   assert.ok(record);
   assert.equal(record.debugRoute, '/debug/codex-report');
-  assert.equal(getCodexEvidenceStage(record), 'implemented');
+  assert.equal(getCodexEvidenceStage(record), 'verified');
   assert.match(record.implementation?.modelNote ?? '', /user-confirmed current Codex task/i);
   assert.match(record.implementation?.modelNote ?? '', /GPT-5\.6/);
   assert.doesNotMatch(record.implementation?.modelNote ?? '', /platform-certified/i);
-  assert.equal(record.verification, undefined);
+  assert.equal(record.verification?.outcome, 'passed');
+  assert.ok(record.verification?.commands.includes('npm run lint'));
+  assert.ok(record.verification?.commands.includes('npm run build'));
 });
