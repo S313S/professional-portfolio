@@ -136,7 +136,7 @@ test('normalizeCodexGuideDocument preserves valid visual debug evidence', () => 
   const guide = guideWithEvidence([evidenceInput]);
   const record = guide.evidence?.find((entry) => entry.id === evidenceInput.id);
 
-  assert.equal(guide.evidence?.length, 2);
+  assert.equal(guide.evidence?.length, 3);
   assert.equal(record?.debugRoute, '/debug/friend-book-diff-hotspots');
   assert.deepEqual(record?.calibration, evidenceInput.calibration);
 });
@@ -150,7 +150,7 @@ test('normalizeCodexGuideDocument keeps evidence but removes unsafe debug routes
   ]);
   const record = guide.evidence?.find((entry) => entry.id === evidenceInput.id);
 
-  assert.equal(guide.evidence?.length, 2);
+  assert.equal(guide.evidence?.length, 3);
   assert.equal(record?.debugRoute, undefined);
 });
 
@@ -164,7 +164,7 @@ test('normalizeCodexGuideDocument keeps built-in evidence when old documents omi
 
   assert.deepEqual(
     guide.evidence.map((record) => record.id),
-    ['gpt56-visual-debug-evidence-loop'],
+    ['gpt56-visual-debug-evidence-loop', 'gpt56-hotspot-debug-refactor'],
   );
 });
 
@@ -183,13 +183,17 @@ test('normalizeCodexGuideDocument merges built-in evidence with runtime records'
 
   assert.deepEqual(
     emptyRuntimeGuide.evidence?.map((record) => record.id),
-    ['gpt56-visual-debug-evidence-loop'],
+    ['gpt56-visual-debug-evidence-loop', 'gpt56-hotspot-debug-refactor'],
   );
   assert.deepEqual(
     additionalRuntimeGuide.evidence?.map((record) => record.id),
-    ['gpt56-visual-debug-evidence-loop', 'friend-book-hotspots'],
+    [
+      'gpt56-visual-debug-evidence-loop',
+      'gpt56-hotspot-debug-refactor',
+      'friend-book-hotspots',
+    ],
   );
-  assert.equal(overriddenRuntimeGuide.evidence?.length, 1);
+  assert.equal(overriddenRuntimeGuide.evidence?.length, 2);
   assert.equal(overriddenRuntimeGuide.evidence?.[0]?.title, 'Runtime-updated evidence loop');
 });
 
@@ -351,6 +355,24 @@ test('the default report includes the truthful GPT-5.6 Build Week extension reco
   assert.equal(record.verification?.outcome, 'passed');
   assert.ok(record.verification?.commands.includes('npm run lint'));
   assert.ok(record.verification?.commands.includes('npm run build'));
+});
+
+test('the default report records the GPT-5.6 refactor of the existing hotspot tool', () => {
+  const record = createDefaultCodexGuideDocument().evidence.find(
+    (entry) => entry.id === 'gpt56-hotspot-debug-refactor',
+  );
+
+  assert.ok(record);
+  assert.equal(record.debugRoute, '/debug/friend-book-diff-hotspots');
+  assert.match(record.implementation?.summary ?? '', /refactored and extended/i);
+  assert.match(record.implementation?.modelNote ?? '', /existing tool/i);
+  assert.match(record.implementation?.modelNote ?? '', /GPT-5\.6/);
+  assert.doesNotMatch(
+    `${record.implementation?.summary ?? ''} ${record.implementation?.modelNote ?? ''}`,
+    /built (?:the )?original .* from scratch/i,
+  );
+  assert.equal(record.verification?.outcome, 'pending');
+  assert.equal(getCodexEvidenceStage(record), 'implemented');
 });
 
 test('parseCodexGuideDocumentText falls back safely for malformed runtime JSON', () => {
