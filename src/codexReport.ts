@@ -54,6 +54,7 @@ export interface CodexGuideDocument {
   summary: string;
   groups: CodexGuideGroup[];
   evidence: CodexVisualDebugEvidence[];
+  loadWarning?: string | null;
   updatedAt?: string | null;
 }
 
@@ -66,6 +67,8 @@ export const CODEX_REPORT_FILE_PATH = 'tmp/codex-report.json';
 export const CODEX_REPORT_ENDPOINT = '/__codex-report/current';
 export const CODEX_REPORT_UPDATE_ENDPOINT = '/__codex-report/update';
 export const CODEX_REPORT_REFRESH_INTERVAL_MS = 5000;
+export const CODEX_REPORT_INVALID_JSON_WARNING =
+  'The local Codex report JSON is invalid. Showing the safe default report instead.';
 
 const CODEX_REPORT_ALLOWED_DEBUG_ROUTES = new Set([
   '/debug/friend-book-finale',
@@ -284,6 +287,8 @@ function createBuildWeekVisualDebugEvidence(): CodexVisualDebugEvidence {
         'src/codexReport.test.ts',
         'src/CodexReportPage.tsx',
         'src/CodexReportPage.render.test.tsx',
+        'vite.config.ts',
+        'vite.config.test.ts',
         'README.md',
         'docs/build-week/visual-debug-evidence.md',
       ],
@@ -293,17 +298,32 @@ function createBuildWeekVisualDebugEvidence(): CodexVisualDebugEvidence {
     },
     verification: {
       summary:
-        '32 focused regression tests passed. TypeScript checking and the Vite production build passed. Headless Chromium loaded the evidence route and public homepage without overlays or console errors, copied the evidence Markdown with clipboard permission, and found no public debug links.',
+        '39 focused regression tests passed. TypeScript checking and the Vite production build passed. Headless Chromium loaded the evidence route and public homepage without overlays or console errors, copied the evidence Markdown with clipboard permission, and found no public debug links.',
       commands: [
-        'node --import tsx --test src/codexReport.test.ts src/CodexReportPage.render.test.tsx src/App.logic.test.ts src/FriendBookDiffHotspotsDebugPage.logic.test.ts src/FriendBookDiffHotspotsDebugPage.render.test.tsx',
+        'node --import tsx --test vite.config.test.ts src/codexReport.test.ts src/CodexReportPage.render.test.tsx src/App.logic.test.ts src/FriendBookDiffHotspotsDebugPage.logic.test.ts src/FriendBookDiffHotspotsDebugPage.render.test.tsx',
         'npm run lint',
         'npm run build',
         'Playwright browser verification for /debug/codex-report and /',
       ],
       outcome: 'passed',
-      completedAt: '2026-07-18T12:18:07+08:00',
+      completedAt: '2026-07-18T12:31:04+08:00',
     },
   };
+}
+
+function mergeVisualDebugEvidence(value: unknown): CodexVisualDebugEvidence[] {
+  const recordsById = new Map<string, CodexVisualDebugEvidence>();
+  const builtInRecord = createBuildWeekVisualDebugEvidence();
+  recordsById.set(builtInRecord.id, builtInRecord);
+
+  if (Array.isArray(value)) {
+    value
+      .map((record) => normalizeVisualDebugEvidence(record))
+      .filter((record): record is CodexVisualDebugEvidence => record !== null)
+      .forEach((record) => recordsById.set(record.id, record));
+  }
+
+  return [...recordsById.values()];
 }
 
 export function createDefaultCodexGuideDocument(): CodexGuideDocument {
@@ -329,6 +349,7 @@ export function createDefaultCodexGuideDocument(): CodexGuideDocument {
       },
     ],
     evidence: [createBuildWeekVisualDebugEvidence()],
+    loadWarning: null,
     updatedAt: null,
   };
 }
@@ -350,28 +371,36 @@ export function normalizeCodexGuideDocument(value: unknown): CodexGuideDocument 
     title: asTrimmedString(value.title) || '未命名行动指南',
     summary: asTrimmedString(value.summary) || '从左侧选择一个主题，查看当前最该做的事。',
     groups,
-    evidence: Array.isArray(value.evidence)
-      ? value.evidence
-          .map((record) => normalizeVisualDebugEvidence(record))
-          .filter((record): record is CodexVisualDebugEvidence => record !== null)
-      : [createBuildWeekVisualDebugEvidence()],
+    evidence: mergeVisualDebugEvidence(value.evidence),
+    loadWarning: asTrimmedString(value.loadWarning) || null,
     updatedAt: asTrimmedString(value.updatedAt) || null,
   };
+}
+
+export function parseCodexGuideDocumentText(text: string): CodexGuideDocument {
+  try {
+    return normalizeCodexGuideDocument(JSON.parse(text));
+  } catch {
+    return {
+      ...createDefaultCodexGuideDocument(),
+      loadWarning: CODEX_REPORT_INVALID_JSON_WARNING,
+    };
+  }
 }
 
 export function getCodexEvidenceStage(
   record: CodexVisualDebugEvidence,
 ): CodexEvidenceStage {
-  if (record.verification) {
-    return 'verified';
+  if (!record.calibration) {
+    return 'described';
   }
-  if (record.implementation) {
-    return 'implemented';
-  }
-  if (record.calibration) {
+  if (!record.implementation) {
     return 'calibrated';
   }
-  return 'described';
+  if (!record.verification) {
+    return 'implemented';
+  }
+  return 'verified';
 }
 
 export function formatCodexEvidenceMarkdown(

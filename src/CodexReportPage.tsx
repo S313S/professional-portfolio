@@ -365,6 +365,7 @@ export default function CodexReportPage({
   );
   const [isNavCollapsed, setIsNavCollapsed] = useState(initialNavCollapsed);
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'unavailable'>('idle');
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -384,6 +385,7 @@ export default function CodexReportPage({
 
         startTransition(() => {
           setDocument(nextDocument);
+          setLoadError(null);
           setSelectedItemId((current) => resolveCodexGuideSelection(nextDocument, current));
           setSelectedEvidenceId((current) =>
             current && nextDocument.evidence.some((record) => record.id === current)
@@ -395,6 +397,7 @@ export default function CodexReportPage({
         if (isDisposed || controller.signal.aborted) {
           return;
         }
+        setLoadError('Unable to refresh the local Codex report. Showing the last safe state.');
       }
     };
 
@@ -418,6 +421,7 @@ export default function CodexReportPage({
   const visibleSteps = activeSelection ? getVisibleCodexGuideSteps(activeSelection.item) : [];
   const promptHint =
     activeSelection?.item.promptHint || '如果你想看细节，可以直接继续追问。';
+  const reportWarning = loadError || document.loadWarning;
   const selectGuide = (itemId: string) => {
     setSelectedItemId(itemId);
     setSelectedEvidenceId(null);
@@ -459,6 +463,15 @@ export default function CodexReportPage({
       </header>
 
       <main className="mx-auto max-w-[1340px] px-4 py-6 lg:px-6">
+        {reportWarning ? (
+          <p
+            data-codex-report-warning="true"
+            role="status"
+            className="mb-5 rounded-[1rem] border border-[#c58a62] bg-[#fff2e6] px-4 py-3 text-sm leading-6 text-[#70452f]"
+          >
+            {reportWarning}
+          </p>
+        ) : null}
         <details
           className="overflow-hidden rounded-[1.4rem] border border-[#d8c3ab] bg-[rgba(255,249,242,0.92)] shadow-[0_14px_32px_rgba(70,43,29,0.07)] lg:hidden"
         >

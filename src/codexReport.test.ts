@@ -134,10 +134,11 @@ test('resolveCodexGuideSelection keeps valid selections and falls back to the fi
 
 test('normalizeCodexGuideDocument preserves valid visual debug evidence', () => {
   const guide = guideWithEvidence([evidenceInput]);
+  const record = guide.evidence?.find((entry) => entry.id === evidenceInput.id);
 
-  assert.equal(guide.evidence?.length, 1);
-  assert.equal(guide.evidence?.[0]?.debugRoute, '/debug/friend-book-diff-hotspots');
-  assert.deepEqual(guide.evidence?.[0]?.calibration, evidenceInput.calibration);
+  assert.equal(guide.evidence?.length, 2);
+  assert.equal(record?.debugRoute, '/debug/friend-book-diff-hotspots');
+  assert.deepEqual(record?.calibration, evidenceInput.calibration);
 });
 
 test('normalizeCodexGuideDocument keeps evidence but removes unsafe debug routes', () => {
@@ -147,9 +148,10 @@ test('normalizeCodexGuideDocument keeps evidence but removes unsafe debug routes
       debugRoute: 'https://example.com/debug',
     },
   ]);
+  const record = guide.evidence?.find((entry) => entry.id === evidenceInput.id);
 
-  assert.equal(guide.evidence?.length, 1);
-  assert.equal(guide.evidence?.[0]?.debugRoute, undefined);
+  assert.equal(guide.evidence?.length, 2);
+  assert.equal(record?.debugRoute, undefined);
 });
 
 test('normalizeCodexGuideDocument keeps built-in evidence when old documents omit it', () => {
@@ -164,6 +166,31 @@ test('normalizeCodexGuideDocument keeps built-in evidence when old documents omi
     guide.evidence.map((record) => record.id),
     ['gpt56-visual-debug-evidence-loop'],
   );
+});
+
+test('normalizeCodexGuideDocument merges built-in evidence with runtime records', () => {
+  const emptyRuntimeGuide = guideWithEvidence([]);
+  const additionalRuntimeGuide = guideWithEvidence([evidenceInput]);
+  const overriddenRuntimeGuide = guideWithEvidence([
+    {
+      id: 'gpt56-visual-debug-evidence-loop',
+      title: 'Runtime-updated evidence loop',
+      problem: 'Updated problem statement.',
+      visualIntent: 'Updated visual intent.',
+      debugRoute: '/debug/codex-report',
+    },
+  ]);
+
+  assert.deepEqual(
+    emptyRuntimeGuide.evidence?.map((record) => record.id),
+    ['gpt56-visual-debug-evidence-loop'],
+  );
+  assert.deepEqual(
+    additionalRuntimeGuide.evidence?.map((record) => record.id),
+    ['gpt56-visual-debug-evidence-loop', 'friend-book-hotspots'],
+  );
+  assert.equal(overriddenRuntimeGuide.evidence?.length, 1);
+  assert.equal(overriddenRuntimeGuide.evidence?.[0]?.title, 'Runtime-updated evidence loop');
 });
 
 test('getCodexEvidenceStage reports the latest stage backed by recorded data', () => {
@@ -206,6 +233,47 @@ test('getCodexEvidenceStage reports the latest stage backed by recorded data', (
       title: evidenceInput.title,
       problem: evidenceInput.problem,
       visualIntent: evidenceInput.visualIntent,
+    }),
+    'described',
+  );
+});
+
+test('getCodexEvidenceStage does not invent missing prerequisite stages', () => {
+  const verification = {
+    summary: 'A command was attempted.',
+    commands: ['npm run lint'],
+    outcome: 'failed' as const,
+  };
+  const implementation = {
+    summary: 'A change was made.',
+    changedFiles: ['src/example.ts'],
+  };
+
+  assert.equal(
+    getCodexEvidenceStage({
+      id: evidenceInput.id,
+      title: evidenceInput.title,
+      problem: evidenceInput.problem,
+      visualIntent: evidenceInput.visualIntent,
+      verification,
+    }),
+    'described',
+  );
+  assert.equal(
+    getCodexEvidenceStage({
+      ...evidenceInput,
+      verification,
+    }),
+    'calibrated',
+  );
+  assert.equal(
+    getCodexEvidenceStage({
+      id: evidenceInput.id,
+      title: evidenceInput.title,
+      problem: evidenceInput.problem,
+      visualIntent: evidenceInput.visualIntent,
+      implementation,
+      verification,
     }),
     'described',
   );
@@ -283,4 +351,26 @@ test('the default report includes the truthful GPT-5.6 Build Week extension reco
   assert.equal(record.verification?.outcome, 'passed');
   assert.ok(record.verification?.commands.includes('npm run lint'));
   assert.ok(record.verification?.commands.includes('npm run build'));
+});
+
+test('parseCodexGuideDocumentText falls back safely for malformed runtime JSON', () => {
+  const parseCodexGuideDocumentText = (
+    codexReportModule as typeof codexReportModule & {
+      parseCodexGuideDocumentText?: (value: string) => {
+        loadWarning?: string | null;
+        evidence: Array<{id: string}>;
+      };
+    }
+  ).parseCodexGuideDocumentText;
+
+  assert.equal(typeof parseCodexGuideDocumentText, 'function');
+  const guide = parseCodexGuideDocumentText?.('{"title":') as {
+    loadWarning?: string | null;
+    evidence: Array<{id: string}>;
+  };
+
+  assert.match(guide.loadWarning ?? '', /invalid/i);
+  assert.ok(
+    guide.evidence.some((record) => record.id === 'gpt56-visual-debug-evidence-loop'),
+  );
 });

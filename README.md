@@ -71,6 +71,7 @@ Focused evidence-loop tests:
 
 ```bash
 node --import tsx --test \
+  vite.config.test.ts \
   src/codexReport.test.ts \
   src/CodexReportPage.render.test.tsx \
   src/App.logic.test.ts
@@ -98,4 +99,3 @@ npm run build
 - The GPT-5.6 contribution documented here is the new evidence-loop extension and any later fixes recorded through it.
 - A record is marked `passed` only after its listed commands and browser path have actually been verified.
 - The public website remains the submitted product; the debugging interface explains how hard-to-express visual intent was turned into precise implementation work.
-

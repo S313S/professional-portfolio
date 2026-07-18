@@ -9,6 +9,7 @@ import {
   CODEX_REPORT_FILE_PATH,
   createDefaultCodexGuideDocument,
   normalizeCodexGuideDocument,
+  parseCodexGuideDocumentText,
 } from './src/codexReport';
 
 const FRIEND_BOOK_PRODUCTION_API_ORIGIN = 'https://xiaoci-ai.com';
@@ -23,6 +24,22 @@ export function getFriendBookApiProxyConfig(
     changeOrigin: true,
     secure: true,
   };
+}
+
+export async function readCodexReportPayload(filePath: string) {
+  try {
+    const fileContents = await readFile(filePath, 'utf8');
+    return parseCodexGuideDocumentText(fileContents);
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      'code' in error &&
+      error.code === 'ENOENT'
+    ) {
+      return createDefaultCodexGuideDocument();
+    }
+    throw error;
+  }
 }
 
 export default defineConfig(({mode}) => {
@@ -42,20 +59,7 @@ export default defineConfig(({mode}) => {
           server.middlewares.use(async (req, res, next) => {
             if (req.url === '/__codex-report/current' && req.method === 'GET') {
               try {
-                let payload = createDefaultCodexGuideDocument();
-
-                try {
-                  const fileContents = await readFile(codexReportOutputPath, 'utf8');
-                  payload = normalizeCodexGuideDocument(JSON.parse(fileContents));
-                } catch (error) {
-                  if (
-                    !(error instanceof Error) ||
-                    !('code' in error) ||
-                    error.code !== 'ENOENT'
-                  ) {
-                    throw error;
-                  }
-                }
+                const payload = await readCodexReportPayload(codexReportOutputPath);
 
                 res.statusCode = 200;
                 res.setHeader('Content-Type', 'application/json');

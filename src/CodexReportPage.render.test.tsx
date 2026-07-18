@@ -95,3 +95,17 @@ test('renders a selectable visual debug evidence record with its verified facts'
   assert.match(markup, /node --import tsx --test/);
   assert.match(markup, /Copy evidence Markdown/);
 });
+
+test('renders a visible warning when the local report falls back from invalid JSON', () => {
+  const initialDocument = {
+    ...createDefaultCodexGuideDocument(),
+    loadWarning:
+      'The local Codex report JSON is invalid. Showing the safe default report instead.',
+  };
+  const markup = renderToStaticMarkup(
+    <CodexReportPage initialDocument={initialDocument} />,
+  );
+
+  assert.match(markup, /data-codex-report-warning="true"/);
+  assert.match(markup, /local Codex report JSON is invalid/);
+});
