@@ -63,7 +63,7 @@ GPT-5.6 extended Codex Report with normalized evidence records, a debug-route al
 
 ## GPT-5.6 hotspot debugger refactor
 
-**Stage:** implemented
+**Stage:** verified
 
 ### Problem
 
@@ -103,16 +103,24 @@ GPT-5.6 refactored and extended the existing visual hotspot debugging page with 
 
 ### Verification
 
-**Outcome:** pending
+**Outcome:** passed
 
-Full regression, type, build, and browser verification have not yet been completed for this refactor.
+41 focused tests passed, TypeScript checking passed, and the Vite production build passed. In the 649 × 837 in-app browser, the refactored workflow and narrow-screen guidance rendered, scene selection updated targets and active coordinates, confirmation saved the parameters, and Codex Report listed the new evidence record without a visible error alert.
+
+**Commands:**
+
+- `node --import tsx --test vite.config.test.ts src/codexReport.test.ts src/CodexReportPage.render.test.tsx src/App.logic.test.ts src/FriendBookDiffHotspotsDebugPage.logic.test.ts src/FriendBookDiffHotspotsDebugPage.render.test.tsx`
+- `npm run lint`
+- `npm run build`
+- `In-app browser verification for /debug/friend-book-diff-hotspots and /debug/codex-report at 649 × 837`
 
 ### Timeline
 
 - Created: 2026-07-18T12:57:43+08:00
 - Calibration confirmed: 2026-07-18T12:57:43+08:00
 - Implementation completed: 2026-07-18T12:57:43+08:00
+- Verification completed: 2026-07-18T13:04:34+08:00
 
 ## Verification status
 
-The original evidence-loop record passed. The hotspot-debugger refactor remains pending until its full regression, type, build, and browser checks are complete.
+Passed. Both the evidence-loop extension and the hotspot-debugger refactor were updated only after their recorded regression, type, build, and browser checks completed.

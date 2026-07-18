@@ -351,9 +351,15 @@ function createBuildWeekHotspotDebugRefactorEvidence(): CodexVisualDebugEvidence
     },
     verification: {
       summary:
-        'Full regression, type, build, and browser verification have not yet been completed for this refactor.',
-      commands: [],
-      outcome: 'pending',
+        '41 focused tests passed, TypeScript checking passed, and the Vite production build passed. In the 649 × 837 in-app browser, the refactored workflow and narrow-screen guidance rendered, scene selection updated targets and active coordinates, confirmation saved the parameters, and Codex Report listed the new evidence record without a visible error alert.',
+      commands: [
+        'node --import tsx --test vite.config.test.ts src/codexReport.test.ts src/CodexReportPage.render.test.tsx src/App.logic.test.ts src/FriendBookDiffHotspotsDebugPage.logic.test.ts src/FriendBookDiffHotspotsDebugPage.render.test.tsx',
+        'npm run lint',
+        'npm run build',
+        'In-app browser verification for /debug/friend-book-diff-hotspots and /debug/codex-report at 649 × 837',
+      ],
+      outcome: 'passed',
+      completedAt: '2026-07-18T13:04:34+08:00',
     },
   };
 }

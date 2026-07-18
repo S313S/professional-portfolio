@@ -82,7 +82,9 @@ node --import tsx --test \
   vite.config.test.ts \
   src/codexReport.test.ts \
   src/CodexReportPage.render.test.tsx \
-  src/App.logic.test.ts
+  src/App.logic.test.ts \
+  src/FriendBookDiffHotspotsDebugPage.logic.test.ts \
+  src/FriendBookDiffHotspotsDebugPage.render.test.tsx
 ```
 
 Project checks:

@@ -371,8 +371,10 @@ test('the default report records the GPT-5.6 refactor of the existing hotspot to
     `${record.implementation?.summary ?? ''} ${record.implementation?.modelNote ?? ''}`,
     /built (?:the )?original .* from scratch/i,
   );
-  assert.equal(record.verification?.outcome, 'pending');
-  assert.equal(getCodexEvidenceStage(record), 'implemented');
+  assert.equal(record.verification?.outcome, 'passed');
+  assert.equal(getCodexEvidenceStage(record), 'verified');
+  assert.ok(record.verification?.commands.includes('npm run lint'));
+  assert.ok(record.verification?.commands.includes('npm run build'));
 });
 
 test('parseCodexGuideDocumentText falls back safely for malformed runtime JSON', () => {
