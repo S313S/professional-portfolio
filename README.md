@@ -1,4 +1,4 @@
-<img width="2940" height="1598" alt="CleanShot 2026-08-07 at 21 42 13@2x" src="https://github.com/user-attachments/assets/c796091c-c034-40b0-ab71-6b986a67b7cb" /># Beyond the Résumé: An Immersive Personal Brand
+Beyond the Résumé: An Immersive Personal Brand
 
 **→ [xiaoci-ai.com](https://xiaoci-ai.com)** · 它有 72 个场景要先加载完才开门，建议给它一点时间。
 
