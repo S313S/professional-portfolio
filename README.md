@@ -1,11 +1,28 @@
 # Beyond the Résumé: An Immersive Personal Brand
 
+**→ [xiaoci-ai.com](https://xiaoci-ai.com)** · 它有 72 个场景要先加载完才开门，建议给它一点时间。
+
+<!-- ⬇️ 建议在这里放一张首屏截图或一段 GIF（加载页 → 开门那一下）。
+     直接把图拖进 GitHub 编辑器即可，传完把这段注释删掉。 -->
+
 An immersive personal brand website for **Xiao Ci — AI Builder**. Instead of presenting a static résumé, the site turns professional experience, projects, visual work, and personal connections into a long-form interactive journey.
 
 - Live website: [https://xiaoci-ai.com](https://xiaoci-ai.com)
 - Build Week evidence: [docs/build-week/visual-debug-evidence.md](docs/build-week/visual-debug-evidence.md)
 - Evidence-loop design: [docs/plans/2026-07-18-gpt56-visual-debug-evidence-loop-design.md](docs/plans/2026-07-18-gpt56-visual-debug-evidence-loop-design.md)
 - Hotspot refactor design: [docs/plans/2026-07-18-gpt56-hotspot-debug-refactor-design.md](docs/plans/2026-07-18-gpt56-hotspot-debug-refactor-design.md)
+
+## 中文简介
+
+这是我的个人品牌站，跑在 [xiaoci-ai.com](https://xiaoci-ai.com)。
+
+它不是一份网页版简历。经历、项目、视觉作品和一些私人的东西，被做成了一段可以一直往下走的长叙事。整站有 72 个场景要先加载，所以开门会慢一点 —— 这是刻意的取舍：它是给愿意花几分钟的人看的。
+
+做这个站最难的部分不是写代码，是**把「我觉得这里不对」翻译成机器能执行的参数**。我能看出某个热区、某层动画、某段滚动过渡不对劲，但说不出具体的坐标、变换和响应式行为。所以我做了一组开发者专用的调试界面，把这些藏起来的数值变成可以直接拖的控件 —— **人来判断「对不对」，模型来负责「怎么改」。**
+
+下面的英文部分记录了这套 Visual Debug Evidence Loop 的设计，以及 OpenAI Build Week 2026 期间的具体工作。
+
+---
 
 ## Why visual debugging matters
 
