@@ -1,9 +1,15 @@
-# Beyond the Résumé: An Immersive Personal Brand
+<img width="2940" height="1598" alt="CleanShot 2026-08-07 at 21 42 13@2x" src="https://github.com/user-attachments/assets/c796091c-c034-40b0-ab71-6b986a67b7cb" /># Beyond the Résumé: An Immersive Personal Brand
 
 **→ [xiaoci-ai.com](https://xiaoci-ai.com)** · 它有 72 个场景要先加载完才开门，建议给它一点时间。
 
 <!-- ⬇️ 建议在这里放一张首屏截图或一段 GIF（加载页 → 开门那一下）。
      直接把图拖进 GitHub 编辑器即可，传完把这段注释删掉。 -->
+
+<img width="2940" height="1598" alt="CleanShot 2026-08-07 at 21 42 13@2x" src="https://github.com/user-attachments/assets/813e18ea-a0a7-44b6-a790-aa3a4a31bc71" />
+
+<img width="2940" height="1602" alt="CleanShot 2026-08-07 at 21 42 57@2x" src="https://github.com/user-attachments/assets/daa96c35-ed28-416d-967f-4692efdc369d" />
+
+
 
 An immersive personal brand website for **Xiao Ci — AI Builder**. Instead of presenting a static résumé, the site turns professional experience, projects, visual work, and personal connections into a long-form interactive journey.
 
